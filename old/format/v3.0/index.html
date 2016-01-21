@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		
+		<title>Format v3.1</title>
+
+		<script type="text/javascript" src="js/Blob.js"></script>
+		<script type="text/javascript" src="js/FileSaver.js"></script>
+		
+		<link type="text/css" rel="stylesheet" href="css/jquery-ui.min.css" />
+		<script type="text/javascript" src="js/jquery-2.1.1.min.js"></script>
+		<script type="text/javascript" src="js/jquery-ui.js"></script>
+		
+		<script type="text/javascript" src="js/shortcut.js"></script>
+		<script type="text/javascript" src="js/konami.js"></script>
+		
+		<link type="text/css" rel="stylesheet" href="css/default.css" />
+		<script type="text/javascript" src="js/default.js"></script>
+	</head>
+	<body>
+		<div id="settingseditor">
+			<div class="left textleft">
+				Types <button id="addtype" class="compact add"><span class="ui-icon ui-icon-plus"></span></button>
+				<ul id="types"></ul>
+			</div>
+			<div class="right textleft">
+				Colors <button id="addcolor" class="compact add"><span class="ui-icon ui-icon-plus"></span></button>
+				<ul id="colors"></ul>
+			</div>
+			<div class="clear"></div>
+		</div>
+		<div id="container">
+			<div id="fileroot">
+				<div class="left textleft">
+					<button id="load" class="compact">Load</button>
+					<input id="file" type="file" />
+				</div>
+				<div class="right textright">
+					<div id="edited"></div>
+					<input id="filename" type="text" placeholder="File Name" />
+					+
+					<select id="timestamp">
+						<option value="none" selected>None</option>
+						<option value="time">Time</option>
+						<option value="date">Date</option>
+						<option value="both">Both</option>
+					</select>
+					<input id="minimal" type="checkbox" />
+					<label id="minimallabel" for="minimal">Minimal</label>
+					<button id="save" class="compact">Save</button>
+				</div>
+				<div class="clear"></div>
+			</div>
+			<ul id="filterroot" class="tagroot"></ul>
+			<div id="filteroptions">
+				<div id="sortcontainer">
+					<ul id="sorting">
+						<li>color</li>
+						<li>name</li>
+						<li>type</li>
+					</ul>
+					<div id="sortgreaterleft">&gt;</div>
+					<div id="sortgreaterright">&gt;</div>
+					<button id="sort" class="compact">Sort</button>
+				</div>
+				<input type="checkbox" id="onlyinvalid" />
+				<label for="onlyinvalid">Only Invalid</label>
+				<button id="resetfilter" class="compact">Clear</button>
+				<button id="refilter" class="compact">Refilter</button>
+			</div>
+			<ul id="tagroot" class="tagroot"></ul>
+			<div id="editroot">
+				<button id="edit" class="compact">Edit</button>
+			</div>
+		</div>
+	</body>
+</html>

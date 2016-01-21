@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<data tags="0">
+	<type name="bool"/>
+	<type name="byte"/>
+	<type name="sbyte"/>
+	<type name="char"/>
+	<type name="double"/>
+	<type name="float"/>
+	<type name="int"/>
+	<type name="uint"/>
+	<type name="long"/>
+	<type name="ulong"/>
+	<type name="short"/>
+	<type name="ushort"/>
+	<type name="string"/>
+	<type name="tag"/>
+	<type name="tagid"/>
+	<color code="#2a363b"/>
+	<color code="#bf0c43"/>
+	<color code="#fd8603"/>
+	<color code="#f9ba15"/>
+	<color code="#8eac00"/>
+	<color code="#127a97"/>
+	<color code="#452b72"/>
+</data>

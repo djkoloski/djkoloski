@@ -1,0 +1,236 @@
+@import url('blitzer/jquery-ui-1.10.3.custom.css');
+@import url('ui.css');
+
+body
+{
+	position: relative;
+	font-size: 8pt;
+	background-color: #000;
+}
+
+div.clear
+{
+	width: 100%;
+	clear: both;
+}
+
+div#question-dialog
+{
+	width: 60%;
+}
+
+div#question-dialog div.progress-bar
+{
+	width: 90%;
+	float: left;
+	margin-top: 2px;
+}
+
+div#question-dialog div#question-next
+{
+	width: 9%;
+	float: right;
+	text-align: center;
+}
+
+div#score-dialog h1#score-count
+{
+	text-align: center;
+}
+
+div#score-dialog #score-close-button
+{
+	float: right;
+}
+
+div#gameboard
+{
+	width: 100%;
+}
+
+table.gametable
+{
+	margin: 40px auto 0 auto;
+}
+
+td.gamecell
+{
+	border: 1px solid #000;
+	width: 50px;
+	height: 50px;
+	background-color: #404040;
+	cursor: pointer;
+	background-position: center center;
+	background-repeat: no-repeat;
+}
+
+td.gamecell:hover
+{
+	background-color: #606060;
+}
+
+td.gamecell.selected
+{
+	border: 1px solid #fff;
+	border-radius: 2px;
+	background-color: #606060;
+}
+
+td.gamecell[data-side=red]
+{
+	background-color: #cc0000;
+}
+
+td.gamecell[data-side=blue]
+{
+	background-color: #0000cc;
+}
+
+td.gamecell[data-side=red][data-moved=true]
+{
+	background-color: #770000;
+}
+
+td.gamecell[data-side=blue][data-moved=true]
+{
+	background-color: #000066;
+}
+
+td.gamecell[data-unit=base]
+{
+	background-image: url('../img/base.png');
+}
+
+td.gamecell[data-unit=ship]
+{
+	background-image: url('../img/ship.png');
+}
+
+td.gamecell[data-unit=serpent]
+{
+	background-image: url('../img/serpent.png');
+}
+
+td.gamecell[data-unit=zephyr]
+{
+	background-image: url('../img/zephyr.png');
+}
+
+td.gamecell[data-unit=octopus]
+{
+	background-image: url('../img/octopus.png');
+}
+
+td.gamecell[data-unit=crab]
+{
+	background-image: url('../img/crab.png');
+}
+
+div#sidebar
+{
+	position: relative;
+	float: right;
+}
+
+div#stats
+{
+	width: 100%;
+	text-align: center;
+	color: #fff;
+}
+
+table.gamecontrols
+{
+	margin: 0 auto 0 auto;
+}
+
+table.gamecontrols td
+{
+	border: 2px solid #404040;
+	border-radius: 4px;
+	width: 50px;
+	height: 50px;
+	background-position: center center;
+	background-repeat: no-repeat;
+	cursor: pointer;
+}
+
+table.gamecontrols td#gamecontrols-create
+{
+	background-image: url('../img/build.png');
+}
+
+table.gamecontrols td#gamecontrols-move
+{
+	background-image: url('../img/move.png');
+}
+
+table.gamecontrols td#gamecontrols-attack
+{
+	background-image: url('../img/attack.png');
+}
+
+table.gamecontrols td#gamecontrols-finish
+{
+	background-image: url('../img/cycle.png');
+}
+
+table.gamecontrols td#gamecontrols-target
+{
+	background-image: url('../img/target.png');
+}
+
+table.gamecontrols td#gamecontrols-cancel
+{
+	background-image: url('../img/cancel.png');
+}
+
+table#unit-table
+{
+	margin: 0 auto 0 auto;
+}
+
+table#unit-table td.unit
+{
+	width: 50px;
+	height: 50px;
+	border: 2px solid #fff;
+	border-radius: 4px;
+	background-position: center center;
+	background-repeat: no-repeat;
+	background-color: #000;
+	cursor: pointer;
+}
+
+table#unit-table td#unit-ship
+{
+	background-image: url('../img/ship.png');
+}
+
+table#unit-table td#unit-zephyr
+{
+	background-image: url('../img/zephyr.png');
+}
+
+table#unit-table td#unit-octopus
+{
+	background-image: url('../img/octopus.png');
+}
+
+table#unit-table td#unit-crab
+{
+	background-image: url('../img/crab.png');
+}
+
+table#unit-table td#unit-serpent
+{
+	background-image: url('../img/serpent.png');
+}
+
+div#change-settings
+{
+	width: 50px;
+	height: 50px;
+	float: left;
+	background-image: url('../img/settings.png');
+}

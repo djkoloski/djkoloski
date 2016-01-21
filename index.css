@@ -1,0 +1,126 @@
+/*
+ * Red gradient:
+ *   d70060 rgba(215,0,96,1)  PRIMARY
+ *   e54028 rgba(229,64,40,1)
+ *   e44733 rgba(228,71,51,1)
+ *   linear-gradient(to XXX, #d70060, #e54028, #e44733)
+ * Green gradient:
+ *   32742c rgba(50,116,44,1)
+ *   61ae24 rgba(97,174,36,1) PRIMARY
+ *   d0d102 rgba(208,209,2,1)
+ *   linear-gradient(to XXX, #32742c, #61ae24, #d0d102)
+ * Blue gradient:
+ *   113f8c rgba(17,63,140,1)
+ *   01a4a4 rgba(1,164,164,1)
+ *   00a1cb rgba(0,161,203,1) PRIMARY
+ *   linear-gradient(to XXX, #113f8c, #01a4a4, #00a1cb)
+ * Hard Rainbow:
+ *   linear-gradient(to XXX, #d70060 0%, #d70060 11%, #e54028 11%, #e54028 22%, #e44733 22%, #e44733 33%, #32742c 33%, #32742c 44%, #61ae24 44%, #61ae24 55%, #d0d102 55%, #d0d102 66%, #113f8c 66%, #113f8c 77%, #01a4a4 77%, #01a4a4 88%, #00a1cb 88%, #00a1cb 100%)
+ *   linear-gradient(to right, #d70060, #d70060 33%, #61ae24 33%, #61ae24 66%, #00a1cb 66%, #00a1cb)
+ */
+
+@import url(http://fonts.googleapis.com/css?family=Montserrat:400,700);
+
+body {
+	margin: 0;
+	padding: 0;
+	font-family: 'Montserrat', sans-serif;
+	background-color: #e8e8e8;
+}
+
+div.container {
+	width: 960px;
+	margin: 0 auto;
+}
+
+div.break {
+	width: 100%;
+	height: 3px;
+	background-image: linear-gradient(to right, #d70060, #d70060 33%, #61ae24 33%, #61ae24 66%, #00a1cb 66%, #00a1cb);
+}
+
+div.header {
+	margin: 20px 0 0 0;
+	height: auto;
+}
+
+div.content {
+	margin: 20px 0 0 0;
+	text-align: center;
+}
+
+.highlight {
+	background-color: white;
+	position: relative;
+	border: 3px solid white;
+}
+.highlight:before {
+	content: "";
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	top: -3px;
+	left: -3px;
+	z-index: 1;
+	border-width: 3px;
+	border-style: solid;
+	border-image: linear-gradient(to right, #d70060, #d70060 33%, #61ae24 33%, #61ae24 66%, #00a1cb 66%, #00a1cb) 1 round;
+	opacity: 0.0;
+	transition: opacity 0.3s ease;
+}
+.highlight:hover:before {
+	opacity: 1.0;
+}
+
+div.right {
+	float: right;
+	text-align: right;
+}
+
+div.portfolio-item {
+	width: 250px;
+	margin: 10px;
+	margin: 20px auto;
+	display: inline-block;
+	vertical-align: text-top;
+	margin: 0 20px 20px 20px;
+}
+div.portfolio-item a {
+	text-decoration: none;
+}
+div.portfolio-title {
+	text-align: center;
+	font-size: large;
+	font-weight: bold;
+}
+div.portfolio-item:nth-child(3n+0) .portfolio-title {
+	color: #d70060;
+}
+div.portfolio-item:nth-child(3n+1) .portfolio-title {
+	color: #61ae24;
+}
+div.portfolio-item:nth-child(3n+2) .portfolio-title {
+	color: #00a1cb;
+}
+div.portfolio-icon {
+	width: 250px;
+	height: 250px;
+}
+div.portfolio-desc {
+	margin-top: 10px;
+	color: #404040;
+	text-align: center;
+}
+div.portfolio-note {
+	margin-top: 10px;
+	color: #666;
+	font-style: italic;
+	font-size: small;
+	text-align: center;
+}
+
+div.copy {
+	text-align: center;
+	font-size: small;
+	color: #666;
+}

@@ -1,0 +1,102 @@
+/* Vertical Tabs */
+.ui-tabs-vertical
+{
+}
+.ui-tabs-vertical .ui-tabs-nav
+{
+	padding: .2em .1em .2em .2em;
+	float: left;
+	margin-right: 5px;
+}
+.ui-tabs-vertical .ui-tabs-nav li
+{
+	clear: left;
+	display: block;
+	width: 100%;
+	border-bottom-width: 1px !important;
+	border-right-width: 0 !important;
+	margin: 0 -1px .2em 0;
+}
+.ui-tabs-vertical .ui-tabs-nav li a
+{
+	display: block;
+	cursor: pointer !important;
+}
+.ui-tabs-vertical .ui-tabs-nav li.ui-tabs-active
+{
+	padding-bottom: 0;
+	padding-right: .1em;
+	border-right-width: 1px;
+	border-right-width: 1px;
+	margin-bottom: .2em;
+}
+.ui-tabs-vertical .ui-tabs-nav li:last-child
+{
+	margin-bottom: 0;
+}
+.ui-tabs-vertical .ui-tabs-panel
+{
+	padding: 1em;
+	width: 90%;
+	float: right;
+}
+
+/* Progress Bar */
+.ui-progressbar
+{
+	position: relative;
+}
+.progress-label
+{
+	position: absolute;
+	width: 100%;
+	text-align: center;
+	top: 4px;
+	font-weight: bold;
+	color: #fff;
+	text-shadow: -1px 0 rgba(0, 0, 0, 0.5), 1px 0 rgba(0, 0, 0, 0.5), 0 -1px rgba(0, 0, 0, 0.5), 0 1px rgba(0, 0, 0, 0.5), 0 0 0.3em #000;
+}
+
+/* Selectable */
+.selectable .ui-selecting
+{
+	background-color: #990000;
+	color: white;
+	font-weight: bold;
+}
+.selectable .ui-selected
+{
+	background-color: #cc0000;
+	color: white;
+	font-weight: bold;
+}
+.selectable
+{
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+	width: 60%;
+}
+.selectable li
+{
+	margin: 3px;
+	padding: 0.4em;
+	cursor: pointer;
+	border: 2px solid #ddd;
+	border-radius: 3px;
+}
+.selectable .ui-selecting, .selectable .ui-selected
+{
+	border: 2px solid #aa0000;
+}
+.selectable li span.ui-icon
+{
+	display: inline-block;
+	vertical-align: middle;
+	background-position: -112px -144px;
+}
+.selectable .ui-selecting span.ui-icon, .selectable .ui-selected span.ui-icon
+{
+	background-image: url(blitzer/images/ui-icons_ffffff_256x240.png);
+	background-position: -80px -144px;
+}

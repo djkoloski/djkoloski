@@ -1,0 +1,83 @@
+<!doctype>
+<html>
+	<head>
+		<title>Ur</title>
+		<link rel="stylesheet" type="text/css" href="css/default.css" />
+		<script type="text/javascript" src="js/jquery-2.0.3.min.js"></script>
+		<script type="text/javascript" src="js/default.js"></script>
+	</head>
+	<body>
+		<!--
+			Tile names:
+				1: Rosettes
+				2: Eyes
+				3: Dice
+				4: Fate
+				5: Isles
+				6: Stars
+		-->
+		<div class="wrapper">
+			<table>
+				<tr>
+					<td>
+						<table>
+							<tr>
+								<td><img src="img/rosette.png" /> Rosettes: Type "rosette"</td>
+							</tr>
+							<tr>
+								<td><img src="img/eye.png" /> Eyes: Type "eye"</td>
+							</tr>
+							<tr>
+								<td><img src="img/die.png" /> Dice: Type "die"</td>
+							</tr>
+							<tr>
+								<td><img src="img/star.png" /> Stars: Type "star"</td>
+							</tr>
+							<tr>
+								<td><img src="img/fate.png" /> Fates: Type "fate"</td>
+							</tr>
+							<tr>
+								<td><img src="img/isle.png" /> Isles: Type "isle"</td>
+							</tr>
+						</table>
+					</td>
+					<td>
+						<table id="board">
+							<tr>
+								<td data-tile="rosette"></td>
+								<td data-tile="eye"></td>
+								<td data-tile="die"></td>
+								<td data-tile="eye"></td>
+								<td data-tile="none"></td>
+								<td data-tile="none"></td>
+								<td data-tile="rosette"></td>
+								<td data-tile="star"></td>
+							</tr>
+							<tr>
+								<td data-tile="fate"></td>
+								<td data-tile="die"></td>
+								<td data-tile="isle"></td>
+								<td data-tile="rosette"></td>
+								<td data-tile="die"></td>
+								<td data-tile="isle"></td>
+								<td data-tile="eye"></td>
+								<td data-tile="die"></td>
+							</tr>
+							<tr>
+								<td data-tile="rosette"></td>
+								<td data-tile="eye"></td>
+								<td data-tile="die"></td>
+								<td data-tile="eye"></td>
+								<td data-tile="none"></td>
+								<td data-tile="none"></td>
+								<td data-tile="rosette"></td>
+								<td data-tile="star"></td>
+							</tr>
+						</table>
+						<div id="notify"></div>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</body>
+</html>
