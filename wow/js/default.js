@@ -188,6 +188,17 @@ function selectMode(mode)
 				50,
 				500
 			);
+		case 'pokemon7':
+			return new Theme(
+				['Pokemon'],
+				['img/pokemonmoon.png', 'img/pokemonsun.png'],
+				['HYPE TRAIN', 'MOON', 'SUN', 'GEN I', 'GEN 7', 'HOLIDAY SEASON', 'NEW POKEMON', 'ZYGARDE', '9 LANGUAGES', 'MEGA SOLROCK', 'MEGA LUNATONE', 'ITALY', 'SPAIN', '2016', 'GEN 6.5', 'POKEBANK', '3DS', 'CHILDHOOD', 'HALF-LIFE 3 CONFIRMED'],
+				undefined,
+				100,
+				500,
+				50,
+				500
+			);
 		case 'doge':
 		default:
 			return new Theme(
@@ -219,7 +230,7 @@ function start()
 {
 	spawnPhrases(18);
 	
-	changeTheme('doge');
+	changeTheme('pokemon7');
 }
 
 $(document).ready(
