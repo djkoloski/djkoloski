@@ -10,6 +10,7 @@ body {
 	font-family: carnaslight;
 	margin: 0;
 	padding: 0;
+	color: #fff;
 	background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAABmJLR0QAAAAAAAD5Q7t/AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4AMOERkfdgPRawAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAG0lEQVQI12MwNjb+z8DAAMeMUAYcMDGgAQwBAD5HBZoWWNAEAAAAAElFTkSuQmCC');
 }
 p {
@@ -29,6 +30,9 @@ a:hover {
 }
 a:visited {
 	color: #ff0054;
+}
+div.clear {
+	clear: both;
 }
 
 div.header {
@@ -229,6 +233,7 @@ div.body {
 	background-color: #000;
 	width: 100%;
 	box-shadow: 0 5px 5px rgba(0, 0, 0, 0.4);
+	overflow: auto;
 }
 div.content {
 	margin: 0 10px 0 10px;
