@@ -39,7 +39,7 @@ div.header {
 	right: 0;
 	background: #000;
 	cursor: default;
-	box-shadow: 0 5px 5px rgba(0, 0, 0, 0.75);
+	box-shadow: 0 5px 5px rgba(0, 0, 0, 0.4);
 }
 div.header-proxy {
 	margin: 0;
@@ -188,7 +188,7 @@ div.navigation-foldout ul {
 	border-bottom: 5px solid #000;
 	border-bottom-left-radius: 5px;
 	background-color: #000;
-	box-shadow: -5px 5px 5px rgba(0, 0, 0, 0.75);
+	box-shadow: -5px 5px 5px rgba(0, 0, 0, 0.4);
 }
 div.navigation-foldout.active ul {
 	display: block;
