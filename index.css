@@ -10,8 +10,7 @@ body {
 	font-family: carnaslight;
 	margin: 0;
 	padding: 0;
-	background-image: url('/img/background.png');
-	color: #fff;
+	background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAABmJLR0QAAAAAAAD5Q7t/AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4AMOERkfdgPRawAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAG0lEQVQI12MwNjb+z8DAAMeMUAYcMDGgAQwBAD5HBZoWWNAEAAAAAElFTkSuQmCC');
 }
 p {
 	text-indent: 4em;
