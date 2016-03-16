@@ -61,6 +61,9 @@ a.logo-header {
 	width: 79px;
 	height: 76px;
 }
+a.logo-header.active {
+	background-image: url('/img/logo-large-red.png');
+}
 a.logo-header div.overlay {
 	position: absolute;
 	left: 0;
@@ -68,19 +71,18 @@ a.logo-header div.overlay {
 	right: 0;
 	bottom: 0;
 	cursor: pointer;
-	background-color: transparent;
-	mix-blend-mode: multiply;
+	background-image: url('/img/logo-large-blue.png');
+	background-repeat: no-repeat;
+	background-position: center center;
+	opacity: 0.0;
 
-	transition: background-color 0.15s linear;
+	transition: opacity 0.15s linear;
 }
 a.logo-header:hover div.overlay {
-	background-color: #15bcf3;
+	opacity: 1.0;
 }
 a.logo-header.active div.overlay {
-	background-color: #ff0054;
-}
-a.logo-header.active:hover div.overlay {
-	background-color: #ff2a70;
+	background-image: url('/img/logo-large-lightred.png');
 }
 div.navigation {
 	position: absolute;
@@ -339,20 +341,18 @@ div.social a img {
 	vertical-align: bottom;
 	filter: drop-shadow(0 0 5px #000);
 }
-div.social a::after {
+div.social a img.overlay {
 	position: absolute;
 	left: 0;
 	top: 0;
 	right: 0;
 	bottom: 0;
-	background: #fff;
-	mix-blend-mode: multiply;
-	content: ' ';
+	opacity: 0.0;
 
-	transition: background-color 0.15s linear;
+	transition: opacity 0.15s linear;
 }
-div.social a:hover::after {
-	background-color: #15bcf3;
+div.social a:hover img.overlay {
+	opacity: 1.0;
 }
 div.footer {
 	clear: both;
@@ -404,6 +404,15 @@ div.footer a:hover {
 		width: 40px;
 		height: 38px;
 	}
+	a.logo-header.active {
+		background-image: url('/img/logo-medium-red.png');
+	}
+	a.logo-header div.overlay {
+		background-image: url('/img/logo-medium-blue.png');
+	}
+	a.logo-header.active div.overlay {
+		background-image: url('/img/logo-medium-lightred.png');
+	}
 	div.navigation {
 		right: 35px;
 		left: 60px;
@@ -429,7 +438,7 @@ div.footer a:hover {
 
 @media only screen and (min-width: 1200px) {
 	div.header {
-		max-width: 1200px;
+		width: 1200px;
 		margin: 0 auto 0 auto;
 	}
 	div.body {
