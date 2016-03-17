@@ -5,6 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 	<link rel="stylesheet" href="/index.css" />
+	<script type="text/javascript" src="/index.js"></script>
 
 	<title>David Koloski</title>
 </head>
@@ -13,38 +14,9 @@
 		<a href="/" class="logo-header">
 			<div class="overlay"></div>
 		</a>
-		<div class="navigation">
-			<a href="/about" class="nav">
-				<span>About</span>
-			</a>
-			<a href="/blog" class="nav extra">
-				<span>Blog</span>
-			</a>
-			<a href="/games" class="nav extra">
-				<span>Games</span>
-			</a>
-			<a href="/resume" class="nav active">
-				<span>Resume</span>
-			</a>
-			<a href="/portfolio" class="nav">
-				<span>Portfolio</span>
-			</a>
-		</div>
-		<div class="navigation-foldout" onclick="if (this.className.indexOf('active') == -1) this.className = 'navigation-foldout active'; else this.className = 'navigation-foldout';">
-			<span class="dots"></span>
-			<ul>
-				<li>
-					<a href="/blog" class="foldout-nav">
-						<span>Blog</span>
-					</a>
-				</li>
-				<li>
-					<a href="/games" class="foldout-nav">
-						<span>Games</span>
-					</a>
-				</li>
-			</ul>
-		</div>
+		<script type="text/javascript">
+			WriteNavigation();
+		</script>
 		<div class="tagline">
 			David Koloski - Game Developer
 		</div>

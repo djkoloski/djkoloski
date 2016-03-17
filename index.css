@@ -87,7 +87,7 @@ a.logo-header:hover div.overlay {
 a.logo-header.active div.overlay {
 	background-image: url('/img/logo-large-lightred.png');
 }
-div.navigation {
+div#navigation {
 	position: absolute;
 	left: 100px;
 	top: 0;
@@ -129,7 +129,7 @@ a.nav.active:hover span {
 	border-bottom-color: #ff2a70;
 	color: #ff2a70;
 }
-div.navigation-foldout {
+div#navigation-foldout {
 	display: none;
 	position: absolute;
 	right: 10px;
@@ -138,7 +138,7 @@ div.navigation-foldout {
 	width: 30px;
 	cursor: pointer;
 }
-div.navigation-foldout span.dots {
+div#navigation-foldout span.dots {
 	display: block;
 	position: absolute;
 	left: 12px;
@@ -150,8 +150,8 @@ div.navigation-foldout span.dots {
 
 	transition: background-color 0.15s linear;
 }
-div.navigation-foldout span.dots::before,
-div.navigation-foldout span.dots::after {
+div#navigation-foldout span.dots::before,
+div#navigation-foldout span.dots::after {
 	display: block;
 	position: relative;
 	width: 6px;
@@ -162,28 +162,28 @@ div.navigation-foldout span.dots::after {
 
 	transition: background-color 0.15s linear;
 }
-div.navigation-foldout span.dots::before {
+div#navigation-foldout span.dots::before {
 	top: -9px;
 }
-div.navigation-foldout span.dots::after {
+div#navigation-foldout span.dots::after {
 	top: 3px;
 }
-div.navigation-foldout:hover span.dots,
-div.navigation-foldout:hover span.dots::before,
-div.navigation-foldout:hover span.dots::after {
+div#navigation-foldout:hover span.dots,
+div#navigation-foldout:hover span.dots::before,
+div#navigation-foldout:hover span.dots::after {
 	background-color: #15bcf3;
 }
-div.navigation-foldout.active span.dots,
-div.navigation-foldout.active span.dots::before,
-div.navigation-foldout.active span.dots::after {
+div#navigation-foldout.active span.dots,
+div#navigation-foldout.active span.dots::before,
+div#navigation-foldout.active span.dots::after {
 	background-color: #ff0054;
 }
-div.navigation-foldout.active:hover span.dots,
-div.navigation-foldout.active:hover span.dots::before,
-div.navigation-foldout.active:hover span.dots::after {
+div#navigation-foldout.active:hover span.dots,
+div#navigation-foldout.active:hover span.dots::before,
+div#navigation-foldout.active:hover span.dots::after {
 	background-color: #ff2a70;
 }
-div.navigation-foldout ul {
+div#navigation-foldout ul {
 	display: none;
 	list-style-type: none;
 	position: absolute;
@@ -198,10 +198,10 @@ div.navigation-foldout ul {
 	background-color: #000;
 	box-shadow: -5px 5px 5px rgba(0, 0, 0, 0.4);
 }
-div.navigation-foldout.active ul {
+div#navigation-foldout.active ul {
 	display: block;
 }
-div.navigation-foldout ul li {
+div#navigation-foldout ul li {
 	font-size: 12pt;
 }
 a.foldout-nav {
@@ -270,6 +270,7 @@ div.showcase-entry {
 	vertical-align: text-top;
 	margin-bottom: 15px;
 	width: 30%;
+	padding: 2px;
 }
 div.showcase-entry a {
 	text-decoration: none;
@@ -416,7 +417,7 @@ div.footer a:hover {
 	a.logo-header.active div.overlay {
 		background-image: url('/img/logo-medium-lightred.png');
 	}
-	div.navigation {
+	div#navigation {
 		right: 35px;
 		left: 60px;
 		bottom: 10px;
@@ -428,7 +429,7 @@ div.footer a:hover {
 	a.nav.extra {
 		display: none;
 	}
-	div.navigation-foldout {
+	div#navigation-foldout {
 		display: block;
 	}
 	div.tagline {
