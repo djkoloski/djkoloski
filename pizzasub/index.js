@@ -30,7 +30,7 @@ var updateST = function() {
 	var b = parseInt(inputs.stb.value);
 	var s = parseInt(inputs.sts.value);
 
-	var t = pair(b, s);
+	var t = pair(zton(b), zton(s));
 	var x = b + s * t;
 
 	inputs.stx.value = x;
@@ -41,11 +41,13 @@ var updateTS = function() {
 	var t = parseInt(inputs.tst.value);
 
 	var sub = unpair(t);
-	var x = sub.x + sub.y * t;
+	var b = ntoz(sub.x);
+	var s = ntoz(sub.y);
+	var x = b + s * t;
 
 	inputs.tsx.value = x;
-	inputs.tsb.value = sub.x;
-	inputs.tss.value = sub.y;
+	inputs.tsb.value = b;
+	inputs.tss.value = s;
 };
 
 window.onload = function() {

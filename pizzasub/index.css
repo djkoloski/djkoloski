@@ -1,6 +1,18 @@
+.right {
+	float: right;
+}
+
 body {
 	margin-top: 20px;
 	text-align: center;
+}
+
+div.problemstatement {
+	text-align: left;
+}
+
+p {
+	text-indent: 4em;
 }
 
 div.inputs {
