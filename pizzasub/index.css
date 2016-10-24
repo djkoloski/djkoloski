@@ -15,6 +15,10 @@ p {
 	text-indent: 4em;
 }
 
+img {
+	margin: 5px;
+}
+
 div.inputs {
 	text-align: right;
 	width: 256px;
@@ -34,6 +38,7 @@ hr {
 	height: 2px;
 	background-color: #ccc;
 	border: 0;
+	clear: both;
 }
 
 input {
