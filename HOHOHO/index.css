@@ -1,11 +1,13 @@
 body {
 	font-family: Arial;
 	font-weight: bold;
-	background-color: black;
+	background: radial-gradient(circle farthest-side, rgba(0, 0, 0, 0.0), rgba(0, 0, 0, 0.7)), url('http://1-background.com/images/nature/images/snow-forest.jpg');
+	background-repeat: repeat;
 	color: white;
 	font-size: 64pt;
 	text-align: center;
 	padding-top: 60px;
+	perspective: 250px;
 }
 
 div {
@@ -16,26 +18,90 @@ select {
 	font-size: 64pt;
 	font-family: Arial;
 	font-weight: bold;
-	background-color: white;
+	color: white;
+	border: 0;
+	background: transparent;
+	border-bottom: 5px solid white;
+}
+
+option {
 	color: black;
-	border: 5px solid #999;
-	border-radius: 20px;
 }
 
 button {
 	font-size: 64pt;
 	font-family: Arial;
 	font-weight: bold;
-	background-color: white;
-	color: black;
-	border: 5px solid #999;
-	border-radius: 20px;
+	background: transparent;
+	border: 0;
+	filter: grayscale(1) sepia(1) hue-rotate(310deg) saturate(4);
+}
+
+h1 {
+	margin-bottom: 0;
+}
+
+div.underneath {
+	margin-top: -20px;
+	margin-bottom: 60px;
+}
+
+.threed {
+	text-shadow: 0 1px 0 #ccc,
+		0 2px 0 #c9c9c9,
+		0 3px 0 #bbb,
+		0 4px 0 #b9b9b9,
+		0 5px 0 #aaa,
+		0 6px 1px rgba(0,0,0,.1),
+		0 0 5px rgba(0,0,0,.1),
+		0 1px 3px rgba(0,0,0,.3),
+		0 3px 5px rgba(0,0,0,.2),
+		0 5px 10px rgba(0,0,0,.25),
+		0 10px 10px rgba(0,0,0,.2),
+		0 20px 20px rgba(0,0,0,.15);
 }
 
 .red {
-	color: red;
+	filter: brightness(0.55) sepia(2) hue-rotate(310deg) saturate(4);
 }
 
 .green {
-	color: green;
+	filter: brightness(0.65) sepia(1) hue-rotate(50deg) saturate(2);
 }
+
+#snow {
+	background: none;
+	font-family: Androgyne;
+	background-image: url('http://www.wearewebstars.dk/codepen/img/s1.png'), url('http://www.wearewebstars.dk/codepen/img//s2.png'), url('http://www.wearewebstars.dk/codepen/img//s3.png');
+	height: 100%;
+	left: 0;
+	position: absolute;
+	top: 0;
+	width: 100%;
+	z-index:1;
+	-webkit-animation: snow 10s linear infinite;
+	-moz-animation: snow 10s linear infinite;
+	-ms-animation: snow 10s linear infinite;
+	animation: snow 10s linear infinite;
+	pointer-events: none;
+}
+@keyframes snow {
+  0% {background-position: 0px 0px, 0px 0px, 0px 0px;}
+  50% {background-position: 500px 500px, 100px 200px, -100px 150px;}
+  100% {background-position: 500px 1000px, 200px 400px, -100px 300px;}
+}
+@-moz-keyframes snow {
+  0% {background-position: 0px 0px, 0px 0px, 0px 0px;}
+  50% {background-position: 500px 500px, 100px 200px, -100px 150px;}
+  100% {background-position: 400px 1000px, 200px 400px, 100px 300px;}
+}
+@-webkit-keyframes snow {
+  0% {background-position: 0px 0px, 0px 0px, 0px 0px;}
+  50% {background-position: 500px 500px, 100px 200px, -100px 150px;}
+  100% {background-position: 500px 1000px, 200px 400px, -100px 300px;}
+}
+@-ms-keyframes snow {
+  0% {background-position: 0px 0px, 0px 0px, 0px 0px;}
+  50% {background-position: 500px 500px, 100px 200px, -100px 150px;}
+  100% {background-position: 500px 1000px, 200px 400px, -100px 300px;}
+}	
