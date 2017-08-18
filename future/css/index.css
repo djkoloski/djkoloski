@@ -1,0 +1,88 @@
+.background {
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(135deg, #15bcf3 0%, #ff0054 100%);
+}
+.home-menu {
+	background: #3b3b3b;
+	z-index: 4;
+	box-shadow: 0px 0px 14px rgba(0,0,0,0.6);
+}
+.home-menu .pure-menu-link {
+	color: white;
+	border-bottom: 1px solid white;
+	padding-top: 12px;
+}
+.home-menu .pure-menu-link:focus {
+	background: transparent;
+	color: white;
+}
+.home-menu .pure-menu-link:hover, .home-menu .pure-menu-link:hover:focus {
+	border-bottom: 3px solid white;
+	padding-bottom: 6px;
+	background: transparent;
+	color: white;
+}
+.home-menu .pure-menu-link:visited {
+	color: white;
+}
+.home-menu .pure-menu-link:hover:active {
+	background: rgba(255, 255, 255, 0.2);
+}
+.splash-container {
+	z-index: 1;
+	overflow: hidden;
+	width: 100%;
+	height: 60%;
+	top: 39px;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	position: fixed !important;
+}
+#webgl-splash {
+	width: 100%;
+	height: 100%;
+	position: absolute;
+}
+.content-wrapper {
+	position: absolute;
+	top: 60%;
+	width: 100%;
+	margin-top: 39px;
+	min-height: 15%;
+	z-index: 2;
+	box-shadow: 0px 0px 14px rgba(0,0,0,0.6);
+}
+.content-header {
+	padding: 1em 0.25em;
+	background: #3b3b3b;
+	text-align: center;
+}
+.content-header-name {
+	color: white;
+	font-size: 300%;
+	padding: 0.4em 1em;
+}
+.content-header-item {
+	color: white;
+	margin: 0;
+	padding: 0.5em 0;
+	font-size: 125%;
+}
+@media (max-width: 380px) {
+	.content-header-name {
+		font-size: 250%;
+	}
+	.content-header-item {
+		font-size: 110%;
+	}
+}
+.content-header-item .fa {
+	margin-right: 0.25em;
+}
+.content {
+	padding: 1em 2em;
+	background: white;
+}
