@@ -58,7 +58,7 @@
 }
 .content-wrapper {
 	position: absolute;
-	top: 60%;
+	top: 30%;
 	width: 100%;
 	margin-top: 39px;
 	min-height: 15%;
@@ -203,22 +203,9 @@
 	text-align: center;
 	color: white;
 }
-.content-copyright a {
-	color: #d8d8d8;
-}
-.content-copyright a:hover {
-	color: white;
-	text-decoration: none;
-}
 .content-blogpost {
 	padding: 1em 2em;
 	background: white;
-	text-align: left;
-}
-.content-blogpost .content-block {
-	width: 50%;
-}
-.content-blogpost h1 {
 	text-align: center;
 }
 .content-spacer {

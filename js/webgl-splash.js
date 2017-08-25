@@ -56,7 +56,8 @@ WebGLApp.prototype.start = function(meshes) {
 	this.program.uniformModelViewMatrix = this.gl.getUniformLocation(this.program, "uModelViewMatrix");
 	
 	this.meshes = meshes;
-	OBJ.initMeshBuffers(this.gl, this.meshes.dragon);
+	this.mesh = (window.location.pathname == '/' ? this.meshes.dragon : this.meshes.bunny);
+	OBJ.initMeshBuffers(this.gl, this.mesh);
 	
 	// Viewing
 	this.eyePosition = vec3.fromValues(0, 0, -10);
@@ -120,24 +121,24 @@ WebGLApp.prototype.draw = function() {
 		false,
 		modelViewProjectionMatrix);
 	
-	this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.meshes.dragon.vertexBuffer);
+	this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.mesh.vertexBuffer);
 	this.gl.vertexAttribPointer(
 		this.program.vertexPositionAttribute,
-		this.meshes.dragon.vertexBuffer.itemSize,
+		this.mesh.vertexBuffer.itemSize,
 		this.gl.FLOAT,
 		false, 0, 0);
 	
-	this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.meshes.dragon.normalBuffer);
+	this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.mesh.normalBuffer);
 	this.gl.vertexAttribPointer(
 		this.program.vertexNormalAttribute,
-		this.meshes.dragon.normalBuffer.itemSize,
+		this.mesh.normalBuffer.itemSize,
 		this.gl.FLOAT,
 		false, 0, 0);
 	
-	this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.meshes.dragon.indexBuffer);
+	this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.mesh.indexBuffer);
 	this.gl.drawElements(
 		this.gl.TRIANGLES,
-		this.meshes.dragon.indexBuffer.numItems,
+		this.mesh.indexBuffer.numItems,
 		this.gl.UNSIGNED_SHORT,
 		0);
 };
@@ -146,6 +147,7 @@ var app = null;
 window.WebGLMain = function() {
 	app = new WebGLApp();
 	OBJ.downloadMeshes({
-		dragon: '/models/dragon-lowpoly.obj'
+		dragon: '/models/dragon-lowpoly.obj',
+		bunny: '/models/bunny-lowpoly.obj'
 	}, app.start.bind(app));
 };
