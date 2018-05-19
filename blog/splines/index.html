@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Curves and Splines</title>
+		<link rel="stylesheet" href="./index.css">
+		<script src="./gl-matrix-min.js"></script>
+		<script src="./index.js"></script>
+	</head>
+	<body>
+		<div id="container">
+			<div>
+				<h1>Cubic curves as segments of cubic functions</h1>
+			</div>
+			<div>
+				<canvas id="example1">Your browser does not support HTML5 canvas.</canvas>
+			</div>
+			<div>
+				<button id="example1-reset">Reset</button>
+				<input type="checkbox" id="example1-showentirecurve" checked="checked"><label for="example1-showentirecurve">Show entire curve</label>
+			</div>
+			<div>
+				<p>One way to think about cubic curves is as segments of cubic functions. What we render is just a small segment of an infinite function that stretches out to infinity.</p>
+			</div>
+			<div>
+				<canvas id="example2">Your browser does not support HTML5 canvas.</canvas>
+			</div>
+			<div>
+				<button id="example2-reset">Reset</button>
+				<input type="checkbox" id="example2-showentirecurve" checked="checked"><label for="example2-showentirecurve">Show entire curve</label>
+			</div>
+			<div>
+				<p>Where two curves would join together, their endpoints meet and they smoothly transition from one to the other. However, the two underlying functions for the curves are completely different. If we want to perform some sort of general calculation on a spline (eg. find the nearest point on a spline), we have to consider each segment separately.</p>
+			</div>
+		</div>
+	</body>
+</html>

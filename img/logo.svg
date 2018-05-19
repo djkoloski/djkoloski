@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="135.46666mm"
+   height="118.84829mm"
+   viewBox="0 0 135.46666 118.84829"
+   version="1.1"
+   id="svg8"
+   inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
+   sodipodi:docname="logo.svg">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.4"
+     inkscape:cx="237.81593"
+     inkscape:cy="197.48021"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-42.063723,-92.11742)">
+    <path
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:5.8446908;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:23.37876632, 23.37876632;stroke-dashoffset:0;stroke-opacity:1"
+       d="m 92.105118,92.11742 v 43.78626 H 67.084424 a 25.020694,25.020694 0 0 0 -25.020701,25.02067 v 25.02068 a 25.020694,25.020694 0 0 0 25.020701,25.02068 h 25.020694 25.020692 v -25.02068 l 25.02069,25.02068 h 35.38389 L 140.0024,173.43466 177.53039,135.90368 H 142.1465 l -25.02069,25.02067 V 92.11742 Z m -12.510351,68.80693 h 12.510351 v 25.02068 H 79.594767 A 12.510348,12.510348 0 0 1 67.084424,173.43466 12.510348,12.510348 0 0 1 79.594767,160.92435 Z"
+       id="path4599"
+       inkscape:connector-curvature="0"
+       inkscape:export-filename="D:\Projects\rebirth\art\logo.png"
+       inkscape:export-xdpi="12"
+       inkscape:export-ydpi="12" />
+  </g>
+</svg>

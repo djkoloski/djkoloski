@@ -1,0 +1,16 @@
+body {
+	font-family: sans-serif;
+}
+
+div#container {
+	width: 800px;
+	margin: 0 auto;
+}
+
+canvas {
+	border: 1px solid #d3d3d3;
+}
+
+label {
+	color: #666;
+}
