@@ -180,48 +180,48 @@ class Graph {
 }
 
 class CubicCurve {
-  constructor (x) {
-    this.x = x
+  constructor (p) {
+    this.p = p
   }
 
   clone () {
     return new CubicCurve([
-      vec2.clone(this.x[0]),
-      vec2.clone(this.x[1]),
-      vec2.clone(this.x[2]),
-      vec2.clone(this.x[3])
+      vec2.clone(this.p[0]),
+      vec2.clone(this.p[1]),
+      vec2.clone(this.p[2]),
+      vec2.clone(this.p[3])
     ])
   }
 
   bezier () {
-    return CubicCurve.ConvertParametricToBezier(this.x)
+    return CubicCurve.ConvertParametricToBezier(this.p)
   }
 
   evaluate (t) {
-    let result = vec2.clone(this.x[0])
-    vec2.scaleAndAdd(result, result, this.x[1], t)
-    vec2.scaleAndAdd(result, result, this.x[2], t * t)
-    vec2.scaleAndAdd(result, result, this.x[3], t * t * t)
+    let result = vec2.clone(this.p[0])
+    vec2.scaleAndAdd(result, result, this.p[1], t)
+    vec2.scaleAndAdd(result, result, this.p[2], t * t)
+    vec2.scaleAndAdd(result, result, this.p[3], t * t * t)
     return result
   }
 
   evaluateFirstDerivative (t) {
-    let result = vec2.clone(this.x[1])
-    vec2.scaleAndAdd(result, result, this.x[2], 2 * t)
-    vec2.scaleAndAdd(result, result, this.x[3], 3 * t * t)
+    let result = vec2.clone(this.p[1])
+    vec2.scaleAndAdd(result, result, this.p[2], 2 * t)
+    vec2.scaleAndAdd(result, result, this.p[3], 3 * t * t)
     return result
   }
 
   evaluateSecondDerivative (t) {
     let result = vec2.create()
-    vec2.scaleAndAdd(result, result, this.x[2], 2)
-    vec2.scaleAndAdd(result, result, this.x[3], 6 * t)
+    vec2.scaleAndAdd(result, result, this.p[2], 2)
+    vec2.scaleAndAdd(result, result, this.p[3], 6 * t)
     return result
   }
 
   evaluateThirdDerivative (t) {
     let result = vec2.create()
-    vec2.scaleAndAdd(result, result, this.x[3], 6)
+    vec2.scaleAndAdd(result, result, this.p[3], 6)
     return result
   }
 
@@ -278,7 +278,7 @@ class CubicCurve {
       if (vec2.len(d) < CubicCurve.HandleRadius / graph.scale) {
         return (delta) => {
           vec2.add(b[i], b[i], delta)
-          this.x = CubicCurve.ConvertBezierToParametric(b)
+          this.p = CubicCurve.ConvertBezierToParametric(b)
           graph.render()
         }
       }

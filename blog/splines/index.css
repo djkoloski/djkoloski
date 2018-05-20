@@ -2,6 +2,61 @@ body {
 	font-family: sans-serif;
 }
 
+a {
+	font-weight: bold;
+	text-decoration: none;
+	color: #00c;
+}
+a:hover {
+	text-decoration: none;
+}
+a:visited {
+	color: #808;
+}
+a::after {
+	display: inline-block;
+	content: " ";
+	width: 12px;
+	height: 12px;
+	background-image: url("https://upload.wikimedia.org/wikipedia/commons/d/d9/VisualEditor_-_Icon_-_External-link.svg");
+	position: relative;
+	top: 2px;
+}
+a[href^="#"]::after {
+	display: none;
+}
+
+p[id^="term-"] {
+	border: 4px solid #d3d3d3;
+	padding: 0.5em;
+}
+
+h1 {
+	counter-reset: h2;
+}
+h2 {
+	counter-reset: h3;
+}
+h2:before {
+	content: counters(h2, ".") " ";
+	counter-increment: h2;
+}
+h3:before {
+	content: counters(h2, ".") "." counters(h3, ".") " ";
+	counter-increment: h3;
+}
+
+ol {
+	counter-reset: item;
+}
+li {
+	display: block;
+}
+li:before {
+	content: counters(item, ".") " ";
+	counter-increment: item;
+}
+
 div#container {
 	width: 800px;
 	margin: 0 auto;
