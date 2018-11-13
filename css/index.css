@@ -149,7 +149,7 @@
 }
 .experience-image img {
 	max-width: 100%;
-	filter: grayscale(100%) brightness(0.8) contrast(150%);
+	filter: grayscale(100%) brightness(0.8) contrast(125%);
 }
 .experience-description {
 	text-align: center;
