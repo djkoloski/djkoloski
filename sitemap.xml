@@ -29,6 +29,16 @@
     
         
         <url>
+            <loc>https://davidkoloski.me/categories/</loc>
+        </url>
+        
+        <url>
+            <loc>https://davidkoloski.me/categories/web-development/</loc>
+        </url>
+        
+    
+        
+        <url>
             <loc>https://davidkoloski.me/tags/</loc>
         </url>
         
@@ -42,16 +52,6 @@
         
         <url>
             <loc>https://davidkoloski.me/tags/zola/</loc>
-        </url>
-        
-    
-        
-        <url>
-            <loc>https://davidkoloski.me/categories/</loc>
-        </url>
-        
-        <url>
-            <loc>https://davidkoloski.me/categories/web-development/</loc>
         </url>
         
     
