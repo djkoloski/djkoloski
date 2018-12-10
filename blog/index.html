@@ -1,112 +1,88 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:og="http://ogp.me/ns#">
+<html lang="en">
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width,initial-scale=1">
-	<meta property="og:url" content="http://davidkoloski.me/blog">
-	<meta property="og:type" content="website">
-	<meta property="og:title" content="david koloski">
-	<meta property="og:description" content="software engineer, game designer, web developer">
-	<meta property="og:image" content="http://davidkoloski.me/img/thumbnail-social.png">
-	<link rel="stylesheet" href="/css/pure-min.css">
-	<link rel="stylesheet" href="/css/grids-responsive-min.css">
-	<link rel="stylesheet" href="/font-awesome-4.7.0/css/font-awesome.min.css">
-	<link rel="stylesheet" href="/css/index.css">
-	<script type="text/javascript" src="/js/gl-matrix-min.js" defer></script>
-	<script type="text/javascript" src="/js/webgl-obj-loader.js" defer></script>
-	<script type="text/javascript" src="/js/webgl-splash.js" defer></script>
-	<script type="text/javascript" src="/js/index.js" defer></script>
-	<title>david koloski</title>
+    <meta charset="UTF-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Software Engineer, Game Designer, Web Developer">
+    <meta name="author" content="David Koloski">
+
+    <!-- favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- fonts and styles -->
+    <link href="https://fonts.googleapis.com/css?family=Rubik:400,700" rel="stylesheet">
+    <link href="https://davidkoloski.me/style.css" rel="stylesheet">
+
+    <!-- scripts -->
+    <script src="/elasticlunr.min.js" async></script>
+    <script src="/search_index.en.js" async></script>
+    <script src="/search.js" async></script>
+
+    <title>
+        
+            Blog
+        
+    </title>
 </head>
 <body>
-	<div class="background"></div>
-	<div class="header">
-		<div class="home-menu pure-menu pure-menu-horizontal pure-menu-fixed">
-			<div class="content-block">
-				<a href="/" class="pure-menu-heading">
-					<img src="/img/logo-small.png" class="menu-logo">
-				</a>
-				<ul class="pure-menu-list">
-					<li class="pure-menu-item pure-menu-selected">
-						<a href="/" class="pure-menu-link">about</a>
-					</li>
-					<li class="pure-menu-item">
-						<a href="/resume" class="pure-menu-link">resume</a>
-					</li>
-					<li class="pure-menu-item">
-						<a href="/blog" class="pure-menu-link">blog</a>
-					</li>
-				</ul>
-			</div>
-		</div>
-	</div>
-	<div class="splash-container">
-		<canvas id="webgl-splash" width="100%" height="100%"></canvas>
-	</div>
-	<div class="content-wrapper">
-		<div class="content-header pure-g">
-			<div class="content-block">
-				<div class="pure-u-1 content-header-name">
-					blog
-				</div>
-			</div>
-		</div>
-		<div class="content-blogpost">
-			<div class="content-block">
-				<h1>How to kill your framerate with Unity's builtin UI</h1>
-				<p>Unity's new UI system is really great, and can speed up development and make handling multiple devices and resolutions quick and painless. But there also lie dragons. A couple of the common and provided patterns for Unity's UI can lead to extreme FPS drops. Here are a few you should look out for:</p>
-				<h3>Text Shadows Considered Harmful</h3>
-				<p>Unity's Shadow component is an easy way to add depth and character to UI elements. But beware placing it on text! Every time the text is changed, the Shadow component must process every character quad in the text and modify them to add a shadow. While this may not be an issue for mostly static text or text with a single shadow component, text that changes often or uses multiple shadow components will lead to extremely large FPS spikes!</p>
-				<h4>What you should do instead:</h4>
-				<p>You should make a custom font from the one being used and add a shadow to the font texture. A great program for generating bitmap fonts for this is <a href="http://www.angelcode.com/products/bmfont/">AngelCode's BMFont</a>, which allows you to add padding to characters in a font texture so you can add shadows in an image editor.</p>
-				<h4>When this won't work:</h4>
-				<p>If your font texture must be dynamic (for example, if you can't be sure of your character set ahead of time), then this definitely won't work. In this case, the best route is either to leave off the shadow or stop changing the text so often.</p>
-				<h3>SetActive(...) Considered Harmful</h3>
-				<p>Activating and deactivating UI elements using SetActive(...) forces the UI system to rebuild the UI layout of the GameObject <em>and all its children</em>. This can lead to FPS drops when large pieces of UI is enabled or disabled, as the UI system may have to relayout a panel and all its children. Most of the time the content of panels will simply appear or disappear, which should not require any layout at all.</p>
-				<h4>What you should do instead:</h4>
-				<p>Instead of calling SetActive(...), add a Canvas Group onto the root object that SetActive(...) is being called on. Instead of deactivating it, set alpha to 0, interactable to false, and blocks raycasts to false. Instead of activating it, set alpha to 1, interactable to true, and blocks raycasts to true. If you also need to remove the element from the UI layout it's a part of, add a Layout Element to it and set ignore layout to true or false when it's deactivated or activate respectively.</p>
-				<h4>When this won't work:</h4>
-				<p>If your object's layout needs to be rebuilt anyway (due to changing content) or removing it from its layout will cause a huge relayout anyway, the performance benefits from avoiding SetActive(...) may help with FPS drops but probably will not alleviate them. Instead, you should consider avoiding layout with areas of UI that change a lot, or with the root object itself.</p>
-				<h3>Summary:</h3>
-				<p>You should be on the lookout for FPS drops while using Unity's new UI system. Big hits to your framerate may come from very unexpected places, and there are often easy workarounds that will fix them for your situation.</p>
-			</div>
-		</div>
-		<div class="content-spacer"></div>
-		<div class="content-copyright">
-			<div class="content-block">
-				<div class="pure-g">
-					<div class="pure-u-1">
-						&copy <a href="mailto:djkoloski@gmail.com">david koloski</a> <script type="text/javascript">document.write(new Date().getFullYear());</script>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-	<script id="vertex-shader" type="text">
-attribute vec4 aVertexPosition;
-attribute vec3 aVertexNormal;
+    <div class="section header">
+        <div class="logo">
+            <a href="/" class="logo-image" width="100"></a>
+        </div>
+        <div class="links">
+            
+            
+                <a href="https://davidkoloski.me/about/">About</a>
+            
+                <a href="https://davidkoloski.me/resume/">Resume</a>
+            
+            
+                
+                <a href="https://davidkoloski.me/blog/">Blog</a>
+            
+        </div>
+        <div class="search">
+            <input id="search-checkbox" type="checkbox" autocomplete="off">
+            <input id="search-input" type="text">
+            <label id="search-show" for="search-checkbox"></label>
+        </div>
+    </div>
+    
+<div class="section title">
+    Blog
+</div>
+<div class="section pages">
+    <p>
+        Browse taxonomies: 
+        
+            <a href="/categories">Categories</a>
+        
+            <a href="/tags">Tags</a>
+        
+    </p>
 
-varying vec3 vVertexNormal;
+    
 
-uniform mat4 uModelViewMatrix;
-uniform mat4 uModelViewProjectionMatrix;
+    
+    <div class="page">
+        <a href="https://davidkoloski.me/blog/ssg-with-zola/">Static Site Generation with Zola</a>
+        <div class="info">
+            <div>December  2, 2018</div>
+        </div>
+    </div>
+    
+    
+</div>
 
-void main() {
-	gl_Position = uModelViewProjectionMatrix * aVertexPosition;
-	vVertexNormal = vec3(uModelViewMatrix * vec4(aVertexNormal, 0.0));
-}
-	</script>
-	<script id="fragment-shader" type="text">
-precision mediump float;
-
-varying vec3 vVertexNormal;
-
-void main() {
-	vec4 red = vec4(255.0 / 255.0, 0.0 / 255.0, 84.0 / 255.0, 1);
-	vec4 blue = vec4(21.0 / 255.0, 188.0 / 255.0, 243.0 / 255.0, 1.0);
-	float value = mix(0.45, 1.0, vVertexNormal.x);
-	gl_FragColor = mix(red, blue, value);
-}
-	</script>
+    <div class="section footer">
+        &copy; 2018 David Koloski
+    </div>
 </body>
 </html>

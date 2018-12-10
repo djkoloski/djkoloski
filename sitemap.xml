@@ -1,0 +1,58 @@
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    
+        <url>
+            <loc>https://davidkoloski.me/about/</loc>
+            
+        </url>
+    
+        <url>
+            <loc>https://davidkoloski.me/blog/ssg-with-zola/</loc>
+            
+                <lastmod>2018-12-02</lastmod>
+            
+        </url>
+    
+        <url>
+            <loc>https://davidkoloski.me/resume/</loc>
+            
+        </url>
+    
+    
+        <url>
+            <loc>https://davidkoloski.me/</loc>
+        </url>
+    
+        <url>
+            <loc>https://davidkoloski.me/blog/</loc>
+        </url>
+    
+    
+        
+        <url>
+            <loc>https://davidkoloski.me/tags/</loc>
+        </url>
+        
+        <url>
+            <loc>https://davidkoloski.me/tags/rust/</loc>
+        </url>
+        
+        <url>
+            <loc>https://davidkoloski.me/tags/static-site-generation/</loc>
+        </url>
+        
+        <url>
+            <loc>https://davidkoloski.me/tags/zola/</loc>
+        </url>
+        
+    
+        
+        <url>
+            <loc>https://davidkoloski.me/categories/</loc>
+        </url>
+        
+        <url>
+            <loc>https://davidkoloski.me/categories/web-development/</loc>
+        </url>
+        
+    
+</urlset>

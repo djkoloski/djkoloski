@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Software Engineer, Game Designer, Web Developer">
+    <meta name="author" content="David Koloski">
+
+    <!-- favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- fonts and styles -->
+    <link href="https://fonts.googleapis.com/css?family=Rubik:400,700" rel="stylesheet">
+    <link href="https://davidkoloski.me/style.css" rel="stylesheet">
+
+    <!-- scripts -->
+    <script src="/elasticlunr.min.js" async></script>
+    <script src="/search_index.en.js" async></script>
+    <script src="/search.js" async></script>
+
+    <title>
+        
+            Static Site Generation with Zola
+        
+    </title>
+</head>
+<body>
+    <div class="section header">
+        <div class="logo">
+            <a href="/" class="logo-image" width="100"></a>
+        </div>
+        <div class="links">
+            
+            
+                <a href="https://davidkoloski.me/about/">About</a>
+            
+                <a href="https://davidkoloski.me/resume/">Resume</a>
+            
+            
+                
+                <a href="https://davidkoloski.me/blog/">Blog</a>
+            
+        </div>
+        <div class="search">
+            <input id="search-checkbox" type="checkbox" autocomplete="off">
+            <input id="search-input" type="text">
+            <label id="search-show" for="search-checkbox"></label>
+        </div>
+    </div>
+    
+<div class="section title">
+    Static Site Generation with Zola
+    <div class="subtitle">
+        December  2, 2018
+    </div>
+</div>
+<div class="section taxonomies">
+    
+    <div class="tags">
+        
+            <a href="https:&#x2F;&#x2F;davidkoloski.me&#x2F;tags&#x2F;zola&#x2F;">Zola</a>,
+        
+            <a href="https:&#x2F;&#x2F;davidkoloski.me&#x2F;tags&#x2F;rust&#x2F;">Rust</a>,
+        
+            <a href="https:&#x2F;&#x2F;davidkoloski.me&#x2F;tags&#x2F;static-site-generation&#x2F;">Static Site Generation</a>
+        
+    </div>
+    
+    <div class="categories">
+        
+            <a href="https:&#x2F;&#x2F;davidkoloski.me&#x2F;categories&#x2F;web-development&#x2F;">Web Development</a>
+        
+    </div>
+    
+</div>
+<div class="section content">
+    <h1 id="i-m-a-big-fan-of-rust">I'm a big fan of Rust</h1>
+<p>And so are a lot of other people. There's a lot to love about the language, build system, and packages available. But what really brings it home is the community around the language and how they approach programming. In general, the Rust community seems to strike a good balance between purity and pragmatism. Maybe it's because of what the language was built to do, or maybe it's a copy and paste of Mozilla internal culture, but either way it means that Rust makes really good tools. You might have heard of <a href="https://github.com/BurntSushi/ripgrep">ripgrep</a>, but you probably haven't heard of <a href="https://www.getzola.org/">Zola</a>.</p>
+<p><a href="https://www.getzola.org/">Zola</a> is a small static site generator that was originally called Gutenberg and is written in Rust. Its key features are:</p>
+<ul>
+<li>No dependencies: it's just a single executable, perfect for embedding in repositories.</li>
+<li>Blazing fast: the average site generation time is well under a second.</li>
+<li>Fully featured: has support for robust HTML templating with <a href="https://tera.netlify.com/">Tera Templates</a> - another Rust project - and compiles <a href="https://sass-lang.com/">Sass</a> and Markdown for you.</li>
+</ul>
+<p>If this piques your interest already, then I'd suggest you go grab the <a href="https://github.com/getzola/zola/releases">latest release</a> and follow along.</p>
+<h1 id="getting-started">Getting started</h1>
+<h2 id="zola-init">Zola init</h2>
+<p>Making a new site project is incredibly easy - just run:</p>
+<pre style="background-color:#ffffff;">
+<span style="color:#323232;">$ zola init my_site
+</span></pre>
+<p>and it will create a new directory named <code>my_site</code> with the right directory structure set up and ready to go. Just change into the new directory and keep going from there:</p>
+<pre style="background-color:#ffffff;">
+<span style="color:#323232;">$ cd my_site
+</span></pre><h2 id="zola-build">Zola build</h2>
+<p>Building the site is as simple as running:</p>
+<pre style="background-color:#ffffff;">
+<span style="color:#323232;">$ zola build
+</span></pre>
+<p>and it will build the entire site into a new directory named <code>public</code>. This is how the final build of the site is made; copying the <code>public</code> directory to a simple file server is all you need to do to deploy.</p>
+<h2 id="zola-serve">Zola serve</h2>
+<p>For development, Zola comes with a development server built-in. Run:</p>
+<pre style="background-color:#ffffff;">
+<span style="color:#323232;">$ zola serve
+</span></pre>
+<p>and it will continuously:</p>
+<ul>
+<li>Watch content, styles, and templates for changes</li>
+<li>Rebuild the site on the fly</li>
+<li>Refresh the page through an injected script</li>
+</ul>
+<p>This makes for a really great iteration loop since you don't have to constantly switch back and forth between your text editor and browser to refresh it. For obvious reasons, you shouldn't use use the Zola server to serve your final build.</p>
+<h1 id="building-blocks">Building blocks</h1>
+<h2 id="pages-and-sections">Pages and Sections</h2>
+<p>Zola is built on the idea that a site is compsed of <em>pages</em> and <em>sections</em> arranged in a tree structure.</p>
+<p><em>Pages</em> are leaf nodes on your site map, and they're meant to contain most or all of your content. Examples include blog posts and informational pages.</p>
+<p><em>Sections</em> are branch nodes on your site map, and they're meant to direct the user to the pages that they're interested in. Examples include directories that list out blog posts and link to them.</p>
+<p>The <code>content</code> directory in a Zola project defines how the site is structured. Each directory defines a new section<a href="#footnote-1" id="citation-1" class="citation">1</a> and the Markdown files inside of it are the pages that are children of that section<a href="#footnote-2" id="citation-2" class="citation">2</a>. This is why your root index page at <code>my-site.com</code> is a section: it contains all of the other sections and pages in the site.</p>
+<h2 id="templates">Templates</h2>
+<p>Zola uses <a href="https://tera.netlify.com/">Tera Templates</a> for page templating. They have a lot more documentation about the templating engine on their site, so I'll cover mainly how the Tera works with Zola.</p>
+<p>Zola will look in the <code>templates</code> directory for HTML templates to apply to the Markdown files in the <code>content</code> directory. There are three main special templates:</p>
+<ul>
+<li><code>section.html</code> is applied to all sections.</li>
+<li><code>page.html</code> is applied to all pages.</li>
+<li><code>index.html</code> is a special section template applied to the root section instead of <code>section.html</code>.</li>
+</ul>
+<p>Zola will take all the metadata about sections and pages that it has available, and expose it through a <code>section</code> or <code>page</code> object to the template. The Markdown for the section or page can be injected into the template through either <code>{{ section.content }}</code> or <code>{{ page.content }}</code>.</p>
+<h2 id="sass">Sass</h2>
+<p>Zola automatically compiles any Sass files directly under the <code>sass</code> directory into CSS files. Sass is a great set of extensions to CSS that make it easier to write and maintain your styles. I ended up mostly leveraging its variables, but there are a lot of other quality-of-life features and powerful styling tools that make it a joy to use.</p>
+<h2 id="static-content-and-assets-colocation">Static content and Assets Colocation</h2>
+<p>Files placed in the <code>static</code> directory will be copied over as-is to the compiled site, so it's a good place to put content that will be used across the entire site.</p>
+<p>Zola also supports <a href="https://www.getzola.org/documentation/content/overview/#assets-colocation">&quot;assets colocation&quot;</a>, which is a fancy way of saying that if you put non-Markdown files under the <code>content</code> directory, they'll be copied over right next to other Markdown files' compiled HTML pages. This makes it really easy to organize pages that require custom assets like images and javascript files.</p>
+<h1 id="conclusion">Conclusion</h1>
+<p>After working with Zola for a while, the overall experience has been very pleasant. At first I found Zola's notion of sections and pages and little unintuitive, but I think that part of that is due to some confusing wording in their site's documentation. It was really easy to set up and the iteration loop is fast and efficient. While it's still a bit rough around the edges<a href="#footnote-3" id="citation-3" class="citation">3</a>, I can definitely recommend it for anyone looking to make a site like mine.</p>
+<p id="footnote-1" class="footnote"><a href="#citation-1">1</a> For all sections except the top-level index, you also need to add an <code>_index.md</code>.</p>
+<p id="footnote-2" class="footnote"><a href="#citation-2">2</a> With the exception of any <code>_index.md</code> files.</p>
+<p id="footnote-3" class="footnote"><a href="#citation-3">3</a> I had problems with the built-in pagination functionality. It seems like it either doesn't work right or I don't understand it and the docs are too sparse. The server works pretty well for content serving, but every once in a while I managed to crash it with some syntax errors. The system that refreshes the browser page when the server rebuilds content also seems to mess up every once in a while, but restarting the server fixes it.</p>
+</div>
+<div class="section navigation">
+    
+    
+</div>
+
+    <div class="section footer">
+        &copy; 2018 David Koloski
+    </div>
+</body>
+</html>

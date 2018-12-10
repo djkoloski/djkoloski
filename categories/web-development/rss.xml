@@ -1,0 +1,80 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>David Koloski</title>
+        <link>https://davidkoloski.me</link>
+        <description>Software Engineer, Game Designer, Web Developer</description>
+        <generator>Zola</generator>
+        <language>en</language>
+        <atom:link href="https://davidkoloski.me/categories/web-development/rss.xml" rel="self" type="application/rss+xml"/>
+        <lastBuildDate>Sun, 02 Dec 2018 00:00:00 +0000</lastBuildDate>
+        
+            <item>
+                <title>Static Site Generation with Zola</title>
+                <pubDate>Sun, 02 Dec 2018 00:00:00 +0000</pubDate>
+                <link>https://davidkoloski.me/blog/ssg-with-zola/</link>
+                <guid>https://davidkoloski.me/blog/ssg-with-zola/</guid>
+                <description>&lt;h1 id=&quot;i-m-a-big-fan-of-rust&quot;&gt;I&#x27;m a big fan of Rust&lt;&#x2F;h1&gt;
+&lt;p&gt;And so are a lot of other people. There&#x27;s a lot to love about the language, build system, and packages available. But what really brings it home is the community around the language and how they approach programming. In general, the Rust community seems to strike a good balance between purity and pragmatism. Maybe it&#x27;s because of what the language was built to do, or maybe it&#x27;s a copy and paste of Mozilla internal culture, but either way it means that Rust makes really good tools. You might have heard of &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;BurntSushi&#x2F;ripgrep&quot;&gt;ripgrep&lt;&#x2F;a&gt;, but you probably haven&#x27;t heard of &lt;a href=&quot;https:&#x2F;&#x2F;www.getzola.org&#x2F;&quot;&gt;Zola&lt;&#x2F;a&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;a href=&quot;https:&#x2F;&#x2F;www.getzola.org&#x2F;&quot;&gt;Zola&lt;&#x2F;a&gt; is a small static site generator that was originally called Gutenberg and is written in Rust. Its key features are:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;No dependencies: it&#x27;s just a single executable, perfect for embedding in repositories.&lt;&#x2F;li&gt;
+&lt;li&gt;Blazing fast: the average site generation time is well under a second.&lt;&#x2F;li&gt;
+&lt;li&gt;Fully featured: has support for robust HTML templating with &lt;a href=&quot;https:&#x2F;&#x2F;tera.netlify.com&#x2F;&quot;&gt;Tera Templates&lt;&#x2F;a&gt; - another Rust project - and compiles &lt;a href=&quot;https:&#x2F;&#x2F;sass-lang.com&#x2F;&quot;&gt;Sass&lt;&#x2F;a&gt; and Markdown for you.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;If this piques your interest already, then I&#x27;d suggest you go grab the &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;getzola&#x2F;zola&#x2F;releases&quot;&gt;latest release&lt;&#x2F;a&gt; and follow along.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;getting-started&quot;&gt;Getting started&lt;&#x2F;h1&gt;
+&lt;h2 id=&quot;zola-init&quot;&gt;Zola init&lt;&#x2F;h2&gt;
+&lt;p&gt;Making a new site project is incredibly easy - just run:&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#ffffff;&quot;&gt;
+&lt;span style=&quot;color:#323232;&quot;&gt;$ zola init my_site
+&lt;&#x2F;span&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;and it will create a new directory named &lt;code&gt;my_site&lt;&#x2F;code&gt; with the right directory structure set up and ready to go. Just change into the new directory and keep going from there:&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#ffffff;&quot;&gt;
+&lt;span style=&quot;color:#323232;&quot;&gt;$ cd my_site
+&lt;&#x2F;span&gt;&lt;&#x2F;pre&gt;&lt;h2 id=&quot;zola-build&quot;&gt;Zola build&lt;&#x2F;h2&gt;
+&lt;p&gt;Building the site is as simple as running:&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#ffffff;&quot;&gt;
+&lt;span style=&quot;color:#323232;&quot;&gt;$ zola build
+&lt;&#x2F;span&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;and it will build the entire site into a new directory named &lt;code&gt;public&lt;&#x2F;code&gt;. This is how the final build of the site is made; copying the &lt;code&gt;public&lt;&#x2F;code&gt; directory to a simple file server is all you need to do to deploy.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;zola-serve&quot;&gt;Zola serve&lt;&#x2F;h2&gt;
+&lt;p&gt;For development, Zola comes with a development server built-in. Run:&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#ffffff;&quot;&gt;
+&lt;span style=&quot;color:#323232;&quot;&gt;$ zola serve
+&lt;&#x2F;span&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;and it will continuously:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Watch content, styles, and templates for changes&lt;&#x2F;li&gt;
+&lt;li&gt;Rebuild the site on the fly&lt;&#x2F;li&gt;
+&lt;li&gt;Refresh the page through an injected script&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;This makes for a really great iteration loop since you don&#x27;t have to constantly switch back and forth between your text editor and browser to refresh it. For obvious reasons, you shouldn&#x27;t use use the Zola server to serve your final build.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;building-blocks&quot;&gt;Building blocks&lt;&#x2F;h1&gt;
+&lt;h2 id=&quot;pages-and-sections&quot;&gt;Pages and Sections&lt;&#x2F;h2&gt;
+&lt;p&gt;Zola is built on the idea that a site is compsed of &lt;em&gt;pages&lt;&#x2F;em&gt; and &lt;em&gt;sections&lt;&#x2F;em&gt; arranged in a tree structure.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;em&gt;Pages&lt;&#x2F;em&gt; are leaf nodes on your site map, and they&#x27;re meant to contain most or all of your content. Examples include blog posts and informational pages.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;em&gt;Sections&lt;&#x2F;em&gt; are branch nodes on your site map, and they&#x27;re meant to direct the user to the pages that they&#x27;re interested in. Examples include directories that list out blog posts and link to them.&lt;&#x2F;p&gt;
+&lt;p&gt;The &lt;code&gt;content&lt;&#x2F;code&gt; directory in a Zola project defines how the site is structured. Each directory defines a new section&lt;a href=&quot;#footnote-1&quot; id=&quot;citation-1&quot; class=&quot;citation&quot;&gt;1&lt;&#x2F;a&gt; and the Markdown files inside of it are the pages that are children of that section&lt;a href=&quot;#footnote-2&quot; id=&quot;citation-2&quot; class=&quot;citation&quot;&gt;2&lt;&#x2F;a&gt;. This is why your root index page at &lt;code&gt;my-site.com&lt;&#x2F;code&gt; is a section: it contains all of the other sections and pages in the site.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;templates&quot;&gt;Templates&lt;&#x2F;h2&gt;
+&lt;p&gt;Zola uses &lt;a href=&quot;https:&#x2F;&#x2F;tera.netlify.com&#x2F;&quot;&gt;Tera Templates&lt;&#x2F;a&gt; for page templating. They have a lot more documentation about the templating engine on their site, so I&#x27;ll cover mainly how the Tera works with Zola.&lt;&#x2F;p&gt;
+&lt;p&gt;Zola will look in the &lt;code&gt;templates&lt;&#x2F;code&gt; directory for HTML templates to apply to the Markdown files in the &lt;code&gt;content&lt;&#x2F;code&gt; directory. There are three main special templates:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;section.html&lt;&#x2F;code&gt; is applied to all sections.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;page.html&lt;&#x2F;code&gt; is applied to all pages.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;index.html&lt;&#x2F;code&gt; is a special section template applied to the root section instead of &lt;code&gt;section.html&lt;&#x2F;code&gt;.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;Zola will take all the metadata about sections and pages that it has available, and expose it through a &lt;code&gt;section&lt;&#x2F;code&gt; or &lt;code&gt;page&lt;&#x2F;code&gt; object to the template. The Markdown for the section or page can be injected into the template through either &lt;code&gt;{{ section.content }}&lt;&#x2F;code&gt; or &lt;code&gt;{{ page.content }}&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;sass&quot;&gt;Sass&lt;&#x2F;h2&gt;
+&lt;p&gt;Zola automatically compiles any Sass files directly under the &lt;code&gt;sass&lt;&#x2F;code&gt; directory into CSS files. Sass is a great set of extensions to CSS that make it easier to write and maintain your styles. I ended up mostly leveraging its variables, but there are a lot of other quality-of-life features and powerful styling tools that make it a joy to use.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;static-content-and-assets-colocation&quot;&gt;Static content and Assets Colocation&lt;&#x2F;h2&gt;
+&lt;p&gt;Files placed in the &lt;code&gt;static&lt;&#x2F;code&gt; directory will be copied over as-is to the compiled site, so it&#x27;s a good place to put content that will be used across the entire site.&lt;&#x2F;p&gt;
+&lt;p&gt;Zola also supports &lt;a href=&quot;https:&#x2F;&#x2F;www.getzola.org&#x2F;documentation&#x2F;content&#x2F;overview&#x2F;#assets-colocation&quot;&gt;&amp;quot;assets colocation&amp;quot;&lt;&#x2F;a&gt;, which is a fancy way of saying that if you put non-Markdown files under the &lt;code&gt;content&lt;&#x2F;code&gt; directory, they&#x27;ll be copied over right next to other Markdown files&#x27; compiled HTML pages. This makes it really easy to organize pages that require custom assets like images and javascript files.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;conclusion&quot;&gt;Conclusion&lt;&#x2F;h1&gt;
+&lt;p&gt;After working with Zola for a while, the overall experience has been very pleasant. At first I found Zola&#x27;s notion of sections and pages and little unintuitive, but I think that part of that is due to some confusing wording in their site&#x27;s documentation. It was really easy to set up and the iteration loop is fast and efficient. While it&#x27;s still a bit rough around the edges&lt;a href=&quot;#footnote-3&quot; id=&quot;citation-3&quot; class=&quot;citation&quot;&gt;3&lt;&#x2F;a&gt;, I can definitely recommend it for anyone looking to make a site like mine.&lt;&#x2F;p&gt;
+&lt;p id=&quot;footnote-1&quot; class=&quot;footnote&quot;&gt;&lt;a href=&quot;#citation-1&quot;&gt;1&lt;&#x2F;a&gt; For all sections except the top-level index, you also need to add an &lt;code&gt;_index.md&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;p id=&quot;footnote-2&quot; class=&quot;footnote&quot;&gt;&lt;a href=&quot;#citation-2&quot;&gt;2&lt;&#x2F;a&gt; With the exception of any &lt;code&gt;_index.md&lt;&#x2F;code&gt; files.&lt;&#x2F;p&gt;
+&lt;p id=&quot;footnote-3&quot; class=&quot;footnote&quot;&gt;&lt;a href=&quot;#citation-3&quot;&gt;3&lt;&#x2F;a&gt; I had problems with the built-in pagination functionality. It seems like it either doesn&#x27;t work right or I don&#x27;t understand it and the docs are too sparse. The server works pretty well for content serving, but every once in a while I managed to crash it with some syntax errors. The system that refreshes the browser page when the server rebuilds content also seems to mess up every once in a while, but restarting the server fixes it.&lt;&#x2F;p&gt;</description>
+            </item>
+        
+    </channel>
+</rss>
