@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Dungeon Generation</title>
+	<link rel="stylesheet" href="css/index.css" />
+	<script type="text/javascript" src="js/index.js"></script>
+	<script type="text/javascript" src="js/ivec.js"></script>
+	<script type="text/javascript" src="js/dungeon.js"></script>
+</head>
+<body>
+	<div class="container">
+		<h1>Dungeon Generator</h1>
+		<div class="center">
+			<canvas id="dungeon" width="392" height="392">Your browser doesn't support canvas</canvas>
+		</div>
+		<table>
+			<tr>
+				<td>
+					Dungeon Width
+				</td>
+				<td>
+					<input type="number" id="width" value="39" />
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Dungeon Height
+				</td>
+				<td>
+					<input type="number" id="height" value="39" />
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Rooms to spawn
+				</td>
+				<td>
+					<input type="number" id="rooms" value="25" />
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Unnecessary door chance
+				</td>
+				<td>
+					<input type="number" id="chance" value="0.03" step="0.02" />
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Speed (lower is faster)
+				</td>
+				<td>
+					<input type="number" id="speed" value="10" step="10" />
+				</td>
+			</tr>
+			<tr>
+				<td>
+				</td>
+				<td>
+					<button id="generate">Generate</button>
+				</td>
+			</tr>
+		</table>
+	</div>
+</body>
+</html>

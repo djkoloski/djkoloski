@@ -1,0 +1,31 @@
+@import url(http://fonts.googleapis.com/css?family=Montserrat:400,700);
+
+body {
+	color: white;
+	background-color: #202020;
+	font-family: Montserrat, Helvetica, Roboto, Arial, sans-serif;
+}
+h1 {
+	text-align: center;
+}
+div.container {
+	width: 1000px;
+	margin: 0 auto 0 auto;
+}
+div.center {
+	width: 100%;
+	text-align: center;
+}
+canvas#dungeon {
+	margin-bottom: 20px;
+}
+table {
+	margin: 0 auto 0 auto;
+}
+table tr td:first-child {
+	text-align: left;
+	padding-right: 20px;
+}
+table tr td:last-child {
+	text-align: right;
+}
