@@ -39,7 +39,7 @@ var TREASURE_JOKER_CHANCE = 0.5;
 function UseKey() {
 	if (!inventory.HasItem('Key'))
 		return;
-	
+
 	var room = dungeon.GetCurRoom();
 	if (room.type == 'treasure') {
 		inventory.RemoveItem('Key');
@@ -91,6 +91,9 @@ function UseKey() {
 }
 
 function UsePotion() {
+	if (!inventory.HasItem('Potion'))
+		return;
+
 	inventory.RemoveItem('Potion');
 	stats.AddHP(stats.max_hp - stats.hp);
 	display.Write('Drank a potion and refilled their HP.');
