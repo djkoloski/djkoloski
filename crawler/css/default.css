@@ -1,0 +1,170 @@
+body {
+	background: #000;
+	font-family: monospace;
+	color: #fff;
+}
+
+div.room {
+	margin: 100px auto 100px auto;
+	position: relative;
+	height: 500px;
+	width: 500px;
+	perspective: 1000px;
+	font-size: 20pt;
+}
+
+div.room div.plane {
+	position: absolute;
+	width: 500px;
+	height: 500px;
+	top: 50%;
+	left: 50%;
+}
+
+div.room div.plane div.content {
+	position: absolute;
+	bottom: -5px;
+	left: 0px;
+	width: 100%;
+	text-align: center;
+}
+
+div.room div.plane div.content div {
+	width: 100%;
+	text-align: center;
+}
+
+div.plane.bottom {
+	margin: 0 0 0 -250px;
+	transform: rotateX(-90deg);
+}
+
+div.plane.top {
+	margin: -500px 0 0 -250px;
+	transform: rotateX(-90deg);
+}
+
+div.plane.left {
+	margin: -250px 0 0 -500px;
+	transform: rotateY(90deg);
+}
+
+div.plane.right {
+	margin: -250px 0 0 0;
+	transform: rotateY(-90deg);
+}
+
+div.plane.back {
+	margin: -250px 0 0 -250px;
+	transform: translateZ(-250px);
+}
+
+div.plane.mid {
+	margin: -250px 0 0 -250px;
+	background: rgba(0, 0, 0, 0.6);
+}
+
+div.plane.front {
+	margin: -250px 0 0 -250px;
+	transform: translateZ(250px);
+	color: rgba(255, 255, 255, 0);
+}
+
+div.navigation {
+	position: absolute;
+	top: 10%;
+	right: 10%;
+}
+
+div.map table {
+	margin: 0 auto 0 auto;
+}
+div.map table td {
+	width: 5px;
+	height: 5px;
+}
+div.map table td.unexplored {
+	border: 1px solid rgba(255, 255, 255, 0.2);
+}
+div.map table td.explored {
+	border: 1px solid rgba(255, 255, 255, 1.0);
+}
+div.map table td.current {
+	border: 1px solid rgba(255, 255, 255, 1.0);
+	background: rgba(255, 255, 255, 0.5);
+}
+
+div.enemystats {
+	margin: 50px 0 0 0;
+}
+div.enemystats table {
+	width: 100%;
+}
+div.enemystats table tr td:nth-child(2) {
+	text-align: right;
+}
+
+div.merchant {
+	margin: 50px 0 0 0;
+}
+div.merchant table {
+	width: 100%;
+}
+div.merchant table tr td:nth-child(1) {
+	text-align: center;
+	padding: 5px;
+	border: 2px solid rgba(255, 255, 255, 0.5);
+}
+div.merchant table tr td:nth-child(2) {
+	text-align: right;
+}
+
+
+div.items {
+	position: absolute;
+	top: 10%;
+	left: 10%;
+}
+
+div.inventory table td {
+	min-width: 50px;
+	min-height: 50px;
+	padding: 5px;
+	border: 2px solid rgba(255, 255, 255, 0.2);
+}
+div.inventory table td div.sprite {
+	margin: 0 auto 10px auto;
+	text-align: center;
+}
+div.inventory table td div.name {
+	margin: 0 auto 0 auto;
+	text-align: center;
+}
+
+div.stats {
+	margin: 10px 0 0 0;
+}
+div.stats table {
+	width: 100%;
+}
+div.stats table tr td:nth-child(2) {
+	text-align: right;
+}
+
+div.console {
+	margin: 0 auto 0 auto;
+	width: 667px;
+	height: 200px;
+	border: 1px solid #fff;
+	overflow-y: hidden;
+}
+
+div.gold {
+	text-align: center;
+	margin: 0 0 5px; 0;
+}
+
+div.depth {
+	text-align: center;
+	margin: 0 0 5px 0;
+}
