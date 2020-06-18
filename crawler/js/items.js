@@ -60,13 +60,13 @@ function UseKey() {
 			
 			var roll = Math.random();
 			if (roll < JOKER_CHANCE)
-				treasure = 'joker';
+				treasure = 'a joker';
 			else if (roll < TRUMP_CARD_CHANCE)
-				treasure = 'trump card';
+				treasure = 'a trump card';
 			else if (roll < BUSINESS_CARD_CHANCE)
-				treasure = 'business card';
+				treasure = 'a business card';
 			else
-				treasure = 'skeleton key';
+				treasure = 'a skeleton key';
 		}
 		else
 			treasure = 'nothing';
@@ -90,20 +90,16 @@ function UseKey() {
 				for (var i = 0; i < num_keys; ++i)
 					inventory.AddItem(key_item);
 				break;
-			case 'joker':
-				treasure = 'a joker';
+			case 'a joker':
 				inventory.AddItem(joker_item);
 				break;
-			case 'trump card':
-				treasure = 'a trump card';
+			case 'a trump card':
 				inventory.AddItem(trump_card_item);
 				break;
-			case 'business card':
-				treasure = 'a business card';
+			case 'a business card':
 				inventory.AddItem(business_card_item);
 				break;
-			case 'skeleton_key_item':
-				treasure = 'a skeleton key';
+			case 'a skeleton key':
 				inventory.AddItem(skeleton_key_item);
 				break;
 			default:
