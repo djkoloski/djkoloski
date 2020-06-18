@@ -215,36 +215,7 @@ var chest_open = formatArt('\
 +-----------+\n\
 ');
 
-// Item art
-
-var manual_sprite = formatArt('\
-+--.--+\n\
-|  |  |\n\
-|  |  |\n\
-+--*--+\
-');
-
-var key_sprite = formatArt('\
-F\n\
-o\
-');
-
-var potion_sprite = formatArt('\
- ^ \n\
-(_)\
-');
-
-var joker_sprite = formatArt('\
-+-+\n\
-|J|\n\
-+-+\
-');
-
-var stick_sprite = formatArt('\
- / \n\
- \\ \n\
- / \
-');
+// Enemy art
 
 var slime_sprite = formatArt('\
  *-* \n\
@@ -296,6 +267,8 @@ var megaslime_sprite = formatArt("\
  (__/ \\__)\
 ");
 
+// NPC art
+
 var merchant_sprite = formatArt("\
         .--.         \n\
        |    |        \n\
@@ -315,6 +288,64 @@ var merchant_sprite = formatArt("\
 |                   |\
 ");
 
+var sold_out_sprite = formatArt("\
+S O L D\
+");
+
+// Item art
+
+var manual_sprite = formatArt('\
++--.--+\n\
+|  |  |\n\
+|  |  |\n\
++--*--+\
+');
+
+var key_sprite = formatArt('\
+F\n\
+o\
+');
+
+var skeleton_key_sprite = formatArt('\
+|#\n\
+| \n\
+OE\
+');
+
+var potion_sprite = formatArt('\
+ ^ \n\
+(_)\
+');
+
+var joker_sprite = formatArt('\
++-+\n\
+|J|\n\
++-+\
+');
+
+var trump_card_sprite = formatArt('\
++-+\n\
+|T|\n\
++-+\
+');
+
+var business_card_sprite = formatArt('\
++-+\n\
+|~|\n\
++-+\
+');
+
+var fists_sprite = formatArt('\
+ nnn\n\
+c\\_/\n\
+');
+
+var stick_sprite = formatArt('\
+ / \n\
+ \\ \n\
+ / \
+');
+
 var throwing_stick_sprite = formatArt("\
  |/\n\
  | \n\
@@ -322,21 +353,37 @@ var throwing_stick_sprite = formatArt("\
 ");
 
 var bigger_stick_sprite = formatArt("\
- I \n\
- I \n\
- I \
+ || \n\
+ || \n\
+ || \
 ");
 
 var gloves_sprite = formatArt("\
- |||\n\
-^  |\n\
-\\__/\
+ ||||\n\
+^   |\n\
+\\___/\
 ");
 
-var thimble_sprite = formatArt("\
- .-. \n\
- |`| \n\
- --- \
+var brass_knuckles_sprite = formatArt("\
+ o-o-o\n\
+o____/\
+");
+
+var gauntlets_sprite = formatArt("\
+ nnnn\n\
+n|..|\n\
+\\___/\
+");
+
+var running_shoes_sprite = formatArt("\
+ _.-.\n\
+(___/\
+");
+
+var cleats_sprite = formatArt("\
+ _.-.\n\
+(___/\n\
+ v v \
 ");
 
 var steel_toes_sprite = formatArt("\
@@ -345,10 +392,20 @@ var steel_toes_sprite = formatArt("\
 {___/\
 ");
 
+var thimble_sprite = formatArt("\
+ .-. \n\
+ |`| \n\
+ --- \
+");
+
 var pendant_sprite = formatArt("\
   .-.\n\
  /  |\n\
  |  /\n\
   \\/ \n\
   O  \
+");
+
+var cursed_ring_sprite = formatArt("\
+O\
 ");

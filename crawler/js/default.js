@@ -45,7 +45,7 @@ function KEY_COST(depth) {
 }
 
 function ITEM_COST(depth, item) {
-	return Math.ceil((depth + 1) * (item.stats.hpadd + item.stats.atkadd + item.stats.defadd) * item.stats.hpmult * item.stats.atkmult * item.stats.defmult);
+	return Math.ceil((depth + 1) * 3 * (Math.abs(item.stats.hp) / 3 + Math.abs(item.stats.atk) + Math.abs(item.stats.def)));
 }
 
 function BuyItem(cost, item) {
@@ -62,7 +62,7 @@ function BuyItem(cost, item) {
 }
 
 function GameOver() {
-	alert('YOU HAVE DIED.\nTry again later.');
+	alert('YOU HAVE DIED\nThe dungeon beckons...');
 	window.onbeforeunload = null;
 	location.reload();
 }
@@ -81,9 +81,9 @@ $(function() {
 	
 	inventory.AddItem(manual_item);
 	inventory.AddItem(key_item);
-	inventory.AddItem(stick_item);
+	inventory.AddItem(fists_item);
 
-	stats.ToggleEquip('stick');
+	stats.ToggleEquip('fists');
 	
 	dungeon.Display();
 
@@ -215,7 +215,10 @@ Display.prototype.SetStats =
 Display.prototype.SetEnemy =
 	function(enemy) {
 		if (enemy == null)
+		{
+			this.planes.mid.html('');
 			this.enemystats.empty();
+		}
 		else
 		{
 			this.planes.mid.html(enemy.sprite);
@@ -232,19 +235,43 @@ Display.prototype.HideMerchant =
 		this.merchant.hide();
 	};
 Display.prototype.ShowMerchant =
-	function(potion_cost, key_cost, item_cost, item) {
+	function(depth, item) {
 		var content = $('<table></table>');
+
+		var potion_cost = POTION_COST(depth)
 		var potion_buy = $('<tr title="Buy a potion (' + potion_cost + ' gold)"><td><div class="sprite">' + potion_sprite + '</div></td><td><div>Buy a potion: ' + potion_cost + ' gold</div></td></tr>');
-		var key_buy = $('<tr title="Buy a key (' + key_cost + ' gold)"><td><div class="sprite">' + key_sprite + '</div></td><td><div>Buy a key: ' + key_cost + ' gold</div></td></tr>');
-		var item_buy = $('<tr title="Buy a ' + item.name + '(' + item_cost + ' gold)"><td><div class="sprite">' + item.sprite + '</div></td><td><div>Buy a ' + item.name + ': ' + item_cost + ' gold</div></td></tr>');
-
 		potion_buy.on('click', BuyItem(potion_cost, potion_item));
-		key_buy.on('click', BuyItem(key_cost, key_item));
-		item_buy.on('click', BuyItem(item_cost, item));
-
 		content.append(potion_buy);
+
+		var key_cost = KEY_COST(depth)
+		var key_buy = $('<tr title="Buy a key (' + key_cost + ' gold)"><td><div class="sprite">' + key_sprite + '</div></td><td><div>Buy a key: ' + key_cost + ' gold</div></td></tr>');
+		key_buy.on('click', BuyItem(key_cost, key_item));
 		content.append(key_buy);
-		content.append(item_buy);
+
+		if (item != null)
+		{
+			var item_cost = ITEM_COST(depth, item)
+			var item_buy = $('<tr title="Buy a ' + item.name + '(' + item_cost + ' gold)"><td><div class="sprite">' + item.sprite + '</div></td><td><div>Buy a ' + item.name + ': ' + item_cost + ' gold</div></td></tr>');
+			item_buy.on('click', () => {
+				if (inventory.gold < item_cost) {
+					display.Write('You don\'t have enough gold to buy a ' + item.name + '.');
+				}
+				else
+				{
+					inventory.AddGold(-item_cost);
+					inventory.AddItem(item);
+					stats.ToggleEquip(item.name);
+					dungeon.GetCurRoom().merchantItem = null
+					dungeon.Display()
+				}
+			});
+			content.append(item_buy);
+		}
+		else
+		{
+			var item_buy = $('<tr title="Sold out!"></tr><td div class="sprite">' + sold_out_sprite + '</div></td><td><div>Sold out!</div></td></tr>');
+			content.append(item_buy);
+		}
 
 		this.merchant.empty();
 		this.merchant.append(content);
@@ -348,7 +375,7 @@ Dungeon.prototype.Generate =
 			this.rooms[top.x][top.y] = new Room();
 
 			for (var i = 0; i < open_spots.length; ++i)
-				if (Math.random() < ROOM_SPAWN_CHANCE)
+				if (spots.length == 1 || Math.random() < ROOM_SPAWN_CHANCE)
 					queue.push(open_spots[i]);
 		}
 
@@ -417,10 +444,7 @@ Dungeon.prototype.Display =
 		var room = this.GetCurRoom();
 
 		if (room.type == 'merchant') {
-			var potion_cost = POTION_COST(this.depth);
-			var key_cost = KEY_COST(this.depth);
-			var item_cost = ITEM_COST(this.depth, room.merchantItem);
-			display.ShowMerchant(potion_cost, key_cost, item_cost, room.merchantItem);
+			display.ShowMerchant(this.depth, room.merchantItem);
 		}
 		else
 			display.HideMerchant();
@@ -470,10 +494,11 @@ Dungeon.prototype.TeleportToType =
 			for (var y = 0; y < this.height; ++y) {
 				if (this.rooms[x][y] != undefined && this.rooms[x][y].type == type) {
 					this.SetRoom(x, y);
-					return;
+					return true;
 				}
 			}
 		}
+		return false;
 	};
 Dungeon.prototype.NextLevel =
 	function() {
@@ -532,7 +557,6 @@ function Stats() {
 	this.max_hp = this.base_max_hp;
 	this.hp = this.base_max_hp;
 	this.equipment = {
-		head: null,
 		hands: null,
 		weapon: null,
 		feet: null,
@@ -571,11 +595,11 @@ Stats.prototype.ToggleEquip =
 				if (this.equipment[item.stats.slot] != null) {
 					if (this.equipment[item.stats.slot].name.toLowerCase() == name.toLowerCase()) {
 						this.equipment[item.stats.slot] = null;
-						display.Write('Unequipped a ' + name + '.');
+						display.Write('Removed a ' + name + '.');
 					}
 					else
 					{
-						display.Write('Unequipped a ' + this.equipment[item.stats.slot].name + ' to equip a ' + name + '.');
+						display.Write('Equipped a ' + name + ' by removing a ' + this.equipment[item.stats.slot].name + '.');
 						this.equipment[item.stats.slot] = item;
 					}
 				}
@@ -598,17 +622,9 @@ Stats.prototype.Recalc =
 		for (key in this.equipment) {
 			if (this.equipment[key] == null)
 				continue;
-			this.max_hp += this.equipment[key].stats.hpadd;
-			this.attack += this.equipment[key].stats.atkadd;
-			this.defense += this.equipment[key].stats.defadd;
-		}
-
-		for (key in this.equipment) {
-			if (this.equipment[key] == null)
-				continue;
-			this.max_hp *= this.equipment[key].stats.hpmult;
-			this.attack *= this.equipment[key].stats.atkmult;
-			this.defense *= this.equipment[key].stats.defmult;
+			this.max_hp += this.equipment[key].stats.hp;
+			this.attack += this.equipment[key].stats.atk;
+			this.defense += this.equipment[key].stats.def;
 		}
 
 		this.Display();

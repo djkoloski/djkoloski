@@ -11,10 +11,10 @@ Enemy.prototype.Instance =
 
 function EnemyStats(level, hp, atk, def) {
 	this.level = level;
-	this.max_hp = hp * level;
+	this.max_hp = Math.round(hp * level);
 	this.hp = this.max_hp;
-	this.atk = atk * level;
-	this.def = def * level;
+	this.atk = Math.round(atk * level);
+	this.def = Math.round(def * level);
 }
 
 var slime_enemy = new Enemy(
@@ -27,7 +27,7 @@ var goblin_enemy = new Enemy(
 	goblin_sprite,
 	'Goblin',
 	'Always grumpy, especially if you disturb their gardening.',
-	new EnemyStats(1, 2, 1, 0));
+	new EnemyStats(1, 1.75, 1, 0));
 
 var bat_enemy = new Enemy(
 	bat_sprite,
@@ -45,13 +45,13 @@ var ghost_enemy = new Enemy(
 	ghost_sprite,
 	'Ghost',
 	'They\'re not remotely spooky, and because of this, they haunt people until they get fed up with them.',
-	new EnemyStats(1, 2, 1, 1));
+	new EnemyStats(1, 1.5, 1.5, 1));
 
 var megaslime_enemy = new Enemy(
 	megaslime_sprite,
 	'Mega-Slime',
 	'It\'s really more like 6 individual slimes smushed into one.',
-	new EnemyStats(1, 3, 2, 0));
+	new EnemyStats(1, 2, 1.75, 0));
 
 var level_enemies = [
 	[ slime_enemy, bat_enemy ],

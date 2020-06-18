@@ -110,6 +110,9 @@ div.merchant {
 div.merchant table {
 	width: 100%;
 }
+div.merchant table tr td {
+	cursor: pointer;
+}
 div.merchant table tr td:nth-child(1) {
 	text-align: center;
 	padding: 5px;
@@ -120,7 +123,7 @@ div.merchant table tr td:nth-child(2) {
 }
 
 
-div.items {
+div.player {
 	position: absolute;
 	top: 10%;
 	left: 10%;
@@ -131,6 +134,7 @@ div.inventory table td {
 	min-height: 50px;
 	padding: 5px;
 	border: 2px solid rgba(255, 255, 255, 0.2);
+	cursor: pointer;
 }
 div.inventory table td div.sprite {
 	margin: 0 auto 10px auto;
@@ -161,7 +165,7 @@ div.console {
 
 div.gold {
 	text-align: center;
-	margin: 0 0 5px; 0;
+	margin: 0 0 5px 0;
 }
 
 div.depth {
