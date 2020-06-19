@@ -554,8 +554,8 @@ function Stats() {
 	this.attack = 0;
 	this.defense = 0;
 	this.base_max_hp = 13;
-	this.max_hp = this.base_max_hp;
-	this.hp = this.base_max_hp;
+	this.max_hp = this.base_max_hp + this.level;
+	this.hp = this.max_hp;
 	this.equipment = {
 		hands: null,
 		weapon: null,
@@ -617,7 +617,7 @@ Stats.prototype.Recalc =
 	function() {
 		this.attack = 0;
 		this.defense = 0;
-		this.max_hp = this.base_max_hp;
+		this.max_hp = this.base_max_hp + this.level;
 
 		for (key in this.equipment) {
 			if (this.equipment[key] == null)
