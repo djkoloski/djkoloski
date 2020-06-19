@@ -294,7 +294,5 @@ var level_items = [
 	[ throwing_stick_item, bigger_stick_item, brass_knuckles_item, gauntlets_item, cleats_item, steel_toes_item, pendant_item, cursed_ring_item ],
 	[ throwing_stick_item, bigger_stick_item, brass_knuckles_item, gauntlets_item, cleats_item, steel_toes_item, pendant_item, cursed_ring_item ],
 	[ throwing_stick_item, bigger_stick_item, brass_knuckles_item, gauntlets_item, cleats_item, steel_toes_item, pendant_item, cursed_ring_item ],
-	[ throwing_stick_item, bigger_stick_item, brass_knuckles_item, gauntlets_item, cleats_item, steel_toes_item, pendant_item, cursed_ring_item ],
-	[ throwing_stick_item, bigger_stick_item, brass_knuckles_item, gauntlets_item, cleats_item, steel_toes_item, pendant_item, cursed_ring_item ],
-	[ throwing_stick_item, bigger_stick_item, brass_knuckles_item, gauntlets_item, cleats_item, steel_toes_item, pendant_item, cursed_ring_item ]
+	[ null ]
 ];

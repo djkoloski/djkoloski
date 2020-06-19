@@ -64,7 +64,5 @@ var level_enemies = [
 	[ bat_enemy, goblin_enemy, imp_enemy, ghost_enemy, megaslime_enemy ],
 	[ bat_enemy, goblin_enemy, imp_enemy, ghost_enemy, megaslime_enemy ],
 	[ bat_enemy, goblin_enemy, imp_enemy, ghost_enemy, megaslime_enemy ],
-	[ bat_enemy, goblin_enemy, imp_enemy, ghost_enemy, megaslime_enemy ],
-	[ bat_enemy, goblin_enemy, imp_enemy, ghost_enemy, megaslime_enemy ],
-	[ bat_enemy, goblin_enemy, imp_enemy, ghost_enemy, megaslime_enemy ]
+	[ slime_enemy ]
 ];

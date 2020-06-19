@@ -140,8 +140,9 @@ function Display() {
 	};
 	this.map = $('div.map');
 	this.console = $('div.console');
-	this.inventory = $('div.inventory');
 	this.stats = $('div.stats');
+	this.gold = $('div.gold');
+	this.inventory = $('div.inventory');
 	this.enemystats = $('div.enemystats');
 	this.merchant = $('div.merchant');
 
@@ -162,7 +163,7 @@ Display.prototype.SetPlanes =
 	};
 Display.prototype.SetMap =
 	function(depth, width, height, rooms, cur_x, cur_y) {
-		var content = '<div class="depth">' + depth + ': ' + (depth >= DEPTH_NAMES.length ? '???' : DEPTH_NAMES[depth]) + '</div><table>';
+		var content = '<div class="depth">' + (depth + 1) + ': ' + (depth >= DEPTH_NAMES.length ? '???' : DEPTH_NAMES[depth]) + '</div><table>';
 		for (var y = height - 1; y >= 0; --y) {
 			content += '<tr>';
 			for (var x = 0; x < width; ++x) {
@@ -182,16 +183,35 @@ Display.prototype.SetMap =
 	};
 Display.prototype.SetInventory =
 	function(gold, items) {
-		var content = $('<div class="gold">' + gold + ' gold</div><table></table>');
+		this.gold.empty();
+		this.gold.text(gold + ' gold');
+
+		var content = $('<table></table>');
 		var cur_tr = null;
+
+		var unique_items = [];
+		var unique_items_count = [];
 		for (var i = 0; i < items.length; ++i) {
+			var index = unique_items.indexOf(items[i]);
+			if (index == -1) {
+				unique_items.push(items[i]);
+				unique_items_count.push(1);
+			}
+			else
+			{
+				unique_items_count[index] += 1;
+			}
+		}
+
+		for (var i = 0; i < unique_items.length; ++i) {
 			if (i % 4 == 0)
 			{
 				cur_tr = $('<tr></tr>');
 				content.append(cur_tr);
 			}
-			var cell = $('<td title="' + items[i].description + '"><div class="sprite">' + items[i].sprite + '</div><div class="name">' + items[i].name + '</div></td>');
-			cell.on('click', items[i].action);
+			var mult = (unique_items_count[i] > 1 ? ' (' + unique_items_count[i] + ')' : '');
+			var cell = $('<td title="' + unique_items[i].description + '"><div class="sprite">' + unique_items[i].sprite + '</div><div class="name">' + unique_items[i].name + mult + '</div></td>');
+			cell.on('click', unique_items[i].action);
 			cur_tr.append(cell);
 		}
 		this.inventory.empty();
@@ -502,12 +522,20 @@ Dungeon.prototype.TeleportToType =
 	};
 Dungeon.prototype.NextLevel =
 	function() {
-		++this.width;
-		++this.height;
-		++this.depth;
-		this.Generate();
-		this.Display();
-		display.Write('Jumping down the hatch, they continued to the next floor.');
+		if (this.depth == DEPTH_NAMES.length - 1)
+		{
+			display.Write('Reaching the end of their quest, they returned home a hero.');
+			display.Write('You win!');
+		}
+		else
+		{
+			++this.width;
+			++this.height;
+			++this.depth;
+			this.Generate();
+			this.Display();
+			display.Write('Jumping down the hatch, they continued to the next floor.');
+		}
 	};
 
 function Inventory() {
