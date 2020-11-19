@@ -6,6 +6,13 @@
         </url>
     
         <url>
+            <loc>https://davidkoloski.me/blog/rkyv-architecture/</loc>
+            
+                <lastmod>2020-11-18</lastmod>
+            
+        </url>
+    
+        <url>
             <loc>https://davidkoloski.me/blog/ssg-with-zola/</loc>
             
                 <lastmod>2018-12-02</lastmod>
@@ -33,6 +40,10 @@
         </url>
         
         <url>
+            <loc>https://davidkoloski.me/categories/rust/</loc>
+        </url>
+        
+        <url>
             <loc>https://davidkoloski.me/categories/web-development/</loc>
         </url>
         
@@ -43,7 +54,15 @@
         </url>
         
         <url>
+            <loc>https://davidkoloski.me/tags/rkyv/</loc>
+        </url>
+        
+        <url>
             <loc>https://davidkoloski.me/tags/rust/</loc>
+        </url>
+        
+        <url>
+            <loc>https://davidkoloski.me/tags/serialization/</loc>
         </url>
         
         <url>
