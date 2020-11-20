@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CONSTRUCTION ZONE</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22256%22 height=%22256%22 viewBox=%220 0 100 100%22><text x=%2250%%22 y=%2250%%22 dominant-baseline=%22central%22 text-anchor=%22middle%22 font-size=%2278%22>🚧</text></svg>" />
+    <style>
+        @font-face {
+            font-family: 'Lilian';
+            src: url('Lilian.woff2') format('woff2'),
+                url('Lilian.woff') format('woff');
+            font-weight: 500;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        body {
+            font-family: 'Lilian';
+            font-size: 16pt;
+            background: #010101;
+            background-image: url('background.png');
+            margin: 0;
+            color: #e4e4e4;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 2rem auto;
+        }
+        #game {
+            padding: 21px;
+            background-image: url('border-stripes.png');
+            border: 8px solid #000;
+        }
+        #game * {
+            background-color: #000;
+            border: 8px solid #000;
+        }
+        .instructions {
+            background: #000;
+            width: 960px;
+            padding-right: 21px;
+            padding-left: 21px;
+            border-left: 16px solid #000;
+            border-right: 16px solid #000;
+            text-align: center;
+        }
+        a {
+            color: #E6A800;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="game"></div>
+        <div class="instructions">
+            <p>a little game by <a href="davidkoloski.me">david koloski</a></p>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.3.3/pixi.js"></script>
+    <script src="pixi-sound.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
