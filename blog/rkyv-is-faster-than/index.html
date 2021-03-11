@@ -58,7 +58,7 @@
 <div class="section title">
     rkyv is faster than {bincode, capnp, cbor, flatbuffers, postcard, prost, serde_json}
     <div class="subtitle">
-        Mar 11, 2021 &ndash; 6 min read
+        Mar 11, 2021 &ndash; 9 min read
     </div>
 </div>
 <div class="section taxonomies">
@@ -92,11 +92,11 @@
 <p>But just having design goals isn't good enough, you need results to back them up. With that in mind, I can't disclaim enough that I am the creator and maintainer of rkyv. However, the last thing I want is to be biased, so I made some benchmarks to hopefully convince you on their own merits.</p>
 <h2 id="benchmarks">Benchmarks</h2>
 <p>There are a <a href="https://github.com/erickt/rust-serialization-benchmarks">couple</a> <a href="https://blog.logrocket.com/rust-serialization-whats-ready-for-production-today/">different</a> <a href="https://github.com/only-cliches/noproto#benchmarks">benchmarks</a> already available, but in general they fail in a couple different ways:</p>
-<h3 id="testing-with-too-little-data">Testing with too little data</h3>
+<h3 id="they-test-with-too-little-data">They test with too little data</h3>
 <p>This leads to highly variable results and can make it difficult to see whether one library is really faster than another</p>
-<h3 id="testing-only-with-simple-data">Testing only with simple data</h3>
+<h3 id="they-test-only-with-simple-data">They test only with simple data</h3>
 <p>The library may perform completely differently with complex and highly structured data</p>
-<h3 id="testing-only-serialization-and-deserialization">Testing only serialization and deserialization</h3>
+<h3 id="they-test-only-serialization-and-deserialization">They test only serialization and deserialization</h3>
 <p>For most serialization formats, all you can do is serialize and deserialize data. But zero-copy deserialization libraries can access and traverse data without deserializing it first. Knowing how these operations compare with each other is essential to evaluating their relative performance.</p>
 <h2 id="rust-serialization-benchmark"><code>rust_serialization_benchmark</code></h2>
 <p>With these shortcomings in mind, I set off to make my own benchmarks. The goal was to be thorough and complete, and I think I did a pretty good job.</p>
@@ -130,6 +130,98 @@
 <li>Abomonation's <code>decode</code> qualified as access not deserialize because it yields an immutable reference instead of a mutable object. In order to deserialize this object, a simple <code>Clone</code> would suffice but I'm not here to write and benchmark my own deserialization code.</li>
 </ol>
 <h2 id="results">Results</h2>
+<p>These results are directly from the <a href="https://github.com/djkoloski/rust_serialization_benchmark">benchmark repo</a>.</p>
+<h3 id="log"><code>log</code></h3>
+<p>This data set is composed of HTTP request logs that are small and contain many strings.</p>
+<h4 id="raw-data">Raw data</h4>
+<p>For operations, time per iteration; for size, bytes. Lower is better.</p>
+<table><thead><tr><th> Format / Lib </th><th> Serialize </th><th> Access </th><th> Read </th><th> Update </th><th> Deserialize </th><th> Size </th><th> Size (zlib) </th></tr></thead><tbody>
+<tr><td> abomonation </td><td> 315.13 us </td><td> 36.773 us* </td><td> 58.999 us* </td><td> † </td><td> ‡ </td><td> 1705800 </td><td> 507971 </td></tr>
+<tr><td> bincode </td><td> 640.51 us </td><td>  </td><td>  </td><td>  </td><td> 4.2787 ms </td><td> 1045784 </td><td> 374305 </td></tr>
+<tr><td> capnp </td><td> 1.8558 ms </td><td> 259.95 ns </td><td> 711.84 us </td><td> § </td><td> ‡ </td><td> 1843240 </td><td> 537966 </td></tr>
+<tr><td> cbor </td><td> 1.9698 ms </td><td>  </td><td>  </td><td>  </td><td> 8.9702 ms </td><td> 1407835 </td><td> 407372 </td></tr>
+<tr><td> flatbuffers </td><td> 2.6780 ms </td><td> 2.9815 ns </td><td> 162.95 us </td><td> § </td><td> ‡ </td><td> 1276368 </td><td> 469962 </td></tr>
+<tr><td> postcard </td><td> 714.70 us </td><td>  </td><td>  </td><td>  </td><td> 4.4387 ms </td><td> 765778 </td><td> 312739 </td></tr>
+<tr><td> prost </td><td> 5.4927 ms </td><td>  </td><td>  </td><td>  </td><td> 5.1024 ms </td><td> 764951 </td><td> 269811 </td></tr>
+<tr><td> rkyv </td><td> 422.92 us </td><td> 1.3616 ns </td><td> 18.962 us </td><td> 71.321 us </td><td> 3.2492 ms </td><td> 1065784 </td><td> 333895 </td></tr>
+<tr><td> serde_json </td><td> 4.4054 ms </td><td>  </td><td>  </td><td>  </td><td> 10.148 ms </td><td> 1827461 </td><td> 474358 </td></tr>
+</tbody></table>
+<h4 id="comparison">Comparison</h4>
+<p>Relative to best. Higher is better.</p>
+<table><thead><tr><th> Format / Lib </th><th> Serialize </th><th> Access </th><th> Read </th><th> Update </th><th> Deserialize </th><th> Size </th><th> Size (zlib) </th></tr></thead><tbody>
+<tr><td> abomonation </td><td> 100.00% </td><td> 0.00%* </td><td> 32.14%* </td><td> † </td><td> ‡ </td><td> 44.84% </td><td> 53.12% </td></tr>
+<tr><td> bincode </td><td> 49.20% </td><td>  </td><td>  </td><td>  </td><td> 75.94% </td><td> 73.15% </td><td> 72.08% </td></tr>
+<tr><td> capnp </td><td> 16.98% </td><td> 0.52% </td><td> 2.66% </td><td> § </td><td> ‡ </td><td> 41.50% </td><td> 50.15% </td></tr>
+<tr><td> cbor </td><td> 16.00% </td><td>  </td><td>  </td><td>  </td><td> 36.22% </td><td> 54.34% </td><td> 66.23% </td></tr>
+<tr><td> flatbuffers </td><td> 11.77% </td><td> 45.67% </td><td> 11.64% </td><td> § </td><td> ‡ </td><td> 59.93% </td><td> 57.41% </td></tr>
+<tr><td> postcard </td><td> 44.09% </td><td>  </td><td>  </td><td>  </td><td> 73.20% </td><td> 99.89% </td><td> 86.27% </td></tr>
+<tr><td> prost </td><td> 5.74% </td><td>  </td><td>  </td><td>  </td><td> 63.68% </td><td> 100.00% </td><td> 100.00% </td></tr>
+<tr><td> rkyv </td><td> 74.51% </td><td> 100.00% </td><td> 100.00% </td><td> 100.00% </td><td> 100.00% </td><td> 71.77% </td><td> 80.81% </td></tr>
+<tr><td> serde_json </td><td> 7.15% </td><td>  </td><td>  </td><td>  </td><td> 32.02% </td><td> 41.86% </td><td> 56.88% </td></tr>
+</tbody></table>
+<h3 id="mesh"><code>mesh</code></h3>
+<p>The data set is a single mesh. The mesh contains an array of triangles, each of which has three
+vertices and a normal vector.</p>
+<h4 id="raw-data-1">Raw data</h4>
+<p>For operations, time per iteration; for size, bytes. Lower is better.</p>
+<table><thead><tr><th> Format / Lib </th><th> Serialize </th><th> Access </th><th> Read </th><th> Update </th><th> Deserialize </th><th> Size </th><th> Size (zlib) </th></tr></thead><tbody>
+<tr><td> abomonation </td><td> 430.61 us </td><td> 2.4135 ns* </td><td> 177.87 us* </td><td> † </td><td> ‡ </td><td> 6000024 </td><td> 5380836 </td></tr>
+<tr><td> bincode </td><td> 7.0288 ms </td><td>  </td><td>  </td><td>  </td><td> 12.294 ms </td><td> 6000008 </td><td> 5380823 </td></tr>
+<tr><td> capnp </td><td> 15.854 ms </td><td> 247.35 ns </td><td> 8.9442 ms </td><td> § </td><td> ‡ </td><td> 16000056 </td><td> 6780527 </td></tr>
+<tr><td> cbor </td><td> 43.109 ms </td><td>  </td><td>  </td><td>  </td><td> 70.247 ms </td><td> 13122324 </td><td> 7527423 </td></tr>
+<tr><td> flatbuffers </td><td> 1.9518 ms </td><td> 2.9588 ns </td><td> 152.39 us </td><td> § </td><td> ‡ </td><td> 6000024 </td><td> 5380800 </td></tr>
+<tr><td> postcard </td><td> 6.6844 ms </td><td>  </td><td>  </td><td>  </td><td> 8.9408 ms </td><td> 6000003 </td><td> 5380817 </td></tr>
+<tr><td> prost </td><td> 34.037 ms </td><td>  </td><td>  </td><td>  </td><td> 20.232 ms </td><td> 8750000 </td><td> 6683814 </td></tr>
+<tr><td> rkyv </td><td> 1.1217 ms </td><td> 1.4006 ns </td><td> 172.20 us </td><td> 649.18 us </td><td> 1.9594 ms </td><td> 6000008 </td><td> 4263104 </td></tr>
+<tr><td> serde_json </td><td> 105.86 ms </td><td>  </td><td>  </td><td>  </td><td> 83.016 ms </td><td> 26192883 </td><td> 9612105 </td></tr>
+</tbody></table>
+<h4 id="comparison-1">Comparison</h4>
+<p>Relative to best. Higher is better.</p>
+<table><thead><tr><th> Format / Lib </th><th> Serialize </th><th> Access </th><th> Read </th><th> Update </th><th> Deserialize </th><th> Size </th><th> Size (zlib) </th></tr></thead><tbody>
+<tr><td> abomonation </td><td> 100.00% </td><td> 58.03%* </td><td> 85.67%* </td><td> † </td><td> ‡ </td><td> 100.00% </td><td> 79.23% </td></tr>
+<tr><td> bincode </td><td> 6.13% </td><td>  </td><td>  </td><td>  </td><td> 15.94% </td><td> 100.00% </td><td> 79.23% </td></tr>
+<tr><td> capnp </td><td> 2.72% </td><td> 0.57% </td><td> 1.70% </td><td> § </td><td> ‡ </td><td> 37.50% </td><td> 62.87% </td></tr>
+<tr><td> cbor </td><td> 1.00% </td><td>  </td><td>  </td><td>  </td><td> 2.79% </td><td> 45.72% </td><td> 56.63% </td></tr>
+<tr><td> flatbuffers </td><td> 22.06% </td><td> 47.34% </td><td> 100.00% </td><td> § </td><td> ‡ </td><td> 100.00% </td><td> 79.23% </td></tr>
+<tr><td> postcard </td><td> 6.44% </td><td>  </td><td>  </td><td>  </td><td> 21.92% </td><td> 100.00% </td><td> 79.23% </td></tr>
+<tr><td> prost </td><td> 1.27% </td><td>  </td><td>  </td><td>  </td><td> 9.68% </td><td> 68.57% </td><td> 63.78% </td></tr>
+<tr><td> rkyv </td><td> 38.39% </td><td> 100.00% </td><td> 88.50% </td><td> 100.00% </td><td> 100.00% </td><td> 100.00% </td><td> 100.00% </td></tr>
+<tr><td> serde_json </td><td> 0.41% </td><td>  </td><td>  </td><td>  </td><td> 2.36% </td><td> 22.91% </td><td> 44.35% </td></tr>
+</tbody></table>
+<h3 id="minecraft-savedata"><code>minecraft_savedata</code></h3>
+<p>The data set is composed of Minecraft player saves that contain highly-structured data.</p>
+<h4 id="raw-data-2">Raw data</h4>
+<p>For operations, time per iteration; for size, bytes. Lower is better.</p>
+<table><thead><tr><th> Format / Lib </th><th> Serialize </th><th> Access </th><th> Read </th><th> Update </th><th> Deserialize </th><th> Size </th><th> Size (zlib) </th></tr></thead><tbody>
+<tr><td> abomonation </td><td> 368.23 us </td><td> 40.823 us* </td><td> 41.413 us* </td><td> † </td><td> ‡ </td><td> 1290592 </td><td> 393696 </td></tr>
+<tr><td> bincode </td><td> 806.73 us </td><td>  </td><td>  </td><td>  </td><td> 3.4132 ms </td><td> 569975 </td><td> 240897 </td></tr>
+<tr><td> capnp </td><td> 863.41 us </td><td> 256.55 ns </td><td> 5.3431 us </td><td> § </td><td> ‡ </td><td> 835784 </td><td> 342099 </td></tr>
+<tr><td> cbor </td><td> 2.4356 ms </td><td>  </td><td>  </td><td>  </td><td> 8.8797 ms </td><td> 1109821 </td><td> 347562 </td></tr>
+<tr><td> flatbuffers </td><td> 38.683 ms </td><td> 2.9212 ns </td><td> 3.9676 us </td><td> § </td><td> ‡ </td><td> 849472 </td><td> 349208 </td></tr>
+<tr><td> postcard </td><td> 774.37 us </td><td>  </td><td>  </td><td>  </td><td> 3.7533 ms </td><td> 356311 </td><td> 213270 </td></tr>
+<tr><td> prost </td><td> 5.8678 ms </td><td>  </td><td>  </td><td>  </td><td> 5.4083 ms </td><td> 596811 </td><td> 306728 </td></tr>
+<tr><td> rkyv </td><td> 843.80 us </td><td> 1.3837 ns </td><td> 282.88 ns </td><td> 6.5422 us </td><td> 2.4810 ms </td><td> 725176 </td><td> 334238 </td></tr>
+<tr><td> serde_json </td><td> 4.3501 ms </td><td>  </td><td>  </td><td>  </td><td> 10.699 ms </td><td> 1623197 </td><td> 472162 </td></tr>
+</tbody></table>
+<h4 id="comparison-2">Comparison</h4>
+<p>Relative to best. Higher is better.</p>
+<table><thead><tr><th> Format / Lib </th><th> Serialize </th><th> Access </th><th> Read </th><th> Update </th><th> Deserialize </th><th> Size </th><th> Size (zlib) </th></tr></thead><tbody>
+<tr><td> abomonation </td><td> 100.00% </td><td> 0.00%* </td><td> 0.68%* </td><td> † </td><td> ‡ </td><td> 27.61% </td><td> 54.17% </td></tr>
+<tr><td> bincode </td><td> 45.64% </td><td>  </td><td>  </td><td>  </td><td> 72.69% </td><td> 62.51% </td><td> 88.53% </td></tr>
+<tr><td> capnp </td><td> 42.65% </td><td> 0.54% </td><td> 5.29% </td><td> § </td><td> ‡ </td><td> 42.63% </td><td> 62.34% </td></tr>
+<tr><td> cbor </td><td> 15.12% </td><td>  </td><td>  </td><td>  </td><td> 27.94% </td><td> 32.11% </td><td> 61.36% </td></tr>
+<tr><td> flatbuffers </td><td> 0.95% </td><td> 47.37% </td><td> 7.13% </td><td> § </td><td> ‡ </td><td> 41.94% </td><td> 61.07% </td></tr>
+<tr><td> postcard </td><td> 47.55% </td><td>  </td><td>  </td><td>  </td><td> 66.10% </td><td> 100.00% </td><td> 100.00% </td></tr>
+<tr><td> prost </td><td> 6.28% </td><td>  </td><td>  </td><td>  </td><td> 45.87% </td><td> 59.70% </td><td> 69.53% </td></tr>
+<tr><td> rkyv </td><td> 43.64% </td><td> 100.00% </td><td> 100.00% </td><td> 100.00% </td><td> 100.00% </td><td> 49.13% </td><td> 63.81% </td></tr>
+<tr><td> serde_json </td><td> 8.46% </td><td>  </td><td>  </td><td>  </td><td> 23.19% </td><td> 21.95% </td><td> 45.17% </td></tr>
+</tbody></table>
+<h3 id="footnotes">Footnotes:</h3>
+<p>* <em>abomonation requires a mutable backing to access data</em></p>
+<p>† <em>abomonation does not support buffer mutation</em></p>
+<p>‡ <em>do not provide deserialization capabilities, but the user can write their own</em></p>
+<p>§ <em>supports buffer mutation, but not in the rust implementation</em></p>
+<h2 id="analysis">Analysis</h2>
 <h3 id="cbor-serde-json">CBOR / serde_json</h3>
 <p>Unsurprisingly, these two had very similar performance because they're almost the same format. CBOR did a bit better than serde_json in every benchmark, but these two consistently trailed behind all the other frameworks (in some cases, very considerably behind).</p>
 <h3 id="prost">Prost</h3>
