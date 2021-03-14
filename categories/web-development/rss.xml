@@ -26,21 +26,21 @@
 &lt;h2 id=&quot;zola-init&quot;&gt;Zola init&lt;&#x2F;h2&gt;
 &lt;p&gt;Making a new site project is incredibly easy - just run:&lt;&#x2F;p&gt;
 &lt;pre style=&quot;background-color:#ffffff;&quot;&gt;
-&lt;span style=&quot;color:#323232;&quot;&gt;$ zola init my_site
+&lt;span style=&quot;color:#323232;&quot;&gt;$ zola init my_site&lt;&#x2F;span&gt;&lt;span style=&quot;color:#323232;&quot;&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;and it will create a new directory named &lt;code&gt;my_site&lt;&#x2F;code&gt; with the right directory structure set up and ready to go. Just change into the new directory and keep going from there:&lt;&#x2F;p&gt;
 &lt;pre style=&quot;background-color:#ffffff;&quot;&gt;
-&lt;span style=&quot;color:#323232;&quot;&gt;$ cd my_site
+&lt;span style=&quot;color:#323232;&quot;&gt;$ cd my_site&lt;&#x2F;span&gt;&lt;span style=&quot;color:#323232;&quot;&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;pre&gt;&lt;h2 id=&quot;zola-build&quot;&gt;Zola build&lt;&#x2F;h2&gt;
 &lt;p&gt;Building the site is as simple as running:&lt;&#x2F;p&gt;
 &lt;pre style=&quot;background-color:#ffffff;&quot;&gt;
-&lt;span style=&quot;color:#323232;&quot;&gt;$ zola build
+&lt;span style=&quot;color:#323232;&quot;&gt;$ zola build&lt;&#x2F;span&gt;&lt;span style=&quot;color:#323232;&quot;&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;and it will build the entire site into a new directory named &lt;code&gt;public&lt;&#x2F;code&gt;. This is how the final build of the site is made; copying the &lt;code&gt;public&lt;&#x2F;code&gt; directory to a simple file server is all you need to do to deploy.&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;zola-serve&quot;&gt;Zola serve&lt;&#x2F;h2&gt;
 &lt;p&gt;For development, Zola comes with a development server built-in. Run:&lt;&#x2F;p&gt;
 &lt;pre style=&quot;background-color:#ffffff;&quot;&gt;
-&lt;span style=&quot;color:#323232;&quot;&gt;$ zola serve
+&lt;span style=&quot;color:#323232;&quot;&gt;$ zola serve&lt;&#x2F;span&gt;&lt;span style=&quot;color:#323232;&quot;&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;and it will continuously:&lt;&#x2F;p&gt;
 &lt;ul&gt;
