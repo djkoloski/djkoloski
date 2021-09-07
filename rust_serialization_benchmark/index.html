@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <head>
     <title>Rust serialization benchmark</title>
+    <meta charset="utf-8">
     <script>
         function parseUnit (unit) {
             switch (unit) {
@@ -113,8 +114,8 @@
         function processData () {
             let input = document.getElementById('logs-input').value
 
-            let bench_times_re = /^([a-z_]+)\/([a-z_]+)\/([a-z]+)(?: \(([a-z \-+]*)\))?\W+time:   \[\d+\.\d+ [unm]s (\d+\.\d+ [unm]s).*$/gm
-            let bench_sizes_re = /^([a-z_]+)\/([a-z_]+)\/(size|zlib|zstd) (\d+)$/gm
+            let bench_times_re = /^([a-z_\-]+)\/([a-z_\-]+)\/([a-z\-]+)(?: \(([a-z \-+]*)\))?\W+time:   \[\d+\.\d+ [unm]s (\d+\.\d+ [unm]s).*$/gm
+            let bench_sizes_re = /^([a-z_\-]+)\/([a-z_\-]+)\/(size|zlib|zstd) (\d+)$/gm
 
             let results = {}
             for (let match of input.matchAll(bench_times_re)) {
