@@ -165,7 +165,7 @@
                 tables += `\
 ## \`${dataset}\`
 
-${DATASET_DESCRIPTIONS[dataset] | 'Missing dataset description'}}
+${DATASET_DESCRIPTIONS[dataset] || 'Missing dataset description'}
 
 ### Raw Data
 
