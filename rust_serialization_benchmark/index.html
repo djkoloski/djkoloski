@@ -104,11 +104,17 @@
             return { header, data: dataTable, comparison: comparisonTable }
         }
 
+        const DATASET_DESCRIPTIONS = {
+            log: 'This data set is composed of HTTP request logs that are small and contain many strings.',
+            mesh: 'This data set is a single mesh. The mesh contains an array of triangles, each of which has three vertices and a normal vector.',
+            minecraft_savedata: 'This data set is composed of Minecraft player saves that contain highly structured data.'
+        }
+
         function processData () {
             let input = document.getElementById('logs-input').value
 
             let bench_times_re = /^([a-z_]+)\/([a-z_]+)\/([a-z]+)(?: \(([a-z \-+]*)\))?\W+time:   \[\d+\.\d+ [unm]s (\d+\.\d+ [unm]s).*$/gm
-            let bench_sizes_re = /^([a-z_]+)\/([a-z_]+)\/(size|zlib) (\d+)$/gm
+            let bench_sizes_re = /^([a-z_]+)\/([a-z_]+)\/(size|zlib|zstd) (\d+)$/gm
 
             let results = {}
             for (let match of input.matchAll(bench_times_re)) {
@@ -153,11 +159,13 @@
             for (let dataset in results) {
                 let frameworks = results[dataset]
 
-                let serdeTables = buildTables(results, dataset, ['serialize', 'deserialize', 'size', 'zlib'], '†')
+                let serdeTables = buildTables(results, dataset, ['serialize', 'deserialize', 'size', 'zlib', 'zstd'], '†')
                 let zcdTables = buildTables(results, dataset, ['access', 'read', 'update'], '‡')
 
                 tables += `\
 ## \`${dataset}\`
+
+${DATASET_DESCRIPTIONS[dataset] | 'Missing dataset description'}}
 
 ### Raw Data
 
