@@ -58,7 +58,7 @@
 <div class="section title">
     rkyv architecture and internals
     <div class="subtitle">
-        Nov 18, 2020 &ndash; 8 min read
+        Nov 18, 2020 &ndash; 9 min read
     </div>
 </div>
 <div class="section taxonomies">
@@ -81,98 +81,92 @@
     
 </div>
 <div class="section content">
-    <h1 id="what-is-rkyv">What is rkyv?</h1>
+    <h2 id="what-is-rkyv">What is rkyv?</h2>
 <p><a href="https://github.com/djkoloski/rkyv">rkyv</a> is a zero-copy deserialization framework written in rust. It's deeply integrated into the language and has a lot of neat features with the new v0.2.0 release.</p>
 <p>I originally released and <a href="https://www.reddit.com/r/rust/comments/jss6h4/rkyv_a_zerocopy_deserialization_framework_for_rust/">posted about rkyv</a> in the rust subreddit and got a lot of great feedback. Along with a couple highly desired features, many people asked for a blog post about the design and internals of rkyv. This blog post should serve as a jumping-off point to understand rkyv and zero-copy deserialization in general.</p>
-<h1 id="zero-copy-deserialization">Zero-copy deserialization</h1>
+<h2 id="zero-copy-deserialization">Zero-copy deserialization</h2>
 <p>Zero-copy deserialization is a technique used to reduce memory consumption and eliminate work when reading from disk or another external source. This isn't really a precise term, since <a href="https://github.com/serde-rs/serde/releases/tag/v1.0.0">serde has support</a> for zero-copy deserialization, but a very different kind than rkyv. Zero-copy deserialization is more of an umbrella term for techniques that use some of the data from the source and therefore don't copy it when deserializing, hence the name.</p>
 <p>To be more precise, rkyv implements total zero-copy deserialization. All of the output of deserialization is borrowed from the input and no work is required to transform it from the external (on-disk) representation to the in-memory one. In practice, this means that you can do things like <code>mmap</code> files into memory and use them without deserialization. This is a technique that is sometimes used in the game industry, where performance requirements are very strict. Total zero-copy deserialization can drastically reduce load times which translates directly into a better user experience.</p>
-<h1 id="rkyv-architecture">rkyv architecture</h1>
+<h2 id="rkyv-architecture">rkyv architecture</h2>
 <p>This is where we can start getting into the meat and potatoes of rkyv. The first thing to understand about rkyv is relative pointers.</p>
-<h2 id="relative-pointers">Relative pointers</h2>
+<h3 id="relative-pointers">Relative pointers</h3>
 <p>The first hurdle for total zero-copy deserialization is that regular pointers are not serializable. A pointer is just some address in memory, and that means that it might not even be a valid location for your program on a subsequent run. Even if we could get all of our data back into memory, we would still have to fix up the pointers so they point to the right locations.</p>
 <p>Relative pointers are a technique where instead of writing an absolute pointer to disk (which wouldn't come back pointing to the right place), we instead write an <em>offset</em> to some memory. That offset essentially points to &quot;the address of this plus some bytes&quot;. A simple example of a relative pointer to a string is these bytes:</p>
-<pre style="background-color:#ffffff;">
-<span style="color:#323232;">0x0000    04 00 00 00 68 65 6c 6c</span><span style="color:#323232;">
-</span><span style="color:#323232;">0x0008    6f 20 77 6f 72 6c 64 21</span><span style="color:#323232;">
-</span><span style="color:#323232;">...</span><span style="color:#323232;">
-</span></pre>
+<pre data-lang="txt" class="language-txt "><code class="language-txt" data-lang="txt">0x0000    04 00 00 00 68 65 6c 6c
+0x0008    6f 20 77 6f 72 6c 64 21
+...
+</code></pre>
 <p>We'll assume that our relative pointers use 32-bit offsets. The first four bytes of the archive are the relative pointer, which encodes the offset to the string. The first four bytes are <code>04 00 00 00</code>, which is four on little endian machines. This means that the data is located four bytes forward from the address of the offset. Since the offset is located at <code>0x0000</code>, we should look for the data at <code>0x0000 + 4 = 0x0004</code>!</p>
 <p>Taking a peek at that location reveals some bytes that look like ASCII, but we don't know how many yet! Along with the data for the bytes of a string, we also need to encode the length of the string. Let's update our example:</p>
-<pre style="background-color:#ffffff;">
-<span style="color:#323232;">0x0000    08 00 00 00 0c 00 00 00</span><span style="color:#323232;">
-</span><span style="color:#323232;">0x0008    68 65 6c 6c 6f 20 77 6f</span><span style="color:#323232;">
-</span><span style="color:#323232;">0x0010    72 6c 64 21 cd cd cd cd</span><span style="color:#323232;">
-</span><span style="color:#323232;">...</span><span style="color:#323232;">
-</span></pre>
+<pre data-lang="txt" class="language-txt "><code class="language-txt" data-lang="txt">0x0000    08 00 00 00 0c 00 00 00
+0x0008    68 65 6c 6c 6f 20 77 6f
+0x0010    72 6c 64 21 cd cd cd cd
+...
+</code></pre>
 <p>Now there's two four-byte values: first the relative pointer and second the string length. The relative pointer now has bytes <code>08 00 00 00</code>, four more than before since we now need to skip over the string length bytes. So the data is now located at <code>0x0000 + 8 = 0x0008</code>. The length bytes tell us there should be 12 bytes at that location. Reading off the first 12 bytes from there gives us <code>&quot;hello world!&quot;</code>! Success!</p>
 <p>In order to map those bytes into a structure in memory, we might put our <code>ArchivedString</code> together like this:</p>
-<pre style="background-color:#ffffff;">
-<span style="font-weight:bold;color:#a71d5d;">pub struct </span><span style="color:#323232;">ArchivedString {</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="color:#323232;">ptr: </span><span style="font-weight:bold;color:#a71d5d;">i32</span><span style="color:#323232;">,</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="color:#323232;">len: </span><span style="font-weight:bold;color:#a71d5d;">u32</span><span style="color:#323232;">,</span><span style="color:#323232;">
-</span><span style="color:#323232;">}</span><span style="color:#323232;">
-</span><span style="color:#323232;">
-</span><span style="font-weight:bold;color:#a71d5d;">impl </span><span style="color:#323232;">ArchivedString {</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="font-weight:bold;color:#a71d5d;">pub fn </span><span style="font-weight:bold;color:#795da3;">as_bytes</span><span style="color:#323232;">(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span style="color:#323232;">self) -&gt; </span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span style="color:#323232;">[</span><span style="font-weight:bold;color:#a71d5d;">u8</span><span style="color:#323232;">] {</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="font-weight:bold;color:#a71d5d;">unsafe </span><span style="color:#323232;">{</span><span style="color:#323232;">
-</span><span style="color:#323232;">            </span><span style="font-weight:bold;color:#a71d5d;">let</span><span style="color:#323232;"> ptr </span><span style="font-weight:bold;color:#a71d5d;">= </span><span style="color:#323232;">(self </span><span style="font-weight:bold;color:#a71d5d;">as *const Self</span><span style="color:#323232;">)</span><span style="color:#323232;">
-</span><span style="color:#323232;">                </span><span style="color:#323232;">.cast::&lt;</span><span style="font-weight:bold;color:#a71d5d;">u8</span><span style="color:#323232;">&gt;()</span><span style="color:#323232;">
-</span><span style="color:#323232;">                </span><span style="color:#323232;">.</span><span style="color:#62a35c;">add</span><span style="color:#323232;">(self.ptr);</span><span style="color:#323232;">
-</span><span style="color:#323232;">            </span><span style="color:#323232;">slice::from_raw_parts(ptr, self.len </span><span style="font-weight:bold;color:#a71d5d;">as usize</span><span style="color:#323232;">)</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="color:#323232;">}</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="color:#323232;">}</span><span style="color:#323232;">
-</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="font-weight:bold;color:#a71d5d;">pub fn </span><span style="font-weight:bold;color:#795da3;">as_str</span><span style="color:#323232;">(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span style="color:#323232;">self) -&gt; </span><span style="font-weight:bold;color:#a71d5d;">&amp;str </span><span style="color:#323232;">{</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="font-weight:bold;color:#a71d5d;">unsafe </span><span style="color:#323232;">{</span><span style="color:#323232;">
-</span><span style="color:#323232;">            </span><span style="font-weight:bold;color:#a71d5d;">str</span><span style="color:#323232;">::from_utf8_unchecked(self.</span><span style="color:#62a35c;">as_bytes</span><span style="color:#323232;">())</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="color:#323232;">}</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="color:#323232;">}</span><span style="color:#323232;">
-</span><span style="color:#323232;">}</span><span style="color:#323232;">
-</span></pre>
+<pre data-lang="rust" class="language-rust "><code class="language-rust" data-lang="rust">pub struct ArchivedString {
+    ptr: i32,
+    len: u32,
+}
+
+impl ArchivedString {
+    pub fn as_bytes(&amp;self) -&gt; &amp;[u8] {
+        unsafe {
+            let ptr = (self as *const Self)
+                .cast::&lt;u8&gt;()
+                .add(self.ptr);
+            slice::from_raw_parts(ptr, self.len as usize)
+        }
+    }
+
+    pub fn as_str(&amp;self) -&gt; &amp;str {
+        unsafe {
+            str::from_utf8_unchecked(self.as_bytes())
+        }
+    }
+}
+</code></pre>
 <p>The reality is just a little bit more complicated than this, but this is pretty close to the same code you can find in rkyv right now. The general idea behind rkyv is to take build these structures for all of our types so that we can serialize them out and get them back later without having to deserialize.</p>
-<h2 id="archiving-dependencies">Archiving dependencies</h2>
+<h3 id="archiving-dependencies">Archiving dependencies</h3>
 <p>The next problem we have to tackle is actually creating those relative pointers. In order to make one, we need to know the locations of <em>both</em> the target memory and the relative pointer itself. This is a problem; how can we know where the relative pointer should point if we haven't written it yet?</p>
 <p>Imagine that we had some struct that had two strings in it:</p>
-<pre style="background-color:#ffffff;">
-<span style="font-weight:bold;color:#a71d5d;">struct </span><span style="color:#323232;">Pair {</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="color:#323232;">key: String,</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="color:#323232;">value: String,</span><span style="color:#323232;">
-</span><span style="color:#323232;">}</span><span style="color:#323232;">
-</span></pre>
+<pre data-lang="rust" class="language-rust "><code class="language-rust" data-lang="rust">struct Pair {
+    key: String,
+    value: String,
+}
+</code></pre>
 <p>It's archived version would look like this:</p>
-<pre style="background-color:#ffffff;">
-<span style="font-weight:bold;color:#a71d5d;">struct </span><span style="color:#323232;">ArchivedPair {</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="color:#323232;">key: ArchivedString,</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="color:#323232;">value: ArchivedString,</span><span style="color:#323232;">
-</span><span style="color:#323232;">}</span><span style="color:#323232;">
-</span></pre>
+<pre data-lang="rust" class="language-rust "><code class="language-rust" data-lang="rust">struct ArchivedPair {
+    key: ArchivedString,
+    value: ArchivedString,
+}
+</code></pre>
 <p>In order to make our archived pair, we have to write the bytes of the key and value first, then construct the relative pointers for the strings. Let's brainstorm roughly what that would look like:</p>
-<pre style="background-color:#ffffff;">
-<span style="font-weight:bold;color:#a71d5d;">impl </span><span style="color:#323232;">Pair {</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">archive</span><span style="color:#323232;">(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span style="color:#323232;">self, writer: </span><span style="font-weight:bold;color:#a71d5d;">&amp;mut</span><span style="color:#323232;"> Write) -&gt; ArchivedPair {</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="font-weight:bold;color:#a71d5d;">let</span><span style="color:#323232;"> key_pos </span><span style="font-weight:bold;color:#a71d5d;">=</span><span style="color:#323232;"> writer.</span><span style="color:#62a35c;">write</span><span style="color:#323232;">(self.key.</span><span style="color:#62a35c;">as_bytes</span><span style="color:#323232;">());</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="font-weight:bold;color:#a71d5d;">let</span><span style="color:#323232;"> value_pos </span><span style="font-weight:bold;color:#a71d5d;">=</span><span style="color:#323232;"> writer.</span><span style="color:#62a35c;">write</span><span style="color:#323232;">(self.value.</span><span style="color:#62a35c;">as_bytes</span><span style="color:#323232;">());</span><span style="color:#323232;">
-</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="font-weight:bold;color:#a71d5d;">let</span><span style="color:#323232;"> base </span><span style="font-weight:bold;color:#a71d5d;">=</span><span style="color:#323232;"> writer.</span><span style="color:#62a35c;">pos</span><span style="color:#323232;">();</span><span style="color:#323232;">
-</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="font-weight:bold;color:#a71d5d;">let</span><span style="color:#323232;"> key_off </span><span style="font-weight:bold;color:#a71d5d;">= </span><span style="color:#323232;">offset_of!(ArchivedPair, key);</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="font-weight:bold;color:#a71d5d;">let</span><span style="color:#323232;"> value_off </span><span style="font-weight:bold;color:#a71d5d;">= </span><span style="color:#323232;">offset_of!(ArchivedPair, value);</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="color:#323232;">ArchivedPair {</span><span style="color:#323232;">
-</span><span style="color:#323232;">            </span><span style="color:#323232;">key: ArchivedString::new(</span><span style="color:#323232;">
-</span><span style="color:#323232;">                </span><span style="color:#323232;">base </span><span style="font-weight:bold;color:#a71d5d;">+</span><span style="color:#323232;"> key_off,</span><span style="color:#323232;">
-</span><span style="color:#323232;">                </span><span style="color:#323232;">key_pos,</span><span style="color:#323232;">
-</span><span style="color:#323232;">                </span><span style="color:#323232;">self.key.</span><span style="color:#62a35c;">len</span><span style="color:#323232;">()</span><span style="color:#323232;">
-</span><span style="color:#323232;">            </span><span style="color:#323232;">),</span><span style="color:#323232;">
-</span><span style="color:#323232;">            </span><span style="color:#323232;">value: ArchivedString::new(</span><span style="color:#323232;">
-</span><span style="color:#323232;">                </span><span style="color:#323232;">base </span><span style="font-weight:bold;color:#a71d5d;">+</span><span style="color:#323232;"> value_off,</span><span style="color:#323232;">
-</span><span style="color:#323232;">                </span><span style="color:#323232;">value_pos,</span><span style="color:#323232;">
-</span><span style="color:#323232;">                </span><span style="color:#323232;">self.value.</span><span style="color:#62a35c;">len</span><span style="color:#323232;">()</span><span style="color:#323232;">
-</span><span style="color:#323232;">            </span><span style="color:#323232;">),</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="color:#323232;">}</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="color:#323232;">}</span><span style="color:#323232;">
-</span><span style="color:#323232;">}</span><span style="color:#323232;">
-</span></pre>
+<pre data-lang="rust" class="language-rust "><code class="language-rust" data-lang="rust">impl Pair {
+    fn archive(&amp;self, writer: &amp;mut Write) -&gt; ArchivedPair {
+        let key_pos = writer.write(self.key.as_bytes());
+        let value_pos = writer.write(self.value.as_bytes());
+
+        let base = writer.pos();
+
+        let key_off = offset_of!(ArchivedPair, key);
+        let value_off = offset_of!(ArchivedPair, value);
+        ArchivedPair {
+            key: ArchivedString::new(
+                base + key_off,
+                key_pos,
+                self.key.len()
+            ),
+            value: ArchivedString::new(
+                base + value_off,
+                value_pos,
+                self.value.len()
+            ),
+        }
+    }
+}
+</code></pre>
 <p>Right off the bat, we've introduced some new concepts:</p>
 <ul>
 <li><code>offset_of!</code> is a macro that tells us the offset of a field in our struct. We need to use this to make sure that we're using the positions of the strings <em>within</em> our struct instead of the position of the start of the struct.</li>
@@ -187,43 +181,42 @@
 <li>Get the current position and figure out your relative pointers using it</li>
 </ol>
 <p>This translates to the two core traits in rkyv: <code>Archive</code> and <code>Resolve</code>. The first step is handled by <code>Archive</code> and the second is handled by <code>Resolve</code>. So what do these traits do?</p>
-<h2 id="archive-and-resolve"><code>Archive</code> and <code>Resolve</code></h2>
+<h3 id="archive-and-resolve"><code>Archive</code> and <code>Resolve</code></h3>
 <p><code>Archive</code> writes out the dependencies of the type and returns a <em>resolver</em>. A resolver is a struct that contains the extra information we need to make an archived version of our type from the writer position and original value. A string's implementation might look like this:</p>
-<pre style="background-color:#ffffff;">
-<span style="font-weight:bold;color:#a71d5d;">impl </span><span style="color:#323232;">Archive </span><span style="font-weight:bold;color:#a71d5d;">for </span><span style="color:#323232;">String {</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span style="color:#323232;">Resolver </span><span style="font-weight:bold;color:#a71d5d;">= usize</span><span style="color:#323232;">;</span><span style="color:#323232;">
-</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">archive</span><span style="color:#323232;">(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span style="color:#323232;">self, writer: </span><span style="font-weight:bold;color:#a71d5d;">&amp;mut</span><span style="color:#323232;"> Writer) -&gt; </span><span style="font-weight:bold;color:#a71d5d;">Self::</span><span style="color:#323232;">Resolver {</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="font-weight:bold;color:#a71d5d;">let</span><span style="color:#323232;"> pos </span><span style="font-weight:bold;color:#a71d5d;">=</span><span style="color:#323232;"> writer.</span><span style="color:#62a35c;">pos</span><span style="color:#323232;">();</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="color:#323232;">writer.</span><span style="color:#62a35c;">write</span><span style="color:#323232;">(self.</span><span style="color:#62a35c;">as_bytes</span><span style="color:#323232;">());</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="color:#323232;">pos</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="color:#323232;">}</span><span style="color:#323232;">
-</span><span style="color:#323232;">}</span><span style="color:#323232;">
-</span><span style="color:#323232;">
-</span><span style="font-weight:bold;color:#a71d5d;">impl </span><span style="color:#323232;">Resolve </span><span style="font-weight:bold;color:#a71d5d;">for </span><span style="color:#323232;">String {</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span style="color:#323232;">Archived </span><span style="font-weight:bold;color:#a71d5d;">=</span><span style="color:#323232;"> ArchivedString;</span><span style="color:#323232;">
-</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">resolve</span><span style="color:#323232;">(</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span style="color:#323232;">self,</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="color:#323232;">pos: </span><span style="font-weight:bold;color:#a71d5d;">usize</span><span style="color:#323232;">,</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="color:#323232;">resolver: </span><span style="font-weight:bold;color:#a71d5d;">usize</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="color:#323232;">) -&gt; </span><span style="font-weight:bold;color:#a71d5d;">Self::</span><span style="color:#323232;">Archived {</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="color:#323232;">ArchivedString {</span><span style="color:#323232;">
-</span><span style="color:#323232;">            </span><span style="color:#323232;">ptr: RelPtr::from_to(pos, resolver),</span><span style="color:#323232;">
-</span><span style="color:#323232;">            </span><span style="color:#323232;">len: self.</span><span style="color:#62a35c;">len</span><span style="color:#323232;">(),</span><span style="color:#323232;">
-</span><span style="color:#323232;">        </span><span style="color:#323232;">}</span><span style="color:#323232;">
-</span><span style="color:#323232;">    </span><span style="color:#323232;">}</span><span style="color:#323232;">
-</span><span style="color:#323232;">}</span><span style="color:#323232;">
-</span></pre>
+<pre data-lang="rust" class="language-rust "><code class="language-rust" data-lang="rust">impl Archive for String {
+    type Resolver = usize;
+
+    fn archive(&amp;self, writer: &amp;mut Writer) -&gt; Self::Resolver {
+        let pos = writer.pos();
+        writer.write(self.as_bytes());
+        pos
+    }
+}
+
+impl Resolve for String {
+    type Archived = ArchivedString;
+
+    fn resolve(
+        &amp;self,
+        pos: usize,
+        resolver: usize
+    ) -&gt; Self::Archived {
+        ArchivedString {
+            ptr: RelPtr::from_to(pos, resolver),
+            len: self.len(),
+        }
+    }
+}
+</code></pre>
 <p>In the archive step, we write out the bytes for the string and return the position those bytes were written to. In the resolve step, we take that position and make a new relative pointer that points to them. Now if we wanted to archive an array of strings, we can archive them all and <em>then</em> resolve them all.</p>
 <p>Once again, this is very simplified for the sake of example. But the real implementations of these are not too different!</p>
 <p>rkyv provides archived versions of core and standard library types for you out of the box, but you still need to provide them for your own types. That's why rkyv also provides a handy derive macro that does all the heavy lifting for you! Just add <code>#[derive(Archive)]</code> to your type and rkyv will generate an archived type, resolver, and implementations of <code>Archive</code> and <code>Resolve</code> automagically.</p>
-<h1 id="extending-rkyv">Extending rkyv</h1>
+<h2 id="extending-rkyv">Extending rkyv</h2>
 <p>Being able to archive types made out of library types is enough functionality for some, but there are a few holes in our system that we need to plug up.</p>
 <p>The first trait is <code>ArchiveRef</code>, which is like <code>Archive</code> for unsized types. Instead of resolving to an archived version of themselves, they instead resolve to a something that dereferences to the archived type. A good way to think about this is that <code>ArchiveRef</code> is <code>Archive</code> for unsized types which use wide pointers with extra associated data.</p>
 <p>This allows us to implement <code>Archive</code> for types like <code>Box</code>, which needs to be able to archive unsized types like slices and str's. We can also archive our own unsized types with things like trailing slices, even though they're pretty uncommon in practice.</p>
 <p>The last hole we need to plug is trait objects. Unfortunately this one is pretty complicated, so if you're really interested in how trait object archiving works, I would recommend you look at some of the source for <code>rkyv_dyn</code>, the crate that adds trait object serialization to rkyv.</p>
-<h1 id="conclusion">Conclusion</h1>
+<h2 id="conclusion">Conclusion</h2>
 <p>Even though this overview is pretty basic, it gives a relatively complete overview of how rkyv works internally. The core ideas are pretty simple, the complicated part is really just writing the core and std implementations.</p>
 <p>If you weren't interested in rkyv before and are now, try it out and see how you like it! I just shipped a shiny new version with some great new features including validation and mutable archives. You can find the source <a href="https://github.com/djkoloski/rkyv">on github</a> for more information.</p>
 <p>Thanks for reading!</p>
