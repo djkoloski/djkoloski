@@ -402,8 +402,12 @@ class Puzzle extends CustomElement {
       this.refs.board.appendChild(actor)
     }
 
-    this.refs.solver.style.visibility = (this.props.solver ? 'visible' : 'collapse')
-    this.refs.import.style.visibility = (this.props.import ? 'visible' : 'collapse')
+    if (!this.props.solver) {
+      this.refs.solver.classList.add('hidden')
+    }
+    if (!this.props.import) {
+      this.refs.import.classList.add('hidden')
+    }
 
     this.refs.importInput.value = JSON.stringify(this.props.data)
   }
@@ -693,6 +697,7 @@ window.customElements.define('anima-puzzle', Puzzle)
 
 </script>
 <template id="anima-puzzle-template">
+    <div class="spacer"></div>
     <div class="board-container">
         <h3 data-ref="name"></h3>
         <div data-ref="board" tabindex="0"></div>
@@ -723,21 +728,25 @@ window.customElements.define('anima-puzzle', Puzzle)
             <button data-ref="importButton">Import</button>
         </div>
     </div>
+    <div class="spacer"></div>
     <style>
         :host {
             display: flex;
             align-items: stretch;
-            justify-content: center;
-            margin: 0 auto;
-            margin-top: 0.5rem;
-            margin-bottom: 0.5rem;
+            margin: 0.5rem auto;
+            overflow-x: auto;
         }
         :host > * {
             margin-right: 0.5rem;
             margin-left: 0.5rem;
         }
+        .spacer {
+            margin: 0;
+            flex-grow: 1;
+        }
         .board-container {
             text-align: center;
+            flex-shrink: 0;
         }
         [data-ref="focuser"] {
             position: relative;
@@ -776,7 +785,6 @@ window.customElements.define('anima-puzzle', Puzzle)
             position: relative;
             border-radius: 0.75rem;
             border: 0.5rem solid transparent;
-            overflow: visible;
             cursor: pointer;
         }
         :host(.active) [data-ref="board"] {
@@ -859,6 +867,9 @@ window.customElements.define('anima-puzzle', Puzzle)
             display: flex;
             flex-direction: column;
         }
+        [data-ref="import"].hidden {
+            display: none;
+        }
         .import-input {
             flex-grow: 1;
             display: flex;
@@ -893,6 +904,9 @@ window.customElements.define('anima-puzzle', Puzzle)
             text-align: center;
             display: flex;
             flex-direction: column;
+        }
+        [data-ref="solver"].hidden {
+            display: none;
         }
         [data-ref="solution"] {
             min-width: 200px;
@@ -930,18 +944,25 @@ window.customElements.define('anima-puzzle', Puzzle)
         .color::after {
             content: " ";
             position: absolute;
-            width: 40%;
-            height: 40%;
+            width: 100%;
+            height: 100%;
             left: 50%;
             top: 50%;
-            transform: translate(-50%, -50%) rotate(45deg);
-            border: 100px solid;
+            transform: translate(-50%, -50%);
         }
         :host(.red) .color::after {
-            border-color: #ff0046;
+            background-image:
+                linear-gradient(135deg, #ff0046 30%, transparent 31%),
+                linear-gradient(225deg, #ff0046 30%, transparent 31%),
+                linear-gradient(45deg, #ff0046 30%, transparent 31%),
+                linear-gradient(315deg, #ff0046 30%, transparent 31%);
         }
         :host(.blue) .color::after {
-            border-color: #0989B2;
+            background-image:
+                linear-gradient(135deg, #0989B2 30%, transparent 31%),
+                linear-gradient(225deg, #0989B2 30%, transparent 31%),
+                linear-gradient(45deg, #0989B2 30%, transparent 31%),
+                linear-gradient(315deg, #0989B2 30%, transparent 31%);
         }
     </style>
     <div class="color"></div>
