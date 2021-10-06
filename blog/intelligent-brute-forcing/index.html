@@ -58,7 +58,7 @@
 <div class="section title">
     Intelligent brute forcing
     <div class="subtitle">
-        Apr 10, 2021 &ndash; 4 min read
+        Apr 10, 2021 &ndash; 5 min read
     </div>
 </div>
 <div class="section taxonomies">
@@ -80,16 +80,193 @@
 </div>
 <div class="section content">
     <p>Blog post goes here!</p>
-<h2 id="all-puzzles">All puzzles</h2>
+<p>Controls:</p>
+<ul>
+<li>WASD/Arrow keys: Move</li>
+<li>Space: Undo</li>
+<li>Shift + Space: Reset</li>
+<li>Escape: Unfocus (or just click away)</li>
+</ul>
 <script>
-    window.addEventListener('load', (event) => {
+    let wasm_bindgen;
+(function() {
+    const __exports = {};
+    let wasm;
+
+    let WASM_VECTOR_LEN = 0;
+
+    let cachegetUint8Memory0 = null;
+    function getUint8Memory0() {
+        if (cachegetUint8Memory0 === null || cachegetUint8Memory0.buffer !== wasm.memory.buffer) {
+            cachegetUint8Memory0 = new Uint8Array(wasm.memory.buffer);
+        }
+        return cachegetUint8Memory0;
+    }
+
+    let cachedTextEncoder = new TextEncoder('utf-8');
+
+    const encodeString = (typeof cachedTextEncoder.encodeInto === 'function'
+        ? function (arg, view) {
+        return cachedTextEncoder.encodeInto(arg, view);
+    }
+        : function (arg, view) {
+        const buf = cachedTextEncoder.encode(arg);
+        view.set(buf);
+        return {
+            read: arg.length,
+            written: buf.length
+        };
+    });
+
+    function passStringToWasm0(arg, malloc, realloc) {
+
+        if (realloc === undefined) {
+            const buf = cachedTextEncoder.encode(arg);
+            const ptr = malloc(buf.length);
+            getUint8Memory0().subarray(ptr, ptr + buf.length).set(buf);
+            WASM_VECTOR_LEN = buf.length;
+            return ptr;
+        }
+
+        let len = arg.length;
+        let ptr = malloc(len);
+
+        const mem = getUint8Memory0();
+
+        let offset = 0;
+
+        for (; offset < len; offset++) {
+            const code = arg.charCodeAt(offset);
+            if (code > 0x7F) break;
+            mem[ptr + offset] = code;
+        }
+
+        if (offset !== len) {
+            if (offset !== 0) {
+                arg = arg.slice(offset);
+            }
+            ptr = realloc(ptr, len, len = offset + arg.length * 3);
+            const view = getUint8Memory0().subarray(ptr + offset, ptr + len);
+            const ret = encodeString(arg, view);
+
+            offset += ret.written;
+        }
+
+        WASM_VECTOR_LEN = offset;
+        return ptr;
+    }
+
+    let cachegetInt32Memory0 = null;
+    function getInt32Memory0() {
+        if (cachegetInt32Memory0 === null || cachegetInt32Memory0.buffer !== wasm.memory.buffer) {
+            cachegetInt32Memory0 = new Int32Array(wasm.memory.buffer);
+        }
+        return cachegetInt32Memory0;
+    }
+
+    function getArrayI32FromWasm0(ptr, len) {
+        return getInt32Memory0().subarray(ptr / 4, ptr / 4 + len);
+    }
+    /**
+    * @param {string} puzzle
+    * @returns {Int32Array | undefined}
+    */
+    __exports.solve = function(puzzle) {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            var ptr0 = passStringToWasm0(puzzle, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+            var len0 = WASM_VECTOR_LEN;
+            wasm.solve(retptr, ptr0, len0);
+            var r0 = getInt32Memory0()[retptr / 4 + 0];
+            var r1 = getInt32Memory0()[retptr / 4 + 1];
+            let v1;
+            if (r0 !== 0) {
+                v1 = getArrayI32FromWasm0(r0, r1).slice();
+                wasm.__wbindgen_free(r0, r1 * 4);
+            }
+            return v1;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    };
+
+    async function load(module, imports) {
+        if (typeof Response === 'function' && module instanceof Response) {
+            if (typeof WebAssembly.instantiateStreaming === 'function') {
+                try {
+                    return await WebAssembly.instantiateStreaming(module, imports);
+
+                } catch (e) {
+                    if (module.headers.get('Content-Type') != 'application/wasm') {
+                        console.warn("`WebAssembly.instantiateStreaming` failed because your server does not serve wasm with `application/wasm` MIME type. Falling back to `WebAssembly.instantiate` which is slower. Original error:\n", e);
+
+                    } else {
+                        throw e;
+                    }
+                }
+            }
+
+            const bytes = await module.arrayBuffer();
+            return await WebAssembly.instantiate(bytes, imports);
+
+        } else {
+            const instance = await WebAssembly.instantiate(module, imports);
+
+            if (instance instanceof WebAssembly.Instance) {
+                return { instance, module };
+
+            } else {
+                return instance;
+            }
+        }
+    }
+
+    async function init(input) {
+        if (typeof input === 'undefined') {
+            let src;
+            if (typeof document === 'undefined') {
+                src = location.href;
+            } else {
+                src = document.currentScript.src;
+            }
+            input = src.replace(/\.js$/, '_bg.wasm');
+        }
+        const imports = {};
+
+
+        if (typeof input === 'string' || (typeof Request === 'function' && input instanceof Request) || (typeof URL === 'function' && input instanceof URL)) {
+            input = fetch(input);
+        }
+
+
+
+        const { instance, module } = await load(await input, imports);
+
+        wasm = instance.exports;
+        init.__wbindgen_wasm_module = module;
+
+        return wasm;
+    }
+
+    wasm_bindgen = Object.assign(init, __exports);
+
+})();
+
+</script>
+
+<script>
+    window.addEventListener('load', async (event) => {
+  await wasm_bindgen('/wasm/anima_solver_bg.wasm')
+
   for (let json of document.getElementsByClassName('anima-data')) {
     const data = JSON.parse(json.text)
     json.insertAdjacentElement(
       'afterend',
       new Puzzle({
         data,
-        scale: 50,
+        scale: Number(json.getAttribute('data-scale')),
+        solver: json.getAttribute('data-solver') === 'true',
+        import: json.getAttribute('data-import') === 'true'
       })
     )
   }
@@ -166,6 +343,12 @@ class Puzzle extends CustomElement {
     this.refs.board.addEventListener('focus', e => this.activate())
     this.refs.board.addEventListener('blur', e => this.deactivate())
     document.addEventListener('keydown', e => this.onKeyDown(e))
+    this.refs.focuser.addEventListener('click', e => this.refs.board.focus())
+
+    this.refs.autoSolve.addEventListener('change', e => this.updateDisplay())
+    this.refs.solveButton.addEventListener('click', e => this.solve())
+
+    this.refs.importButton.addEventListener('click', e => this.import())
 
     this.history = []
   }
@@ -173,7 +356,7 @@ class Puzzle extends CustomElement {
   update () {
     this.refs.name.textContent = this.props.data.name
 
-    this.refs.optimalCount.textContent = `${this.props.data.minMoves}`
+    this.refs.optimalMoves.textContent = `${this.props.data.optimalMoves}`
 
     this.refs.board.style.width = `${this.props.data.width * this.props.scale}px`
     this.refs.board.style.height = `${this.props.data.height * this.props.scale}px`
@@ -218,6 +401,11 @@ class Puzzle extends CustomElement {
       this.actors.push(actor)
       this.refs.board.appendChild(actor)
     }
+
+    this.refs.solver.style.visibility = (this.props.solver ? 'visible' : 'collapse')
+    this.refs.import.style.visibility = (this.props.import ? 'visible' : 'collapse')
+
+    this.refs.importInput.value = JSON.stringify(this.props.data)
   }
 
   tile (x, y) {
@@ -266,11 +454,11 @@ class Puzzle extends CustomElement {
         break
       case 'Space':
       case 'KeyZ':
-        this.undo()
-        e.preventDefault()
-        break
-      case 'KeyR':
-        this.reset()
+        if (e.shiftKey) {
+          this.reset()
+        } else {
+          this.undo()
+        }
         e.preventDefault()
         break
       case 'Escape':
@@ -430,56 +618,184 @@ class Puzzle extends CustomElement {
   updateDisplay () {
     if (this.isSolved()) {
       this.classList.add('solved')
+      this.classList.add('was-solved')
+      if (this.history.length == this.props.data.optimalMoves) {
+        this.classList.add('was-optimal')
+      }
     } else {
       this.classList.remove('solved')
     }
 
-    this.refs.moveCount.textContent = `${this.history.length}`
+    this.refs.moves.textContent = `${this.history.length}`
+
+    if (this.refs.autoSolve.checked) {
+      this.solve()
+    }
+  }
+
+  solve () {
+    let puzzle = ''
+    for (let row of this.props.data.tiles) {
+      puzzle += row + '\n'
+    }
+    puzzle += '\n'
+    for (let actor of this.actors) {
+      puzzle += `${actor.props.color == 'red' ? 'R' : 'B'} ${actor.props.x} ${actor.props.y}\n`
+    }
+
+    let start = performance.now()
+    let solution = wasm_bindgen.solve(puzzle)
+    let end = performance.now()
+    this.refs.solveTime.textContent = `${(end - start) / 1000}s`
+
+    let solutionHTML = ''
+
+    solutionHTML += '<ol>'
+    for (let move of solution) {
+      solutionHTML += '<li>'
+      switch (move) {
+        case 0:
+          solutionHTML += '➡️ Right'
+          break
+        case 1:
+          solutionHTML += '⬆️ Up'
+          break
+        case 2:
+          solutionHTML += '⬅️ Left'
+          break
+        case 3:
+          solutionHTML += '⬇️ Down'
+          break
+      }
+      solutionHTML += '</li>'
+    }
+    solutionHTML += '</ol>'
+    this.refs.solution.innerHTML = solutionHTML
+  }
+
+  import () {
+    this.history = []
+
+    this.classList.remove('solved')
+    this.classList.remove('was-solved')
+    this.classList.remove('was-optimal')
+
+    let data = JSON.parse(this.refs.importInput.value)
+    this.props = {
+      ...this.props,
+      data,
+    }
+
+    this.updateDisplay()
   }
 }
 window.customElements.define('anima-puzzle', Puzzle)
 
 </script>
 <template id="anima-puzzle-template">
-    <div data-ref="board" tabindex="0"></div>
-    <div class="info">
+    <div class="board-container">
         <h3 data-ref="name"></h3>
-        <p class="need-focus">
-            Focus the puzzle to begin.
-        </p>
-        <p>
-            Moves so far: <span data-ref="moveCount">0</span>
-        </p>
-        <p>
-            Optimal solution: <span data-ref="optimalCount">0</span>
-        </p>
+        <div data-ref="board" tabindex="0"></div>
+        <span data-ref="focuser">
+            Click to play
+        </span>
+        <div>
+            <span data-ref="moves">0</span><span class="optimal-threshold"> / <span data-ref="optimalMoves">0</span></span> moves
+        </div>
+    </div>
+    <div data-ref="solver">
+        <h3>Solver</h3>
+        <div data-ref="solution"></div>
+        <div>
+            <input type="checkbox" data-ref="autoSolve"/>Auto
+            <button data-ref="solveButton">Solve</button>
+        </div>
+        <div class="solve-statistics">
+            <span data-ref="solveTime">0.000s</span>
+        </div>
+    </div>
+    <div data-ref="import">
+        <h3>Import</h3>
+        <div class="import-input">
+            <textarea data-ref="importInput"></textarea>
+        </div>
+        <div>
+            <button data-ref="importButton">Import</button>
+        </div>
     </div>
     <style>
         :host {
             display: flex;
-            align-items: center;
+            align-items: stretch;
+            justify-content: center;
             margin: 0 auto;
             margin-top: 0.5rem;
             margin-bottom: 0.5rem;
         }
-        :host [data-ref="board"] {
+        :host > * {
+            margin-right: 0.5rem;
+            margin-left: 0.5rem;
+        }
+        .board-container {
+            text-align: center;
+        }
+        [data-ref="focuser"] {
+            position: relative;
+            top: -0.5rem;
+            padding: 0.25rem 0.5rem;
+            background-color: #fff;
+            border-radius: 0.75rem;
+            box-shadow: 0 0 7px rgba(0, 0, 0, 0.5);
+            z-index: 1;
+            cursor: pointer;
+        }
+        :host(.active) [data-ref="focuser"] {
+            opacity: 0;
+        }
+        .optimal-threshold {
+            display: none;
+            font-weight: bold;
+        }
+        :host(.was-solved) .optimal-threshold {
+            display: inline;
+        }
+        :host(.was-solved.was-optimal) .optimal-threshold::after {
+            content: " ✔";
+            color: #006600;
+        }
+        [data-ref="board"] {
             background-color: #e8e8e8;
-            background-image:  linear-gradient(135deg, #cccccc 25%, transparent 25%), linear-gradient(225deg, #cccccc 25%, transparent 25%), linear-gradient(45deg, #cccccc 25%, transparent 25%), linear-gradient(315deg, #cccccc 25%, #e8e8e8 25%);
-            background-position:  18px 0, 18px 0, 0 0, 0 0;
+            background-image:
+                linear-gradient(135deg, #cccccc 25%, transparent 25%),
+                linear-gradient(225deg, #cccccc 25%, transparent 25%),
+                linear-gradient(45deg, #cccccc 25%, transparent 25%),
+                linear-gradient(315deg, #cccccc 25%, #e8e8e8 25%);
+            background-position: 18px 0, 18px 0, 0 0, 0 0;
             background-size: 36px 36px;
             background-repeat: repeat;
             position: relative;
             border-radius: 0.75rem;
             border: 0.5rem solid transparent;
             overflow: visible;
+            cursor: pointer;
         }
-        :host(.active) .need-focus {
-            display: none;
+        :host(.active) [data-ref="board"] {
+            cursor: default;
         }
-        :host [data-ref="board"]::after {
+        [data-ref="board"]::before {
+            content: " ";
+            position: absolute;
+            left: -0.5rem;
+            right: -0.5rem;
+            top: -0.5rem;
+            bottom: -0.5rem;
+            border-radius: 0.75rem;
+            box-shadow: inset 0 0 7px rgba(0, 0, 0, 0.5);
+        }
+        [data-ref="board"]::after {
             content: " ";
             display: block;
-            background-image: url("data:image/svg+xml,%3C%3Fxml version='1.0' encoding='UTF-8'%3F%3E%3Csvg width='111.58' height='80.006' version='1.1' viewBox='0 0 111.57827 80.006501' xml:space='preserve' xmlns='http://www.w3.org/2000/svg' xmlns:cc='http://creativecommons.org/ns%23' xmlns:dc='http://purl.org/dc/elements/1.1/' xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns%23'%3E%3Cmetadata%3E%3Crdf:RDF%3E%3Ccc:Work rdf:about=''%3E%3Cdc:format%3Eimage/svg+xml%3C/dc:format%3E%3Cdc:type rdf:resource='http://purl.org/dc/dcmitype/StillImage'/%3E%3Cdc:title/%3E%3C/cc:Work%3E%3C/rdf:RDF%3E%3C/metadata%3E%3Cpath d='m110.45 22.652c-1.0152-0.76245-2.4134-0.75457-3.414 0.01636l-29.369 22.42-19.275-43.549c-0.91154-2.0522-4.2759-2.0522-5.1905 0l-19.501 44.05-29.113-22.898c-1.0055-0.78609-2.4116-0.8079-3.4359-0.053335-1.0279 0.76002-1.417 2.1164-0.95579 3.2989l20.226 52.262c0.4188 1.0928 1.4728 1.8085 2.6407 1.8085h65.462c1.177 0 2.2219-0.71275 2.6425-1.8085l20.224-52.262c0.45759-1.1825 0.0739-2.5243-0.94124-3.2843z' fill='%23ffd42a'/%3E%3C/svg%3E%0A");
+            background-image: url("data:image/svg+xml,%3C%3Fxml version='1.0' encoding='UTF-8'%3F%3E%3Csvg width='111.58' height='80.006' version='1.1' viewBox='0 0 111.57827 80.006501' xml:space='preserve' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m110.45 22.652c-1.0152-0.76245-2.4134-0.75457-3.414 0.01636l-29.369 22.42-19.275-43.549c-0.91154-2.0522-4.2759-2.0522-5.1905 0l-19.501 44.05-29.113-22.898c-1.0055-0.78609-2.4116-0.8079-3.4359-0.053335-1.0279 0.76002-1.417 2.1164-0.95579 3.2989l20.226 52.262c0.4188 1.0928 1.4728 1.8085 2.6407 1.8085h65.462c1.177 0 2.2219-0.71275 2.6425-1.8085l20.224-52.262c0.45759-1.1825 0.0739-2.5243-0.94124-3.2843z' fill='%23ffd82b'/%3E%3C/svg%3E%0A");
             background-position: center center;
             background-repeat: no-repeat;
             position: absolute;
@@ -487,10 +803,12 @@ window.customElements.define('anima-puzzle', Puzzle)
             top: 50%;
             width: 120px;
             height: 100px;
-            opacity: 0.75;
+            opacity: 0.8;
+            filter: drop-shadow(0 0 1rem rgba(0, 0, 0, 0.5));
             transform: translate(-50%, -50%) scale(0.0);
             transform-origin: center;
-            transition: transform 0.25s cubic-bezier(0.64, 0.57, 0.67, 1.53);
+            transition: transform 0.25s cubic-bezier(.18, .85, .67, 1.53);
+            z-index: 3;
         }
         :host(.solved) [data-ref="board"]::after {
             transform: translate(-50%, -50%) scale(1.0);
@@ -502,24 +820,33 @@ window.customElements.define('anima-puzzle', Puzzle)
             content: " ";
             display: block;
             position: absolute;
-            background: #fff;
             width: calc(100% - 0.15rem);
             height: calc(100% - 0.15rem);
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
             border-radius: 0.75rem;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
         }
-        .tile.goal::after {
+        .tile::after {
             content: " ";
             display: block;
             position: absolute;
-            width: 25%;
-            height: 25%;
+            width: calc(100% - 0.15rem);
+            height: calc(100% - 0.15rem);
             left: 50%;
             top: 50%;
-            transform: translate(-50%, -50%) rotate(45deg);
-            background-color: #ccc;
+            transform: translate(-50%, -50%);
+            border-radius: 0.75rem;
+            background-color: #fff;
+            z-index: 1;
+        }
+        .tile.goal::after {
+            background-image:
+                linear-gradient(135deg, #fff 40%, transparent 41%),
+                linear-gradient(225deg, #fff 40%, transparent 41%),
+                linear-gradient(45deg, #fff 40%, transparent 41%),
+                linear-gradient(315deg, #fff 40%, transparent 41%);
         }
         .tile.goal.red::after {
             background-color: #ff0046;
@@ -527,8 +854,57 @@ window.customElements.define('anima-puzzle', Puzzle)
         .tile.goal.blue::after {
             background-color: #0989B2;
         }
-        .info {
-            margin-left: 1rem;
+        [data-ref="import"] {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+        }
+        .import-input {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .import-input textarea {
+            flex-grow: 1;
+        }
+        button {
+            padding: 0.25rem 0.5rem;
+            background-color: #fff;
+            border: 0;
+            border-radius: 0.75rem;
+            box-shadow: 0 0 7px rgba(0, 0, 0, 0.5);
+            font-family: inherit;
+            font-size: inherit;
+            margin: 0.25rem;
+        }
+        button:hover {
+            background-color: #e0e0e0;
+        }
+        button:active {
+            background-color: #ccc;
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+        }
+        textarea {
+            border: 0;
+            border-radius: 0.75rem;
+            box-shadow: 0 0 7px rgba(0, 0, 0, 0.5);
+        }
+        [data-ref="solver"] {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+        }
+        [data-ref="solution"] {
+            min-width: 200px;
+            height: 0;
+            flex-grow: 1;
+            text-align: left;
+            overflow-y: scroll;
+            border-radius: 0.75rem;
+            box-shadow: 0 0 7px rgba(0, 0, 0, 0.5);
+        }
+        .solve-statistics {
+            font-size: small;
         }
     </style>
 </template>
@@ -538,6 +914,7 @@ window.customElements.define('anima-puzzle', Puzzle)
             display: block;
             position: absolute;
             transition: left 0.15s, bottom 0.15s;
+            z-index: 2;
         }
         .color {
             display: block;
@@ -550,7 +927,7 @@ window.customElements.define('anima-puzzle', Puzzle)
             top: 50%;
             transform: translate(-50%, -50%);
         }
-        :host .color::after {
+        .color::after {
             content: " ";
             position: absolute;
             width: 40%;
@@ -570,7 +947,62 @@ window.customElements.define('anima-puzzle', Puzzle)
     <div class="color"></div>
 </template>
 
-<script class="anima-data" type="application/json">
+
+
+
+
+
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="true"
+    data-import="true"
+>
+    {
+    "name": "Square Dance",
+    "width": 5,
+    "height": 5,
+    "tiles": [
+        " ....",
+        ".r.r.",
+        ".. ..",
+        ".r.r.",
+        ".... "
+    ],
+    "actors": [
+        {
+            "color": "red",
+            "x": 2,
+            "y": 1
+        },
+        {
+            "color": "red",
+            "x": 1,
+            "y": 2
+        },
+        {
+            "color": "red",
+            "x": 3,
+            "y": 2
+        },
+        {
+            "color": "red",
+            "x": 2,
+            "y": 3
+        }
+    ],
+    "optimalMoves": 12
+}
+</script>
+<h2 id="all-puzzles">All puzzles</h2>
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Line Dance",
     "width": 3,
@@ -585,10 +1017,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 0
         }
     ],
-    "minMoves": 2
+    "optimalMoves": 2
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "U-Turn",
     "width": 3,
@@ -605,10 +1043,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 2
         }
     ],
-    "minMoves": 6
+    "optimalMoves": 6
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Spiral",
     "width": 5,
@@ -627,10 +1071,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 2
         }
     ],
-    "minMoves": 16
+    "optimalMoves": 16
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Single File",
     "width": 5,
@@ -662,10 +1112,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 2
         }
     ],
-    "minMoves": 16
+    "optimalMoves": 16
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Oblique",
     "width": 5,
@@ -699,10 +1155,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 3
         }
     ],
-    "minMoves": 10
+    "optimalMoves": 10
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Cycle",
     "width": 5,
@@ -736,10 +1198,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 4
         }
     ],
-    "minMoves": 13
+    "optimalMoves": 13
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Octothorpe",
     "width": 5,
@@ -793,10 +1261,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 4
         }
     ],
-    "minMoves": 7
+    "optimalMoves": 7
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Square Dance",
     "width": 5,
@@ -830,10 +1304,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 3
         }
     ],
-    "minMoves": 12
+    "optimalMoves": 12
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Centralize",
     "width": 5,
@@ -869,10 +1349,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 6
         }
     ],
-    "minMoves": 15
+    "optimalMoves": 15
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Unwind",
     "width": 5,
@@ -891,10 +1377,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 2
         }
     ],
-    "minMoves": 16
+    "optimalMoves": 16
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Spinlock",
     "width": 5,
@@ -928,10 +1420,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 4
         }
     ],
-    "minMoves": 11
+    "optimalMoves": 11
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Gimbal Lock",
     "width": 7,
@@ -953,10 +1451,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 2
         }
     ],
-    "minMoves": 6
+    "optimalMoves": 6
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Deadlock",
     "width": 3,
@@ -983,10 +1487,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 2
         }
     ],
-    "minMoves": 6
+    "optimalMoves": 6
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Sideswipe",
     "width": 5,
@@ -1020,10 +1530,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 3
         }
     ],
-    "minMoves": 10
+    "optimalMoves": 10
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Untangle",
     "width": 5,
@@ -1056,10 +1572,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 3
         }
     ],
-    "minMoves": 11
+    "optimalMoves": 11
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Traffic Circle",
     "width": 5,
@@ -1091,10 +1613,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 2
         }
     ],
-    "minMoves": 8
+    "optimalMoves": 8
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Close Quarters",
     "width": 4,
@@ -1126,10 +1654,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 1
         }
     ],
-    "minMoves": 11
+    "optimalMoves": 11
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Fractal",
     "width": 5,
@@ -1165,10 +1699,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 4
         }
     ],
-    "minMoves": 13
+    "optimalMoves": 13
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Box Step",
     "width": 5,
@@ -1200,10 +1740,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 0
         }
     ],
-    "minMoves": 15
+    "optimalMoves": 15
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Inversion",
     "width": 3,
@@ -1239,10 +1785,16 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 6
         }
     ],
-    "minMoves": 14
+    "optimalMoves": 14
 }
 </script>
-<script class="anima-data" type="application/json">
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-solver="false"
+    data-import="false"
+>
     {
     "name": "Free Radical",
     "width": 5,
@@ -1281,7 +1833,7 @@ window.customElements.define('anima-puzzle', Puzzle)
             "y": 2
         }
     ],
-    "minMoves": 19
+    "optimalMoves": 19
 }
 </script>
 
