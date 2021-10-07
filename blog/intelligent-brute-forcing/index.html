@@ -921,7 +921,6 @@ window.customElements.define('anima-puzzle', Puzzle)
         }
         :host(.active) [data-ref="board"] {
             cursor: default;
-            touch-action: none;
         }
         [data-ref="board"]::before {
             content: " ";
@@ -962,8 +961,8 @@ window.customElements.define('anima-puzzle', Puzzle)
             content: " ";
             display: block;
             position: absolute;
-            width: calc(100% - 0.15rem);
-            height: calc(100% - 0.15rem);
+            width: 96%;
+            height: 96%;
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
@@ -974,8 +973,8 @@ window.customElements.define('anima-puzzle', Puzzle)
             content: " ";
             display: block;
             position: absolute;
-            width: calc(100% - 0.15rem);
-            height: calc(100% - 0.15rem);
+            width: 96%;
+            height: 96%;
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
@@ -985,10 +984,10 @@ window.customElements.define('anima-puzzle', Puzzle)
         }
         .tile.goal::after {
             background-image:
-                linear-gradient(135deg, #fff 40%, transparent 41%),
-                linear-gradient(225deg, #fff 40%, transparent 41%),
-                linear-gradient(45deg, #fff 40%, transparent 41%),
-                linear-gradient(315deg, #fff 40%, transparent 41%);
+                linear-gradient(135deg, #fff 40%, transparent 40%),
+                linear-gradient(225deg, #fff 40%, transparent 40%),
+                linear-gradient(45deg, #fff 40%, transparent 40%),
+                linear-gradient(315deg, #fff 40%, transparent 40%);
         }
         .tile.goal.red::after {
             background-color: #ff0046;
@@ -1071,8 +1070,8 @@ window.customElements.define('anima-puzzle', Puzzle)
             display: block;
             position: absolute;
             overflow: hidden;
-            width: calc(100% - 0.6rem);
-            height: calc(100% - 0.6rem);
+            width: 81%;
+            height: 81%;
             border-radius: 0.4rem;
             left: 50%;
             top: 50%;
@@ -1089,17 +1088,17 @@ window.customElements.define('anima-puzzle', Puzzle)
         }
         :host(.red) .color::after {
             background-image:
-                linear-gradient(135deg, #ff0046 30%, transparent 31%),
-                linear-gradient(225deg, #ff0046 30%, transparent 31%),
-                linear-gradient(45deg, #ff0046 30%, transparent 31%),
-                linear-gradient(315deg, #ff0046 30%, transparent 31%);
+                linear-gradient(135deg, #ff0046 30%, transparent 30%),
+                linear-gradient(225deg, #ff0046 30%, transparent 30%),
+                linear-gradient(45deg, #ff0046 30%, transparent 30%),
+                linear-gradient(315deg, #ff0046 30%, transparent 30%);
         }
         :host(.blue) .color::after {
             background-image:
-                linear-gradient(135deg, #0989B2 30%, transparent 31%),
-                linear-gradient(225deg, #0989B2 30%, transparent 31%),
-                linear-gradient(45deg, #0989B2 30%, transparent 31%),
-                linear-gradient(315deg, #0989B2 30%, transparent 31%);
+                linear-gradient(135deg, #0989B2 30%, transparent 30%),
+                linear-gradient(225deg, #0989B2 30%, transparent 30%),
+                linear-gradient(45deg, #0989B2 30%, transparent 30%),
+                linear-gradient(315deg, #0989B2 30%, transparent 30%);
         }
     </style>
     <div class="color"></div>
