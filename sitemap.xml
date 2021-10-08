@@ -10,8 +10,12 @@
         <loc>https://davidkoloski.me/blog/</loc>
     </url>
     <url>
+        <loc>https://davidkoloski.me/blog/anima-playground/</loc>
+        <lastmod>2021-10-07</lastmod>
+    </url>
+    <url>
         <loc>https://davidkoloski.me/blog/intelligent-brute-forcing/</loc>
-        <lastmod>2021-04-10</lastmod>
+        <lastmod>2021-10-07</lastmod>
     </url>
     <url>
         <loc>https://davidkoloski.me/blog/rkyv-architecture/</loc>
