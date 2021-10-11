@@ -58,7 +58,7 @@
 <div class="section title">
     Intelligent brute forcing
     <div class="subtitle">
-        Oct  7, 2021 &ndash; 5 min read
+        Oct 10, 2021 &ndash; 12 min read
     </div>
 </div>
 <div class="section taxonomies">
@@ -79,14 +79,47 @@
     
 </div>
 <div class="section content">
-    <p>Blog post goes here!</p>
-<p>Controls:</p>
+    <h2 id="a-little-background">A little background</h2>
+<p>Back in college, I played a lot of <em>puzzle games</em>. When I talk about these kinds of games, I'm going
+to be referring to a very specific subset of puzzle game. Some examples include:</p>
 <ul>
-<li>WASD/Arrow keys: Move</li>
-<li>Space: Undo</li>
-<li>Shift + Space: Reset</li>
-<li>Escape: Unfocus (or just click away)</li>
+<li><a href="https://store.steampowered.com/app/353540/Stephens_Sausage_Roll/">Stephen's Sausage Roll</a></li>
+<li><a href="https://store.steampowered.com/app/207570/English_Country_Tune/">English Country Tune</a></li>
+<li><a href="https://store.steampowered.com/app/290260/Sokobond/">Sokobond</a></li>
 </ul>
+<p>I was also fortunate to take Data Structures at RPI, where at the time professor Cutler (hi Barb!)
+had a yearly assignment/competition where students to write a <em>puzzle solver</em>. The game changed
+every year, and for my year the game was
+<a href="https://www.cs.rpi.edu/academics/courses/fall13/csci1200/hw/06_ricochet_robots/hw.pdf">Ricochet Robots</a>,
+which is essentially a sliding ice puzzle with multiple players. I really enjoyed the assignment
+(and won the competition!) and continued to enter the competition as a TA. I probably went too hard
+on it in retrospect; hopefully I wasn't too much of a nuisance!</p>
+<p>Anyway, the purpose of the assignment was to get everyone familiar with recursion and depth-first
+search. Your program would be given the initial state of the game as well as a maximum recursion
+depth. The goal was to return either the shortest possible solution, or all possible solutions of
+minimum length. For the competition, you may or may not be passed a depth limit and might also be
+given puzzles that had no solution. I learned a lot and had a lot of fun, so maybe you will too.</p>
+<h2 id="abstract">Abstract</h2>
+<p>In this article, I will present a new puzzle game and demonstrate techniques I used to write a fast,
+practical solver for it. Topics covered will include Breadth-first/A* search, memoization,
+optimization, and strategies specific to NP-hard and NP-complete puzzle games. If you spot any
+problems or want to suggest any improvements, please file an issue or submit a PR
+<a href="https://github.com/djkoloski/davidkoloski_me">on GitHub</a>.</p>
+<h2 id="let-s-play-a-game">Let's play a game</h2>
+<p>The game we're going to play is called &quot;Anima&quot;. It uses a grid of tiles, each of which is either
+passable or impassable. Some tiles are marked with a small colored diamond; these tiles are <em>goals</em>
+and to solve the puzzle we have to cover all of these tiles simultaneously with <em>actors</em> of the same
+color. Actors are blocks, at most one per tile, that can be moved around the grid on the passable
+tiles. Each turn, you may move the actors in one of the four cardinal directions and they all slide
+together. Let's do a few to get a feel for it:</p>
+<div class="center"><div><h3 id="controls">Controls</h3>
+<ul>
+<li><strong>Move</strong>: WASD/Arrow keys (desktop), swipe (mobile)</li>
+<li><strong>Undo</strong>: Space (desktop), top left button</li>
+<li><strong>Reset</strong>: Shift + Space (desktop), bottom left button</li>
+<li><strong>Unfocus</strong>: Escape (desktop), click away, tap (mobile)</li>
+</ul>
+</div></div>
 <script>
     let wasm_bindgen;
 (function() {
@@ -1178,74 +1211,8 @@ window.customElements.define('anima-puzzle', Puzzle)
 
 
 
-<script
-    class="anima-data"
-    type="application/json"
-    data-scale="50"
-    data-controls="true"
-    data-dynamic="false"
->
-    {
-    "name": "Square Dance",
-    "width": 5,
-    "height": 5,
-    "tiles": [
-        " ....",
-        ".r.r.",
-        ".. ..",
-        ".r.r.",
-        ".... "
-    ],
-    "actors": [
-        {
-            "color": "red",
-            "x": 2,
-            "y": 1
-        },
-        {
-            "color": "red",
-            "x": 1,
-            "y": 2
-        },
-        {
-            "color": "red",
-            "x": 3,
-            "y": 2
-        },
-        {
-            "color": "red",
-            "x": 2,
-            "y": 3
-        }
-    ],
-    "optimalMoves": 12
-}
-</script>
-<h2 id="all-puzzles">All puzzles</h2>
-<script
-    class="anima-data"
-    type="application/json"
-    data-scale="50"
-    data-controls="false"
-    data-dynamic="false"
->
-    {
-    "name": "Line Dance",
-    "width": 3,
-    "height": 1,
-    "tiles": [
-        "..r"
-    ],
-    "actors": [
-        {
-            "color": "red",
-            "x": 0,
-            "y": 0
-        }
-    ],
-    "optimalMoves": 2
-}
-</script>
+
+
 <script
     class="anima-data"
     type="application/json"
@@ -1270,34 +1237,6 @@ window.customElements.define('anima-puzzle', Puzzle)
         }
     ],
     "optimalMoves": 6
-}
-</script>
-<script
-    class="anima-data"
-    type="application/json"
-    data-scale="50"
-    data-controls="false"
-    data-dynamic="false"
->
-    {
-    "name": "Spiral",
-    "width": 5,
-    "height": 5,
-    "tiles": [
-        ".....",
-        ".   .",
-        "... .",
-        "    .",
-        "r...."
-    ],
-    "actors": [
-        {
-            "color": "red",
-            "x": 2,
-            "y": 2
-        }
-    ],
-    "optimalMoves": 16
 }
 </script>
 <script
@@ -1341,314 +1280,15 @@ window.customElements.define('anima-puzzle', Puzzle)
     "optimalMoves": 16
 }
 </script>
-<script
-    class="anima-data"
-    type="application/json"
-    data-scale="50"
-    data-controls="false"
-    data-dynamic="false"
->
-    {
-    "name": "Oblique",
-    "width": 5,
-    "height": 5,
-    "tiles": [
-        " ... ",
-        "..r..",
-        ".r.r.",
-        "..r..",
-        " ... "
-    ],
-    "actors": [
-        {
-            "color": "red",
-            "x": 1,
-            "y": 1
-        },
-        {
-            "color": "red",
-            "x": 3,
-            "y": 1
-        },
-        {
-            "color": "red",
-            "x": 1,
-            "y": 3
-        },
-        {
-            "color": "red",
-            "x": 3,
-            "y": 3
-        }
-    ],
-    "optimalMoves": 10
-}
-</script>
-<script
-    class="anima-data"
-    type="application/json"
-    data-scale="50"
-    data-controls="false"
-    data-dynamic="false"
->
-    {
-    "name": "Cycle",
-    "width": 5,
-    "height": 5,
-    "tiles": [
-        "..r..",
-        ".   .",
-        "r   r",
-        ".   .",
-        "..r.."
-    ],
-    "actors": [
-        {
-            "color": "red",
-            "x": 0,
-            "y": 0
-        },
-        {
-            "color": "red",
-            "x": 4,
-            "y": 0
-        },
-        {
-            "color": "red",
-            "x": 0,
-            "y": 4
-        },
-        {
-            "color": "red",
-            "x": 4,
-            "y": 4
-        }
-    ],
-    "optimalMoves": 13
-}
-</script>
-<script
-    class="anima-data"
-    type="application/json"
-    data-scale="50"
-    data-controls="false"
-    data-dynamic="false"
->
-    {
-    "name": "Octothorpe",
-    "width": 5,
-    "height": 5,
-    "tiles": [
-        " . . ",
-        ".rrr.",
-        " r r ",
-        ".rrr.",
-        " . . "
-    ],
-    "actors": [
-        {
-            "color": "red",
-            "x": 1,
-            "y": 0
-        },
-        {
-            "color": "red",
-            "x": 3,
-            "y": 0
-        },
-        {
-            "color": "red",
-            "x": 0,
-            "y": 1
-        },
-        {
-            "color": "red",
-            "x": 4,
-            "y": 1
-        },
-        {
-            "color": "red",
-            "x": 0,
-            "y": 3
-        },
-        {
-            "color": "red",
-            "x": 4,
-            "y": 3
-        },
-        {
-            "color": "red",
-            "x": 1,
-            "y": 4
-        },
-        {
-            "color": "red",
-            "x": 3,
-            "y": 4
-        }
-    ],
-    "optimalMoves": 7
-}
-</script>
-<script
-    class="anima-data"
-    type="application/json"
-    data-scale="50"
-    data-controls="false"
-    data-dynamic="false"
->
-    {
-    "name": "Square Dance",
-    "width": 5,
-    "height": 5,
-    "tiles": [
-        " ....",
-        ".r.r.",
-        ".. ..",
-        ".r.r.",
-        ".... "
-    ],
-    "actors": [
-        {
-            "color": "red",
-            "x": 2,
-            "y": 1
-        },
-        {
-            "color": "red",
-            "x": 1,
-            "y": 2
-        },
-        {
-            "color": "red",
-            "x": 3,
-            "y": 2
-        },
-        {
-            "color": "red",
-            "x": 2,
-            "y": 3
-        }
-    ],
-    "optimalMoves": 12
-}
-</script>
-<script
-    class="anima-data"
-    type="application/json"
-    data-scale="50"
-    data-controls="false"
-    data-dynamic="false"
->
-    {
-    "name": "Centralize",
-    "width": 5,
-    "height": 7,
-    "tiles": [
-        " ... ",
-        " . . ",
-        ".r.r.",
-        ". . .",
-        ".r.r.",
-        " . . ",
-        " ... "
-    ],
-    "actors": [
-        {
-            "color": "red",
-            "x": 1,
-            "y": 0
-        },
-        {
-            "color": "red",
-            "x": 3,
-            "y": 0
-        },
-        {
-            "color": "red",
-            "x": 1,
-            "y": 6
-        },
-        {
-            "color": "red",
-            "x": 3,
-            "y": 6
-        }
-    ],
-    "optimalMoves": 15
-}
-</script>
-<script
-    class="anima-data"
-    type="application/json"
-    data-scale="50"
-    data-controls="false"
-    data-dynamic="false"
->
-    {
-    "name": "Unwind",
-    "width": 5,
-    "height": 5,
-    "tiles": [
-        "....b",
-        ".    ",
-        ". ...",
-        ".   .",
-        "....."
-    ],
-    "actors": [
-        {
-            "color": "blue",
-            "x": 2,
-            "y": 2
-        }
-    ],
-    "optimalMoves": 16
-}
-</script>
-<script
-    class="anima-data"
-    type="application/json"
-    data-scale="50"
-    data-controls="false"
-    data-dynamic="false"
->
-    {
-    "name": "Spinlock",
-    "width": 5,
-    "height": 5,
-    "tiles": [
-        ".....",
-        ". b .",
-        ".b.b.",
-        ". b .",
-        "....."
-    ],
-    "actors": [
-        {
-            "color": "blue",
-            "x": 0,
-            "y": 0
-        },
-        {
-            "color": "blue",
-            "x": 4,
-            "y": 0
-        },
-        {
-            "color": "blue",
-            "x": 4,
-            "y": 4
-        },
-        {
-            "color": "blue",
-            "x": 0,
-            "y": 4
-        }
-    ],
-    "optimalMoves": 11
-}
-</script>
+<p>These two are pretty easy, but you might have noticed some implicit rules that make solving these
+puzzles nontrivial:</p>
+<ul>
+<li>If an actor tries to move into an impassable tile, they do not move.</li>
+<li>If an actor would overlap another actor, they do not move.</li>
+</ul>
+<p>These side-effects make it very difficult (impossible?) to predict how the system will behave after
+even a move or two, which is a hallmark of problems with high NP-complexity. We'll add one more
+twist to make it a little more interesting:</p>
 <script
     class="anima-data"
     type="application/json"
@@ -1680,6 +1320,8 @@ window.customElements.define('anima-puzzle', Puzzle)
     "optimalMoves": 6
 }
 </script>
+<p>Unlike red actors, blue actors move in the opposite direction you choose. If you choose left, blue
+actors will move right and vice-versa. This leads to one final implicit rule:</p>
 <script
     class="anima-data"
     type="application/json"
@@ -1716,6 +1358,82 @@ window.customElements.define('anima-puzzle', Puzzle)
     "optimalMoves": 6
 }
 </script>
+<p>When they're right next to each other, red and blue actors can pass through each other to exchange
+positions. However, if they're separated by a single space, they'll try to move onto the same space
+and block each other from moving at all. This added complexity can make puzzles much more difficult
+to solve.</p>
+<p>Before diving in, I'd definitely recommend trying out some more puzzles to get a better feel for
+some high-level techniques and to get better acquainted with the game. Don't worry about solving
+all of these, they can get very hard. Just work with them until you feel competent and confident.</p>
+<div class="center"><div><h2 id="practice-puzzles"><a href="/blog/anima-puzzles/"><strong>Practice Puzzles</strong></a></h2>
+</div></div>
+<p>This is where we start writing our solver. You can follow along using the <code>start</code> tag on the
+<a href="https://github.com/djkoloski/anima_solver">GitHub repo</a>, which will start you with all of the
+boilerplate:</p>
+<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>git clone --branch start https://github.com/djkoloski/anima_solver
+</span></code></pre>
+<h2 id="a-basic-solver">A basic solver</h2>
+<p>Our strategy for a basic solver will be to explore, one move at a time, out from
+the initial state until we find a solution. I'll do this with a basic
+breadth-first search augmented with parent tracking:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">pub fn </span><span style="font-weight:bold;color:#795da3;">solve</span><span>(initial_state: State, data: </span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>Data) -&gt; </span><span style="color:#0086b3;">Option</span><span>&lt;</span><span style="color:#0086b3;">Vec</span><span>&lt;Direction&gt;&gt; {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">let mut</span><span> parents </span><span style="font-weight:bold;color:#a71d5d;">= </span><span style="color:#0086b3;">Vec</span><span>::new();
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">let mut</span><span> queue </span><span style="font-weight:bold;color:#a71d5d;">= </span><span>VecDeque::new();
+</span><span>
+</span><span>    </span><span style="font-style:italic;color:#969896;">// Add transitions from initial state
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>(action, transition) </span><span style="font-weight:bold;color:#a71d5d;">in</span><span> initial_state.</span><span style="color:#62a35c;">transitions</span><span>(data) {
+</span><span>        </span><span style="font-weight:bold;color:#a71d5d;">match</span><span> transition {
+</span><span>            Transition::Indeterminate(state) </span><span style="font-weight:bold;color:#a71d5d;">=&gt; </span><span>{
+</span><span>                parents.</span><span style="color:#62a35c;">push</span><span>((</span><span style="color:#0086b3;">0</span><span>, action));
+</span><span>                queue.</span><span style="color:#62a35c;">push_back</span><span>(state);
+</span><span>            }
+</span><span>            Transition::Success </span><span style="font-weight:bold;color:#a71d5d;">=&gt; return </span><span style="color:#0086b3;">Some</span><span>(vec![action]),
+</span><span>        }
+</span><span>    }
+</span><span>
+</span><span>    </span><span style="font-style:italic;color:#969896;">// Pop states in order
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">let mut</span><span> index </span><span style="font-weight:bold;color:#a71d5d;">= </span><span style="color:#0086b3;">0</span><span>;
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">while let </span><span style="color:#0086b3;">Some</span><span>(parent_node) </span><span style="font-weight:bold;color:#a71d5d;">=</span><span> queue.</span><span style="color:#62a35c;">pop_front</span><span>() {
+</span><span>        index </span><span style="font-weight:bold;color:#a71d5d;">+= </span><span style="color:#0086b3;">1</span><span>;
+</span><span>
+</span><span>        </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>(action, transition) </span><span style="font-weight:bold;color:#a71d5d;">in</span><span> parent_node.</span><span style="color:#62a35c;">transitions</span><span>(data) {
+</span><span>            </span><span style="font-weight:bold;color:#a71d5d;">match</span><span> transition {
+</span><span>                Transition::Indeterminate(state) </span><span style="font-weight:bold;color:#a71d5d;">=&gt; </span><span>{
+</span><span>                    parents.</span><span style="color:#62a35c;">push</span><span>((index, action));
+</span><span>                    queue.</span><span style="color:#62a35c;">push_back</span><span>(state);
+</span><span>                }
+</span><span>                Transition::Success </span><span style="font-weight:bold;color:#a71d5d;">=&gt; </span><span>{
+</span><span>                    </span><span style="font-weight:bold;color:#a71d5d;">let mut</span><span> result_actions </span><span style="font-weight:bold;color:#a71d5d;">= </span><span>vec![action];
+</span><span>                    </span><span style="font-weight:bold;color:#a71d5d;">let mut</span><span> current_index </span><span style="font-weight:bold;color:#a71d5d;">=</span><span> index;
+</span><span>                    </span><span style="font-weight:bold;color:#a71d5d;">while</span><span> current_index </span><span style="font-weight:bold;color:#a71d5d;">!= </span><span style="color:#0086b3;">0 </span><span>{
+</span><span>                        </span><span style="font-weight:bold;color:#a71d5d;">let </span><span>(next_index, action) </span><span style="font-weight:bold;color:#a71d5d;">=</span><span> parents.</span><span style="color:#62a35c;">swap_remove</span><span>(current_index </span><span style="font-weight:bold;color:#a71d5d;">- </span><span style="color:#0086b3;">1</span><span>);
+</span><span>                        result_actions.</span><span style="color:#62a35c;">push</span><span>(action);
+</span><span>                        current_index </span><span style="font-weight:bold;color:#a71d5d;">=</span><span> next_index;
+</span><span>                    }
+</span><span>                    result_actions.</span><span style="color:#62a35c;">reverse</span><span>();
+</span><span>                    </span><span style="font-weight:bold;color:#a71d5d;">return </span><span style="color:#0086b3;">Some</span><span>(result_actions);
+</span><span>                }
+</span><span>            }
+</span><span>        }
+</span><span>    }
+</span><span>
+</span><span>    </span><span style="color:#0086b3;">None
+</span><span>}
+</span></code></pre>
+<p>There's a lot of boilerplate omitted, so here's what's relevant:</p>
+<ul>
+<li>We have <code>State</code> and <code>Data</code> structs where <code>State</code> is all the information that can change and
+<code>Data</code> is all the information that is static. <code>State</code> is the positions of the actors, and <code>Data</code>
+is the layout of the board and goal positions. These are separated out to minimize how much memory
+is being used by <code>queue</code>.</li>
+<li>The <code>transitions()</code> method operates on a <code>State</code>, takes some <code>Data</code>, and returns the new states
+we reach by performing every possible move. An <code>Indeterminate</code> transition means that the state you
+reach is not solved, and a <code>Success</code> transition means that it is.</li>
+</ul>
+<p><code>parents</code> here is a list of <code>(usize, Direction)</code> that tracks what state it came from and what
+direction was moved to transition. When we get a successful transition, we crawl back through the
+<code>parents</code> vector to reassemble the solution and return it. Let's try it out!</p>
+<p>We're going to use a nice and simple one to test:</p>
 <script
     class="anima-data"
     type="application/json"
@@ -1724,383 +1442,39 @@ window.customElements.define('anima-puzzle', Puzzle)
     data-dynamic="false"
 >
     {
-    "name": "Sideswipe",
-    "width": 5,
-    "height": 5,
-    "tiles": [
-        " ... ",
-        ".r.r.",
-        ".....",
-        ".b.b.",
-        " ... "
-    ],
-    "actors": [
-        {
-            "color": "red",
-            "x": 1,
-            "y": 2
-        },
-        {
-            "color": "red",
-            "x": 3,
-            "y": 2
-        },
-        {
-            "color": "blue",
-            "x": 2,
-            "y": 1
-        },
-        {
-            "color": "blue",
-            "x": 2,
-            "y": 3
-        }
-    ],
-    "optimalMoves": 10
-}
-</script>
-<script
-    class="anima-data"
-    type="application/json"
-    data-scale="50"
-    data-controls="false"
-    data-dynamic="false"
->
-    {
-    "name": "Untangle",
-    "width": 5,
-    "height": 4,
-    "tiles": [
-        "...  ",
-        "b r..",
-        "..r b",
-        "  ..."
-    ],
-    "actors": [
-        {
-            "color": "red",
-            "x": 4,
-            "y": 0
-        },
-        {
-            "color": "red",
-            "x": 0,
-            "y": 3
-        },
-        {
-            "color": "blue",
-            "x": 2,
-            "y": 0
-        },
-        {
-            "color": "blue",
-            "x": 2,
-            "y": 3
-        }
-    ],
-    "optimalMoves": 11
-}
-</script>
-<script
-    class="anima-data"
-    type="application/json"
-    data-scale="50"
-    data-controls="false"
-    data-dynamic="false"
->
-    {
-    "name": "Traffic Circle",
-    "width": 5,
-    "height": 3,
-    "tiles": [
-        " b.r ",
-        " . . ",
-        "r...b"
-    ],
-    "actors": [
-        {
-            "color": "red",
-            "x": 1,
-            "y": 1
-        },
-        {
-            "color": "red",
-            "x": 3,
-            "y": 1
-        },
-        {
-            "color": "blue",
-            "x": 2,
-            "y": 0
-        },
-        {
-            "color": "blue",
-            "x": 2,
-            "y": 2
-        }
-    ],
-    "optimalMoves": 8
-}
-</script>
-<script
-    class="anima-data"
-    type="application/json"
-    data-scale="50"
-    data-controls="false"
-    data-dynamic="false"
->
-    {
-    "name": "Close Quarters",
-    "width": 4,
-    "height": 3,
-    "tiles": [
-        ".rb.",
-        ".br.",
-        " .. "
-    ],
-    "actors": [
-        {
-            "color": "red",
-            "x": 0,
-            "y": 1
-        },
-        {
-            "color": "red",
-            "x": 3,
-            "y": 2
-        },
-        {
-            "color": "blue",
-            "x": 0,
-            "y": 2
-        },
-        {
-            "color": "blue",
-            "x": 3,
-            "y": 1
-        }
-    ],
-    "optimalMoves": 11
-}
-</script>
-<script
-    class="anima-data"
-    type="application/json"
-    data-scale="50"
-    data-controls="false"
-    data-dynamic="false"
->
-    {
-    "name": "Fractal",
-    "width": 5,
-    "height": 7,
-    "tiles": [
-        "  r  ",
-        " ... ",
-        ". b .",
-        ".....",
-        ". r .",
-        " ... ",
-        "  b  "
-    ],
-    "actors": [
-        {
-            "color": "red",
-            "x": 1,
-            "y": 3
-        },
-        {
-            "color": "red",
-            "x": 3,
-            "y": 3
-        },
-        {
-            "color": "blue",
-            "x": 2,
-            "y": 2
-        },
-        {
-            "color": "blue",
-            "x": 2,
-            "y": 4
-        }
-    ],
-    "optimalMoves": 13
-}
-</script>
-<script
-    class="anima-data"
-    type="application/json"
-    data-scale="50"
-    data-controls="false"
-    data-dynamic="false"
->
-    {
-    "name": "Box Step",
-    "width": 5,
-    "height": 3,
-    "tiles": [
-        ".r.b.",
-        ".....",
-        ".b.r."
-    ],
-    "actors": [
-        {
-            "color": "red",
-            "x": 3,
-            "y": 2
-        },
-        {
-            "color": "red",
-            "x": 1,
-            "y": 0
-        },
-        {
-            "color": "blue",
-            "x": 1,
-            "y": 2
-        },
-        {
-            "color": "blue",
-            "x": 3,
-            "y": 0
-        }
-    ],
-    "optimalMoves": 15
-}
-</script>
-<script
-    class="anima-data"
-    type="application/json"
-    data-scale="50"
-    data-controls="false"
-    data-dynamic="false"
->
-    {
-    "name": "Inversion",
+    "name": "Line Dance",
     "width": 3,
-    "height": 7,
+    "height": 1,
     "tiles": [
-        ".r.",
-        ". .",
-        ".b.",
-        ". .",
-        ".b.",
-        ". .",
-        ".r."
+        "..r"
     ],
     "actors": [
-        {
-            "color": "red",
-            "x": 1,
-            "y": 2
-        },
-        {
-            "color": "red",
-            "x": 1,
-            "y": 4
-        },
-        {
-            "color": "blue",
-            "x": 1,
-            "y": 0
-        },
-        {
-            "color": "blue",
-            "x": 1,
-            "y": 6
-        }
-    ],
-    "optimalMoves": 14
-}
-</script>
-<script
-    class="anima-data"
-    type="application/json"
-    data-scale="50"
-    data-controls="false"
-    data-dynamic="false"
->
-    {
-    "name": "Free Radical",
-    "width": 5,
-    "height": 5,
-    "tiles": [
-        ".....",
-        "..r..",
-        ".r.r.",
-        "..r..",
-        "....."
-    ],
-    "actors": [
-        {
-            "color": "red",
-            "x": 1,
-            "y": 3
-        },
-        {
-            "color": "red",
-            "x": 1,
-            "y": 1
-        },
-        {
-            "color": "red",
-            "x": 3,
-            "y": 1
-        },
-        {
-            "color": "red",
-            "x": 3,
-            "y": 3
-        },
-        {
-            "color": "blue",
-            "x": 2,
-            "y": 2
-        }
-    ],
-    "optimalMoves": 19
-}
-</script>
-<h2 id="bonus-puzzles">Bonus puzzles</h2>
-<script
-    class="anima-data"
-    type="application/json"
-    data-scale="50"
-    data-controls="false"
-    data-dynamic="false"
->
-    {
-    "name": "Side Channel",
-    "width": 4,
-    "height": 5,
-    "tiles": [
-        ".b..",
-        "....",
-        "   .",
-        "....",
-        "r.r."
-    ],
-    "actors": [
-        {
-            "color": "blue",
-            "x": 1,
-            "y": 0
-        },
         {
             "color": "red",
             "x": 0,
-            "y": 4
-        },
-        {
-            "color": "red",
-            "x": 2,
-            "y": 4
+            "y": 0
         }
     ],
-    "optimalMoves": 20
+    "optimalMoves": 2
 }
 </script>
+<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo run</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/line_dance.txt
+</span><span>puzzles/line_dance.txt:
+</span><span>Parse: 0.000201900s
+</span><span>Solve: 0.000017600s
+</span><span>Found solution of length 2:
+</span><span>Right, Right
+</span></code></pre>
+<p>Cool, it found it! And that looks right too, let's see how fast it is in release mode:</p>
+<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/line_dance.txt
+</span><span>puzzles/line_dance.txt:
+</span><span>Parse: 0.000122700s
+</span><span>Solve: 0.000009100s
+</span><span>Found solution of length 2:
+</span><span>Right, Right
+</span></code></pre>
+<p>Roughly twice as fast, great! We're going to be running exclusively in release mode from here on
+out. Now let's step it up a little bit and try a harder puzzle:</p>
 <script
     class="anima-data"
     type="application/json"
@@ -2109,46 +1483,214 @@ window.customElements.define('anima-puzzle', Puzzle)
     data-dynamic="false"
 >
     {
-    "name": "Antiparticle",
-    "width": 5,
-    "height": 5,
+    "name": "U-Turn",
+    "width": 3,
+    "height": 3,
     "tiles": [
-        ".....",
-        ".r.r.",
-        ".....",
-        ".r.r.",
-        "....."
+        "r .",
+        ". .",
+        "..."
     ],
     "actors": [
         {
             "color": "red",
-            "x": 1,
-            "y": 2
-        },
-        {
-            "color": "red",
-            "x": 2,
-            "y": 1
-        },
-        {
-            "color": "red",
-            "x": 2,
-            "y": 3
-        },
-        {
-            "color": "red",
-            "x": 3,
-            "y": 2
-        },
-        {
-            "color": "blue",
             "x": 2,
             "y": 2
         }
     ],
-    "optimalMoves": 22
+    "optimalMoves": 6
 }
 </script>
+<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/u_turn.txt
+</span><span>puzzles/u_turn.txt:
+</span><span>Parse: 0.005942000s
+</span><span>Solve: 0.001093200s
+</span><span>Found solution of length 6:
+</span><span>Down, Down, Left, Left, Up, Up
+</span></code></pre>
+<p>Awesome, it got that one too! One more, this one's really more of the same:</p>
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-controls="false"
+    data-dynamic="false"
+>
+    {
+    "name": "Spiral",
+    "width": 5,
+    "height": 5,
+    "tiles": [
+        ".....",
+        ".   .",
+        "... .",
+        "    .",
+        "r...."
+    ],
+    "actors": [
+        {
+            "color": "red",
+            "x": 2,
+            "y": 2
+        }
+    ],
+    "optimalMoves": 16
+}
+</script>
+<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/spiral.txt
+</span><span>...
+</span></code></pre>
+<p>Uh oh, this one doesn't seem to be going anywhere fast. And if you don't kill it soon, you might run
+out of memory too! Looking at the timings explains why:</p>
+<pre data-lang="txt" style="background-color:#ffffff;color:#323232;" class="language-txt "><code class="language-txt" data-lang="txt"><span>puzzles/line_dance.txt
+</span><span>Solve: 0.000009100s
+</span><span>Found solution of length 2:
+</span><span>
+</span><span>puzzles/u_turn.txt
+</span><span>Solve: 0.001093200s
+</span><span>Found solution of length 6:
+</span></code></pre>
+<p>By adding just four moves to the solution length, our runtime went up by a factor of <strong>120x</strong>! Let's
+take a peek at how many states we're exploring:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span>println!(</span><span style="color:#183691;">&quot;Explored </span><span style="color:#0086b3;">{}</span><span style="color:#183691;"> states&quot;</span><span>, parents.</span><span style="color:#62a35c;">len</span><span>());
+</span></code></pre>
+<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/line_dance.txt
+</span><span>Explored 3 states
+</span><span>
+</span><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/u_turn.txt
+</span><span>Explored 5364 states
+</span></code></pre>
+<p>Yikes, there's our problem. And it makes sense, every state we explore leads to four more states so
+we should expect that a solution of length <code>n</code> will explore at least <code>(4^n - 1) / 3</code> states. For a
+6-move solution, that comes out to between 1365 and 5461 states, so we're right in that range. What
+does that mean for our currently-unsolvable puzzle? It takes 16 moves to solve it, so we should
+expect to explore between 1431655765 and 5726623061 states.</p>
+<p>Uh oh.</p>
+<p>Now it's time to start iterating on our solver and improving it. We will measure progress by
+measuring how long it takes to solve existing puzzles, then creating new and more difficult puzzles
+as we go along. Our goal will be to quickly solve all puzzles that we can create.</p>
+<h2 id="state-tracking">State tracking</h2>
+<p>First, we should observe that even though we exploerd 5364 states for <em>U-Turn</em>, there are
+functionally only seven unique states: one for each of the tiles the actor could be on. So we must
+be exploring the same state multiple times. We can avoid this by storing our explored states in a
+hash set and only exploring its children if it's not already been visited:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">let mut</span><span> states </span><span style="font-weight:bold;color:#a71d5d;">= </span><span>Hashet::new();
+</span><span style="font-weight:bold;color:#a71d5d;">...
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">while let </span><span style="color:#0086b3;">Some</span><span>(parent_node) </span><span style="font-weight:bold;color:#a71d5d;">=</span><span> queue.</span><span style="color:#62a35c;">pop_front</span><span>() {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">...
+</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">if !</span><span>states.</span><span style="color:#62a35c;">contains</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>parent_node) {
+</span><span>        </span><span style="font-weight:bold;color:#a71d5d;">...
+</span><span>
+</span><span>        states.</span><span style="color:#62a35c;">insert</span><span>(parent_node);
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>Let's see how this affects our cases so far:</p>
+<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/u_turn.txt
+</span><span>Explored 20 states
+</span><span>Solve: 0.000895100s
+</span><span>Found solution of length 6:   
+</span><span>Down, Down, Left, Left, Up, Up
+</span></code></pre>
+<p>That looks much better! Maybe we can solve our new puzzle now?</p>
+<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/spiral.txt
+</span><span>Explored 51 states
+</span><span>puzzles/spiral.txt:
+</span><span>Parse: 0.000212300s
+</span><span>Solve: 0.001049000s
+</span><span>Found solution of length 16:
+</span><span>Left, Left, Up, Up, Right, Right, Right, Right, Down, Down, Down, Down, Left, Left, Left, Left
+</span></code></pre>
+<p>That's much better, bringing our explored states down from over a billion to just 51. This
+optimization alone brings all our sample puzzles into the realm of solvability! Now we can start
+benchmarking our solver more comprehensively. Let's pick a few representatives from the
+<a href="/blog/">sample puzzles set</a> to bench:</p>
+<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo bench
+</span><span>solve_square_dance      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>16.658 ms 16.888 ms 17.125 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>solve_fractal           time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>44.606 ms 45.193 ms 45.806 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>solve_antiparticle      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>1.8001 s 1.8308 s 1.8640 s</span><span style="font-weight:bold;color:#a71d5d;">]
+</span></code></pre>
+<h2 id="entropy-reduction">Entropy reduction</h2>
+<p>One easy optimization we can make is to reduce the entropy of our states. Right now our puzzle state
+looks like this:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">enum </span><span>Color {
+</span><span>    Red,
+</span><span>    Blue,
+</span><span>}
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">pub struct </span><span>Actor {
+</span><span>    position: Vec2,
+</span><span>    color: Color,
+</span><span>}
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">pub struct </span><span>State {
+</span><span>    actors: </span><span style="color:#0086b3;">Vec</span><span>&lt;Actor&gt;,
+</span><span>}
+</span></code></pre>
+<p>So imagine a board with a few red actors on it. Let's say four:</p>
+<pre data-lang="txt" style="background-color:#ffffff;color:#323232;" class="language-txt "><code class="language-txt" data-lang="txt"><span>A.B
+</span><span>...
+</span><span>C.D
+</span></code></pre>
+<p>With these four actors, there's actually <code>4!</code> ways we could represent the state since there are <code>4!</code>
+permutations of the actors in the vector. We can fix this by sorting our <code>actors</code> array. This will
+reorder any permutation of the actors into one canonical ordering. We can do this pretty easily when
+we transition our states:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">pub fn </span><span style="font-weight:bold;color:#795da3;">transition</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self, data: </span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>Data, direction: </span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>Direction) -&gt; State {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">let mut</span><span> result </span><span style="font-weight:bold;color:#a71d5d;">= </span><span>self.</span><span style="color:#62a35c;">clone</span><span>();
+</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">...
+</span><span>
+</span><span>    result.actors.</span><span style="color:#62a35c;">sort</span><span>();
+</span><span>    result
+</span><span>}
+</span></code></pre>
+<p>A good way to think of this is as removing any unnecessary entropy in the state. Let's see how that
+affects our benchmarks:</p>
+<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo bench
+</span><span>
+</span><span>solve_square_dance      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>4.4875 ms 4.5667 ms 4.6525 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-73.527% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>72.960% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>72.308%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span><span>
+</span><span>solve_fractal           time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>19.518 ms 19.647 ms 19.776 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-57.178% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>56.527% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>55.885%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span><span>
+</span><span>solve_antiparticle      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>187.49 ms 190.53 ms 193.91 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-89.835% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>89.593% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>89.343%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span></code></pre>
+<p>Let's see how the number of states explored (and branching factor) changed with that:</p>
+<table><thead><tr><th>Puzzle</th><th align="right">Solution Length</th><th align="right">Before (BF)</th><th align="right">After (BF)</th><th align="right">Change</th></tr></thead><tbody>
+<tr><td>Square Dance</td><td align="right">12</td><td align="right">37268 (2.292)</td><td align="right">11401 (2.061)</td><td align="right">-61.408%</td></tr>
+<tr><td>Fractal</td><td align="right">13</td><td align="right">86277 (2.294)</td><td align="right">46253 (2.179)</td><td align="right">-46.390%</td></tr>
+<tr><td>Antiparticle</td><td align="right">22</td><td align="right">2514936 (1.888)</td><td align="right">315100 (1.708)</td><td align="right">-87.471%</td></tr>
+</tbody></table>
+<p>Getting big performance improvements from small changes like this is what we're aiming to do most of
+the time. The important thing here is that by reducing our state entropy, we reduced our branching
+factor by a little bit. That small change amplifies quickly in exponential algorithms, so even a
+very small decrease can lead to huge improvements.</p>
+<h2 id="a-search">A* search</h2>
+<p>With that in mind, one easy way we can decrease our branching factor even more is by using a more
+sophisticated searching algorithm.</p>
+<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo bench
+</span><span>
+</span><span>solve_square_dance      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>4.4051 ms 4.4276 ms 4.4524 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>+3.7025% +4.6095% +5.4779%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span><span>
+</span><span>solve_fractal           time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>7.7314 ms 7.7718 ms 7.8183 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-57.412% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>57.044% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>56.682%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span><span>
+</span><span>solve_antiparticle      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>201.26 ms 202.26 ms 203.36 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>+14.570% +15.351% +16.121%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span></code></pre>
+<table><thead><tr><th>Puzzle</th><th align="right">Solution Length</th><th align="right">Before (BF)</th><th align="right">After (BF)</th><th align="right">Change</th></tr></thead><tbody>
+<tr><td>Square Dance</td><td align="right">12</td><td align="right">11401 (2.061)</td><td align="right">9737 (2.031)</td><td align="right">-14.595%</td></tr>
+<tr><td>Fractal</td><td align="right">13</td><td align="right">46253 (2.179)</td><td align="right">16593 (2.002)</td><td align="right">-64.126%</td></tr>
+<tr><td>Antiparticle</td><td align="right">22</td><td align="right">315100 (1.708)</td><td align="right">269211 (1.695)</td><td align="right">-14.563%</td></tr>
+</tbody></table>
+<p>Talk about: importance of benchmarking a variety of inputs, reducing maximum runtime vs average
+runtime</p>
 
 </div>
 <div class="section navigation">
@@ -2156,7 +1698,7 @@ window.customElements.define('anima-puzzle', Puzzle)
         Previous article: <a href="https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;rkyv-is-faster-than&#x2F;">rkyv is faster than {bincode, capnp, cbor, flatbuffers, postcard, prost, serde_json}</a>
     
     
-        Next article: <a href="https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;anima-playground&#x2F;">Anima Playground</a>
+        Next article: <a href="https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;anima-puzzles&#x2F;">Anima Puzzles</a>
     
 </div>
 

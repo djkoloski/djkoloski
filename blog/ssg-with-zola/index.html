@@ -63,6 +63,12 @@
 </div>
 <div class="section taxonomies">
     
+    <div class="categories">
+        
+            <a href="https://davidkoloski.me/categories/web-development/">Web Development</a>
+        
+    </div>
+    
     <div class="tags">
         
             <a href="https://davidkoloski.me/tags/zola/">Zola</a>,
@@ -70,12 +76,6 @@
             <a href="https://davidkoloski.me/tags/rust/">Rust</a>,
         
             <a href="https://davidkoloski.me/tags/static-site-generation/">Static Site Generation</a>
-        
-    </div>
-    
-    <div class="categories">
-        
-            <a href="https://davidkoloski.me/categories/web-development/">Web Development</a>
         
     </div>
     
@@ -93,20 +93,20 @@
 <h2 id="getting-started">Getting started</h2>
 <h3 id="zola-init">Zola init</h3>
 <p>Making a new site project is incredibly easy - just run:</p>
-<pre data-lang="sh" class="language-sh "><code class="language-sh" data-lang="sh">zola init my_site
-</code></pre>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>zola init my_site</span><span>
+</span></code></pre>
 <p>and it will create a new directory named <code>my_site</code> with the right directory structure set up and ready to go. Just change into the new directory and keep going from there:</p>
-<pre data-lang="sh" class="language-sh "><code class="language-sh" data-lang="sh">cd my_site
-</code></pre>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span style="color:#62a35c;">cd</span><span> my_site</span><span>
+</span></code></pre>
 <h3 id="zola-build">Zola build</h3>
 <p>Building the site is as simple as running:</p>
-<pre data-lang="sh" class="language-sh "><code class="language-sh" data-lang="sh">zola build
-</code></pre>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>zola build</span><span>
+</span></code></pre>
 <p>and it will build the entire site into a new directory named <code>public</code>. This is how the final build of the site is made; copying the <code>public</code> directory to a simple file server is all you need to do to deploy.</p>
 <h3 id="zola-serve">Zola serve</h3>
 <p>For development, Zola comes with a development server built-in. Run:</p>
-<pre data-lang="sh" class="language-sh "><code class="language-sh" data-lang="sh">zola serve
-</code></pre>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>zola serve</span><span>
+</span></code></pre>
 <p>and it will continuously:</p>
 <ul>
 <li>Watch content, styles, and templates for changes</li>
@@ -136,9 +136,9 @@
 <p>Zola also supports <a href="https://www.getzola.org/documentation/content/overview/#assets-colocation">&quot;assets colocation&quot;</a>, which is a fancy way of saying that if you put non-Markdown files under the <code>content</code> directory, they'll be copied over right next to other Markdown files' compiled HTML pages. This makes it really easy to organize pages that require custom assets like images and javascript files.</p>
 <h2 id="conclusion">Conclusion</h2>
 <p>After working with Zola for a while, the overall experience has been very pleasant. At first I found Zola's notion of sections and pages and little unintuitive, but I think that part of that is due to some confusing wording in their site's documentation. It was really easy to set up and the iteration loop is fast and efficient. While it's still a bit rough around the edges<a href="#footnote-3" id="citation-3" class="citation">3</a>, I can definitely recommend it for anyone looking to make a site like mine.</p>
-<p id="footnote-1" class="footnote"><a href="#citation-1">1</a> For all sections except the top-level index, you also need to add an &lt;code&gt;_index.md&lt;&#x2F;code&gt;.</p>
-<p id="footnote-2" class="footnote"><a href="#citation-2">2</a> With the exception of any &lt;code&gt;_index.md&lt;&#x2F;code&gt; files.</p>
-<p id="footnote-3" class="footnote"><a href="#citation-3">3</a> I had problems with the built-in pagination functionality. It seems like it either doesn&#x27;t work right or I don&#x27;t understand it and the docs are too sparse. The server works pretty well for content serving, but every once in a while I managed to crash it with some syntax errors. The system that refreshes the browser page when the server rebuilds content also seems to mess up every once in a while, but restarting the server fixes it.</p>
+<p id="footnote-1" class="footnote"><a href="#citation-1">1</a> For all sections except the top-level index, you also need to add an <code>_index.md</code>.</p>
+<p id="footnote-2" class="footnote"><a href="#citation-2">2</a> With the exception of any <code>_index.md</code> files.</p>
+<p id="footnote-3" class="footnote"><a href="#citation-3">3</a> I had problems with the built-in pagination functionality. It seems like it either doesn't work right or I don't understand it and the docs are too sparse. The server works pretty well for content serving, but every once in a while I managed to crash it with some syntax errors. The system that refreshes the browser page when the server rebuilds content also seems to mess up every once in a while, but restarting the server fixes it.</p>
 
 </div>
 <div class="section navigation">
