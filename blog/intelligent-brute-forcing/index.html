@@ -58,7 +58,7 @@
 <div class="section title">
     Intelligent brute forcing
     <div class="subtitle">
-        Oct 10, 2021 &ndash; 12 min read
+        Oct 10, 2021 &ndash; 22 min read
     </div>
 </div>
 <div class="section taxonomies">
@@ -101,10 +101,14 @@ minimum length. For the competition, you may or may not be passed a depth limit 
 given puzzles that had no solution. I learned a lot and had a lot of fun, so maybe you will too.</p>
 <h2 id="abstract">Abstract</h2>
 <p>In this article, I will present a new puzzle game and demonstrate techniques I used to write a fast,
-practical solver for it. Topics covered will include Breadth-first/A* search, memoization,
+practical solver for it. Topics covered will include breadth-first/A* search, memoization,
 optimization, and strategies specific to NP-hard and NP-complete puzzle games. If you spot any
 problems or want to suggest any improvements, please file an issue or submit a PR
-<a href="https://github.com/djkoloski/davidkoloski_me">on GitHub</a>.</p>
+<a href="https://github.com/djkoloski/davidkoloski_me">on GitHub</a>. I will present benchmarks to validate my
+results throughout. While the percentage changes should be relatively accurate, the absolute timings
+may vary throughout as they are taken at different times with different amounts of baseline noise.
+The pre-/post- change benchmarks are always run back-to-back to ensure that they are run in the same
+environment and provide accurate percentage change.</p>
 <h2 id="let-s-play-a-game">Let's play a game</h2>
 <p>The game we're going to play is called &quot;Anima&quot;. It uses a grid of tiles, each of which is either
 passable or impassable. Some tiles are marked with a small colored diamond; these tiles are <em>goals</em>
@@ -1570,7 +1574,7 @@ expect to explore between 1431655765 and 5726623061 states.</p>
 measuring how long it takes to solve existing puzzles, then creating new and more difficult puzzles
 as we go along. Our goal will be to quickly solve all puzzles that we can create.</p>
 <h2 id="state-tracking">State tracking</h2>
-<p>First, we should observe that even though we exploerd 5364 states for <em>U-Turn</em>, there are
+<p>First, we should observe that even though we explored 5364 states for <em>U-Turn</em>, there are
 functionally only seven unique states: one for each of the tiles the actor could be on. So we must
 be exploring the same state multiple times. We can avoid this by storing our explored states in a
 hash set and only exploring its children if it's not already been visited:</p>
@@ -1672,7 +1676,126 @@ factor by a little bit. That small change amplifies quickly in exponential algor
 very small decrease can lead to huge improvements.</p>
 <h2 id="a-search">A* search</h2>
 <p>With that in mind, one easy way we can decrease our branching factor even more is by using a more
-sophisticated searching algorithm.</p>
+sophisticated searching algorithm. A* is a very common augmentation to breadth-first search that
+prioritizes exploring more promising nodes first. In practice, this means that we have to define a
+<em>heuristic function</em> that estimates the minimum number of moves to completion. We want our heuristic
+function to estimate the remaining distance as closely as possible, but never overestimate. It's
+okay to underestimate. With this estimate of the number of moves remaining, we prioritize exploring
+states that have the minimum estimated solution size (moves so far + remaining moves). This can help
+us avoid exploring states that are clearly dead ends and prioritize states that look promising.</p>
+<p>The main difficulty with implementing A* is determining a good heuristic function. A good heuristic
+function should be <em>easy to compute</em> and return an estimate that is <em>as high as possible</em> without
+overestimating. This is a tradeoff that we actively have to be conscious of. In most cases, it will
+be a net positive. Let's think about what heuristics we can calculate for our puzzle:</p>
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-controls="false"
+    data-dynamic="false"
+>
+    {
+    "name": "Square Dance",
+    "width": 5,
+    "height": 5,
+    "tiles": [
+        " ....",
+        ".r.r.",
+        ".. ..",
+        ".r.r.",
+        ".... "
+    ],
+    "actors": [
+        {
+            "color": "red",
+            "x": 2,
+            "y": 1
+        },
+        {
+            "color": "red",
+            "x": 1,
+            "y": 2
+        },
+        {
+            "color": "red",
+            "x": 3,
+            "y": 2
+        },
+        {
+            "color": "red",
+            "x": 2,
+            "y": 3
+        }
+    ],
+    "optimalMoves": 12
+}
+</script>
+<p>In order to complete the puzzle, each goal needs one actor of its color on top of it. Since all the
+actors move at the same time, we can use a straightforward <em>maxmin</em>: Find the nearest actor to each
+goal and calculate the distance between them, then take the maximum value of all goal distances. The
+logical way to think about this is that we're calculating the minimum number of moves necessary to
+get any actor of our choice to any given goal. This is an extremely rough estimate, but it will work
+for us. If we wanted, we could calculate the
+<a href="https://en.wikipedia.org/wiki/Linear_bottleneck_assignment_problem">assignment bottleneck</a> instead,
+but that could take a lot of time and negatively impact our performance. Also UPS lost my book from
+SIAM.</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">pub fn </span><span style="font-weight:bold;color:#795da3;">heuristic</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self, data: </span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>Data) -&gt; </span><span style="font-weight:bold;color:#a71d5d;">usize </span><span>{
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">let mut</span><span> max_distance </span><span style="font-weight:bold;color:#a71d5d;">= </span><span style="color:#0086b3;">0</span><span>;
+</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">for</span><span> goal </span><span style="font-weight:bold;color:#a71d5d;">in</span><span> data.goals.</span><span style="color:#62a35c;">iter</span><span>() {
+</span><span>        </span><span style="font-weight:bold;color:#a71d5d;">let mut</span><span> min_distance </span><span style="font-weight:bold;color:#a71d5d;">= usize</span><span>::</span><span style="color:#0086b3;">MAX</span><span>;
+</span><span>        </span><span style="font-weight:bold;color:#a71d5d;">for</span><span> actor </span><span style="font-weight:bold;color:#a71d5d;">in </span><span>self.actors.</span><span style="color:#62a35c;">iter</span><span>().</span><span style="color:#62a35c;">filter</span><span>(|a| a.color </span><span style="font-weight:bold;color:#a71d5d;">==</span><span> goal.color) {
+</span><span>            </span><span style="font-weight:bold;color:#a71d5d;">let</span><span> d </span><span style="font-weight:bold;color:#a71d5d;">= </span><span>(goal.position </span><span style="font-weight:bold;color:#a71d5d;">-</span><span> actor.position).</span><span style="color:#62a35c;">abs</span><span>();
+</span><span>            min_distance </span><span style="font-weight:bold;color:#a71d5d;">= usize</span><span>::min(min_distance, (d.x </span><span style="font-weight:bold;color:#a71d5d;">+</span><span> d.y) </span><span style="font-weight:bold;color:#a71d5d;">as usize</span><span>);
+</span><span>        }
+</span><span>        max_distance </span><span style="font-weight:bold;color:#a71d5d;">= usize</span><span>::max(max_distance, min_distance);
+</span><span>    }
+</span><span>
+</span><span>    max_distance
+</span><span>}
+</span></code></pre>
+<p>Does what it says on the tin. The more difficult part is adapting our existing <code>solve</code> function to
+prioritize states and calculate the heuristic. The first change we'll make is to bundle all of the
+information we need when exploring a node into a new structure:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span>#[derive(Eq, PartialEq)]
+</span><span style="font-weight:bold;color:#a71d5d;">struct </span><span>Node {
+</span><span>    state: State,
+</span><span>    distance: </span><span style="font-weight:bold;color:#a71d5d;">usize</span><span>,
+</span><span>    estimate: </span><span style="font-weight:bold;color:#a71d5d;">usize</span><span>,
+</span><span>    index: </span><span style="font-weight:bold;color:#a71d5d;">usize</span><span>,
+</span><span>}
+</span></code></pre>
+<p>This will be what we insert into our queue now. Speaking of which:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">let mut</span><span> queue </span><span style="font-weight:bold;color:#a71d5d;">= </span><span>BinaryHeap::new();
+</span></code></pre>
+<p>A <code>BinaryHeap</code> is a simple data structure that we can use as a priority queue. We can insert items
+and remove the maximum value in <code>log(N)</code> time. All we need to do is define an ordering on our nodes
+that gives the most promising nodes (with lowest distance + heuristic) the highest priority:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">impl </span><span>PartialOrd </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Node {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">partial_cmp</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self, other: </span><span style="font-weight:bold;color:#a71d5d;">&amp;Self</span><span>) -&gt; </span><span style="color:#0086b3;">Option</span><span>&lt;Ordering&gt; {
+</span><span>        </span><span style="color:#0086b3;">Some</span><span>(self.</span><span style="color:#62a35c;">cmp</span><span>(other))
+</span><span>    }
+</span><span>}
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl </span><span>Ord </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Node {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">cmp</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self, other: </span><span style="font-weight:bold;color:#a71d5d;">&amp;Self</span><span>) -&gt; Ordering {
+</span><span>        other.estimate.</span><span style="color:#62a35c;">cmp</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self.estimate)
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>A little opaque, but this just says that we want to sort in reverse <code>estimate</code> order. Finally, we
+need to change our <code>push</code> operation to account for the new fields we need to fill out in <code>Node</code>:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">let</span><span> estimate </span><span style="font-weight:bold;color:#a71d5d;">=</span><span> state.</span><span style="color:#62a35c;">heuristic</span><span>(data) </span><span style="font-weight:bold;color:#a71d5d;">+ </span><span>(parent_node.distance </span><span style="font-weight:bold;color:#a71d5d;">+ </span><span style="color:#0086b3;">1</span><span>);
+</span><span>queue.</span><span style="color:#62a35c;">push</span><span>(Node {
+</span><span>    state: state,
+</span><span>    distance: parent_node.distance </span><span style="font-weight:bold;color:#a71d5d;">+ </span><span style="color:#0086b3;">1</span><span>,
+</span><span>    estimate,
+</span><span>    index: parents.</span><span style="color:#62a35c;">len</span><span>(),
+</span><span>});
+</span></code></pre>
+<p>Instead of counting our states as we pop them off, we now need to keep track of which index our
+current state is in the <code>parents</code> list. And with that, we're done! We have a fully-functional A*
+implementation ready to make our solver go super fast!</p>
 <pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo bench
 </span><span>
 </span><span>solve_square_dance      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>4.4051 ms 4.4276 ms 4.4524 ms</span><span style="font-weight:bold;color:#a71d5d;">]
@@ -1684,13 +1807,231 @@ sophisticated searching algorithm.</p>
 </span><span>solve_antiparticle      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>201.26 ms 202.26 ms 203.36 ms</span><span style="font-weight:bold;color:#a71d5d;">]
 </span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>+14.570% +15.351% +16.121%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
 </span></code></pre>
+<p>Well that's a little disappointing. At least, it is if you only look at the individual benchmarks.
+Two went up by around 5-15%, and one went down by over 50%. So while it wasn't a unilateral gain, it
+did give us a net benefit overall. And now, if we can improve our heuristic function somehow we can
+gain the benefit from that too. Let's take a look awt our explored states (and branching factor):</p>
 <table><thead><tr><th>Puzzle</th><th align="right">Solution Length</th><th align="right">Before (BF)</th><th align="right">After (BF)</th><th align="right">Change</th></tr></thead><tbody>
 <tr><td>Square Dance</td><td align="right">12</td><td align="right">11401 (2.061)</td><td align="right">9737 (2.031)</td><td align="right">-14.595%</td></tr>
 <tr><td>Fractal</td><td align="right">13</td><td align="right">46253 (2.179)</td><td align="right">16593 (2.002)</td><td align="right">-64.126%</td></tr>
 <tr><td>Antiparticle</td><td align="right">22</td><td align="right">315100 (1.708)</td><td align="right">269211 (1.695)</td><td align="right">-14.563%</td></tr>
 </tbody></table>
-<p>Talk about: importance of benchmarking a variety of inputs, reducing maximum runtime vs average
-runtime</p>
+<p>It's important to remember to benchmark very carefully, since even though our states explored fell
+for every puzzle, our total runtime did increase for two of them. Also a very small change in the
+branching factor for <em>Fractal</em> resulted in a massive decrease in explored states. The average
+runtime has fallen quite nicely.</p>
+<h2 id="reducing-allocations">Reducing allocations</h2>
+<p>The first rule of high-performance optimization is to reduce your allocations. Let's take a look and
+see if there are some places we can do that:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">pub fn </span><span style="font-weight:bold;color:#795da3;">transitions</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self, data: </span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>Data) -&gt; </span><span style="color:#0086b3;">Vec</span><span>&lt;(Direction, Transition&lt;</span><span style="font-weight:bold;color:#a71d5d;">Self</span><span>&gt;)&gt; {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">...
+</span><span>}
+</span></code></pre>
+<p>Our transitions function is returning a <code>Vec</code> with data allocated on the heap, but we know that
+we'll always return four transitions. We can make this return an array instead:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">pub fn </span><span style="font-weight:bold;color:#795da3;">transitions</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self, data: </span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>Data) -&gt; [(Direction, Transition&lt;</span><span style="font-weight:bold;color:#a71d5d;">Self</span><span>&gt;); </span><span style="color:#0086b3;">4</span><span>] {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">...
+</span><span>}
+</span></code></pre>
+<p>Let's see what that gets us:</p>
+<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo bench
+</span><span>
+</span><span>solve_square_dance      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>4.4052 ms 4.4415 ms 4.4867 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-7.0971% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>6.1140% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>4.9385%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span><span>
+</span><span>solve_fractal           time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>7.6836 ms 7.7682 ms 7.8720 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-8.5312% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>7.0938% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>5.5943%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span><span>
+</span><span>solve_antiparticle      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>207.00 ms 207.71 ms 208.44 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-4.9600% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>4.2495% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>3.5907%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span></code></pre>
+<p>Some modest gains, let's keep going. Next we can use the <code>arrayvec</code> crate to reduce the number of
+allocations in our states. It's essentially an inline-allocated array structure, so we won't
+constantly be allocating heap memory as long as we can put an upper bound on the number of actors in
+our puzzles. Let's pick eight for some headroom:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">pub struct </span><span>State {
+</span><span>    actors: ArrayVec&lt;Actor, 8&gt;,
+</span><span>}
+</span></code></pre>
+<p>How about that:</p>
+<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo bench
+</span><span>
+</span><span>solve_square_dance      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>4.0299 ms 4.0567 ms 4.0854 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-9.7690% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>8.6635% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>7.6778%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span><span>
+</span><span>solve_fractal           time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>7.4610 ms 7.5152 ms 7.5743 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-4.6656% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>3.2571% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>1.9086%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span><span>
+</span><span>solve_antiparticle      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>187.27 ms 188.29 ms 189.38 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-9.9536% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>9.3494% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>8.7499%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span></code></pre>
+<p>Nice! Some more modest gains, but every bit helps. It's finally time to move on to...</p>
+<h2 id="profiling">Profiling</h2>
+<p>We're out of low-hanging fruit, so let's move on to doing some micro-optimization. There's still
+plenty to be gained here though, and we can find it by doing some profiling. Running our benchmarks
+in Visual Studio gets us some interesting insights:</p>
+<img src="https:&#x2F;&#x2F;davidkoloski.me&#x2F;processed_images&#x2F;44e6965e7b49e13a00.png" />
+<p>Here they are typed out:</p>
+<table><thead><tr><th>Function</th><th align="right">Total CPU %</th></tr></thead><tbody>
+<tr><td><code>anima_solver::puzzle::State::transitions</code></td><td align="right">24.40%</td></tr>
+<tr><td><code>hashbrown::map::HashMap::contains_key</code></td><td align="right">20.72%</td></tr>
+<tr><td><code>hashbrown::map::HashMap::insert</code></td><td align="right">19.83%</td></tr>
+<tr><td><code>alloc::collections::binary_heap::BinaryHeap::pop</code></td><td align="right">15.91%</td></tr>
+</tbody></table>
+<p>One thing that immediately jumps out is that we're spending almost the same amount of time in
+<code>HashMap::contains_key</code> as we do in <code>HashMap::insert</code>. But we don't have any hash maps in our
+solver, do we?</p>
+<p>Well actually, we do. We're using a <code>HashSet</code> for our visited states, and that's secretly a
+<code>HashMap&lt;K, ()&gt;</code> under the hood. Let's take a look at our code:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">let mut</span><span> states </span><span style="font-weight:bold;color:#a71d5d;">= </span><span>HashSet::new();
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">...
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">while let </span><span style="color:#0086b3;">Some</span><span>(parent_node) </span><span style="font-weight:bold;color:#a71d5d;">=</span><span> queue.</span><span style="color:#62a35c;">pop</span><span>() {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">if !</span><span>states.</span><span style="color:#62a35c;">contains</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>parent_node.state) {
+</span><span>        </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>(action, transition) </span><span style="font-weight:bold;color:#a71d5d;">in</span><span> parent_node.state.</span><span style="color:#62a35c;">transitions</span><span>(data) {
+</span><span>            </span><span style="font-weight:bold;color:#a71d5d;">...
+</span><span>        }
+</span><span>        states.</span><span style="color:#62a35c;">insert</span><span>(parent_node.state);
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>So there's the problem, we're checking to see if the set contains the state, then getting our
+transitions, and after that we're inserting the state. We should be able to use an <code>Entry</code> API to
+check if the set contains the state and insert it with a single lookup right? Well... <code>HashSet</code>
+doesn't have an entry API like <code>HashMap</code> does <a href="https://github.com/rust-lang/rfcs/issues/1490">yet</a>.
+Well, I guess we can use a <code>HashMap</code> with a value of <code>()</code> right?</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">let mut</span><span> states </span><span style="font-weight:bold;color:#a71d5d;">= </span><span>HashMap::new();
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">...
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">while let </span><span style="color:#0086b3;">Some</span><span>(parent_node) </span><span style="font-weight:bold;color:#a71d5d;">=</span><span> queue.</span><span style="color:#62a35c;">pop</span><span>() {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">if let </span><span>Entry::Vacant(entry) </span><span style="font-weight:bold;color:#a71d5d;">=</span><span> states.</span><span style="color:#62a35c;">entry</span><span>(parent_node.state) {
+</span><span>        </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>(action, transition) </span><span style="font-weight:bold;color:#a71d5d;">in</span><span> entry.</span><span style="color:#62a35c;">key</span><span>().</span><span style="color:#62a35c;">transitions</span><span>(data) {
+</span><span>            </span><span style="font-weight:bold;color:#a71d5d;">...
+</span><span>        }
+</span><span>        entry.</span><span style="color:#62a35c;">insert</span><span>(());
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>That should do the trick. Let's see how that changed our runtime:</p>
+<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo bench
+</span><span>
+</span><span>solve_square_dance      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>3.8785 ms 3.9364 ms 3.9998 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>+0.9796% +2.8698% +4.8065%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span><span>
+</span><span>solve_fractal           time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>6.7915 ms 6.8446 ms 6.9022 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-2.2994% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>1.2597% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>0.0914%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.03 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span><span>
+</span><span>solve_antiparticle      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>172.04 ms 172.76 ms 173.54 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-2.4655% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>1.8303% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>1.1884%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span></code></pre>
+<p>Well that's disappointing, there's statistically no change in runtime. I guess the entry API must
+have some overhead that's just as expensive as a lookup and insert. If anyone has ideas on why this
+didn't change the overall runtime, I'd love to know. But this also shows the importance of
+benchmarking every step of the way. Even the most obvious improvements can end up having no effect
+on the overall performance, or worse a negative impact.</p>
+<h2 id="container-pre-sizing">Container pre-sizing</h2>
+<p>We're getting close to the bottom of the barrel. A quick and easy optimization we can do is to
+pre-size our containers. This helps us skip any work we might do to resize containers for work loads
+under some minimum size. I've picked some relatively arbitrary pre-sizes here:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">let mut</span><span> states </span><span style="font-weight:bold;color:#a71d5d;">= </span><span>HashMap::with_capacity(</span><span style="color:#0086b3;">4 </span><span style="font-weight:bold;color:#a71d5d;">* </span><span style="color:#0086b3;">1024</span><span>);
+</span><span style="font-weight:bold;color:#a71d5d;">let mut</span><span> parents </span><span style="font-weight:bold;color:#a71d5d;">= </span><span style="color:#0086b3;">Vec</span><span>::with_capacity(</span><span style="color:#0086b3;">4 </span><span style="font-weight:bold;color:#a71d5d;">* </span><span style="color:#0086b3;">1024</span><span>);
+</span><span style="font-weight:bold;color:#a71d5d;">let mut</span><span> queue </span><span style="font-weight:bold;color:#a71d5d;">= </span><span>BinaryHeap::with_capacity(</span><span style="color:#0086b3;">1024</span><span>);
+</span></code></pre>
+<p>We should expect these to only impact any puzzles that don't use memory above the pre-sizing
+threshold. Do we?</p>
+<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo bench
+</span><span>
+</span><span>solve_square_dance      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>3.7025 ms 3.7311 ms 3.7652 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-9.7612% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>8.3409% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>6.9754%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span><span>
+</span><span>solve_fractal           time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>6.0512 ms 6.1010 ms 6.1584 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-15.633% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>14.231% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>12.778%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span><span>
+</span><span>solve_antiparticle      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>177.28 ms 178.40 ms 179.59 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-0.7913% +0.0458% +0.8882%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.92 </span><span style="font-weight:bold;color:#a71d5d;">&gt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span></code></pre>
+<p>That's exactly what we see. We do get some very nice deltas on our smaller puzzles, but our larger
+puzzle benchmark is completely unaffected. Still, it's bringing down our average case and that's
+important for us. Finally, we can move on to the last optimization strategy:</p>
+<h2 id="inlining">Inlining</h2>
+<p>One of the last tools in our performance toolbox is function inlining. The impact of function
+inlining varies widely, and we should always be careful to benchmark our code along the way. Let's
+see if there are any good candidates for inlining. Ideally, a good function to inline should either
+be <em>small</em> or medium-sized and used <em>once or twice</em>. We have a lot of basic little functions in our
+vector and direction primitives that we can inline, so those might help a little. Inlining our
+especially hot <code>transition</code> function for our puzzle state should also help eliminate some overhead.
+Let's see how that impacts our performance:</p>
+<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo bench
+</span><span>
+</span><span>solve_square_dance      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>3.7629 ms 3.8005 ms 3.8413 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-10.293% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>8.6516% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>6.9645%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span><span>
+</span><span>solve_fractal           time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>6.7174 ms 6.8059 ms 6.9033 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-10.243% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>8.5148% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>6.7086%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span><span>
+</span><span>solve_antiparticle      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>175.97 ms 176.63 ms 177.38 ms</span><span style="font-weight:bold;color:#a71d5d;">]
+</span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-6.8481% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>5.9110% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>5.0767%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)
+</span></code></pre>
+<p>A final solid set of improvements! It's always nice to see. Let's wrap up with some final thoughts.</p>
+<h2 id="wrap-up">Wrap up</h2>
+<p>We've successfully made a puzzle solver that's capable of solving all of our given inputs and
+optimized it using techniques specific to brute-forcing as well as general optimization techniques.
+We looked at the performance impacts of various techniques and know what to expect in the future.
+Finally, we also learned not to assume that any particular optimization will affect every case
+evenly, or even positively.</p>
+<p>In the future, the best gains will likely come from improving our heuristic function. For this
+relatively simple game, there might not be much of a better heuristic we can calculate. In a more
+complex game, we can often calculate leverage the information in the puzzle to make a much better
+function though. When writing a solver for Stephen's Sausage Roll, which permitted a more accurate
+heuristic, the gains from a heuristic function were much larger.</p>
+<p>Finally, you can actually use the solver written here right now! You can turn on the solver for any
+page that has a puzzle on it by adding <code>&amp;controls=true</code> to the URL
+(<a href="/blog/anima-playground?controls=true">here</a> for example). Here's one with the solver enabled, try
+it out! You can also write, import, and share your own puzzles.</p>
+<p>Thanks for reading, and happy solving!</p>
+<script
+    class="anima-data"
+    type="application/json"
+    data-scale="50"
+    data-controls="true"
+    data-dynamic="false"
+>
+    {
+    "name": "Box Step",
+    "width": 5,
+    "height": 3,
+    "tiles": [
+        ".r.b.",
+        ".....",
+        ".b.r."
+    ],
+    "actors": [
+        {
+            "color": "red",
+            "x": 3,
+            "y": 2
+        },
+        {
+            "color": "red",
+            "x": 1,
+            "y": 0
+        },
+        {
+            "color": "blue",
+            "x": 1,
+            "y": 2
+        },
+        {
+            "color": "blue",
+            "x": 3,
+            "y": 0
+        }
+    ],
+    "optimalMoves": 15
+}
+</script>
 
 </div>
 <div class="section navigation">
