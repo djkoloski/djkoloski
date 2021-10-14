@@ -1163,7 +1163,14 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
 		<updated>2021-10-10T00:00:00+00:00</updated>
 		<link href="https://davidkoloski.me/blog/anima-puzzles/" type="text/html"/>
 		<id>https://davidkoloski.me/blog/anima-puzzles/</id>
-		<content type="html">&lt;h2 id=&quot;all-puzzles&quot;&gt;All puzzles&lt;&#x2F;h2&gt;
+		<content type="html">&lt;div class=&quot;center&quot;&gt;&lt;div&gt;&lt;h3 id=&quot;controls&quot;&gt;Controls&lt;&#x2F;h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Move&lt;&#x2F;strong&gt;: WASD&#x2F;Arrow keys (desktop), swipe (mobile)&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Undo&lt;&#x2F;strong&gt;: Space (desktop), top left button&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Reset&lt;&#x2F;strong&gt;: Shift + Space (desktop), bottom left button&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Unfocus&lt;&#x2F;strong&gt;: Escape (desktop), click away, tap (mobile)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;div&gt;&lt;&#x2F;div&gt;
 &lt;script&gt;
     let wasm_bindgen;
 (function() {
@@ -3097,7 +3104,6 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 19
 }
 &lt;&#x2F;script&gt;
-&lt;h2 id=&quot;bonus-puzzles&quot;&gt;Bonus puzzles&lt;&#x2F;h2&gt;
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -4923,7 +4929,7 @@ implementation ready to make our solver go super fast!&lt;&#x2F;p&gt;
 &lt;p&gt;Well that&#x27;s a little disappointing. At least, it is if you only look at the individual benchmarks.
 Two went up by around 5-15%, and one went down by over 50%. So while it wasn&#x27;t a unilateral gain, it
 did give us a net benefit overall. And now, if we can improve our heuristic function somehow we can
-gain the benefit from that too. Let&#x27;s take a look awt our explored states (and branching factor):&lt;&#x2F;p&gt;
+gain the benefit from that too. Let&#x27;s take a look at our explored states (and branching factor):&lt;&#x2F;p&gt;
 &lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Puzzle&lt;&#x2F;th&gt;&lt;th align=&quot;right&quot;&gt;Solution Length&lt;&#x2F;th&gt;&lt;th align=&quot;right&quot;&gt;Before (BF)&lt;&#x2F;th&gt;&lt;th align=&quot;right&quot;&gt;After (BF)&lt;&#x2F;th&gt;&lt;th align=&quot;right&quot;&gt;Change&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
 &lt;tr&gt;&lt;td&gt;Square Dance&lt;&#x2F;td&gt;&lt;td align=&quot;right&quot;&gt;12&lt;&#x2F;td&gt;&lt;td align=&quot;right&quot;&gt;11401 (2.061)&lt;&#x2F;td&gt;&lt;td align=&quot;right&quot;&gt;9737 (2.031)&lt;&#x2F;td&gt;&lt;td align=&quot;right&quot;&gt;-14.595%&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
 &lt;tr&gt;&lt;td&gt;Fractal&lt;&#x2F;td&gt;&lt;td align=&quot;right&quot;&gt;13&lt;&#x2F;td&gt;&lt;td align=&quot;right&quot;&gt;46253 (2.179)&lt;&#x2F;td&gt;&lt;td align=&quot;right&quot;&gt;16593 (2.002)&lt;&#x2F;td&gt;&lt;td align=&quot;right&quot;&gt;-64.126%&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
@@ -5096,9 +5102,9 @@ Finally, we also learned not to assume that any particular optimization will aff
 evenly, or even positively.&lt;&#x2F;p&gt;
 &lt;p&gt;In the future, the best gains will likely come from improving our heuristic function. For this
 relatively simple game, there might not be much of a better heuristic we can calculate. In a more
-complex game, we can often calculate leverage the information in the puzzle to make a much better
-function though. When writing a solver for Stephen&#x27;s Sausage Roll, which permitted a more accurate
-heuristic, the gains from a heuristic function were much larger.&lt;&#x2F;p&gt;
+complex game, we can often leverage the information in the puzzle to make a much better function
+though. When writing a solver for Stephen&#x27;s Sausage Roll, which permitted a more accurate heuristic,
+the gains from a heuristic function were much larger.&lt;&#x2F;p&gt;
 &lt;p&gt;Finally, you can actually use the solver written here right now! You can turn on the solver for any
 page that has a puzzle on it by adding &lt;code&gt;&amp;amp;controls=true&lt;&#x2F;code&gt; to the URL
 (&lt;a href=&quot;&#x2F;blog&#x2F;anima-playground?controls=true&quot;&gt;here&lt;&#x2F;a&gt; for example). Here&#x27;s one with the solver enabled, try

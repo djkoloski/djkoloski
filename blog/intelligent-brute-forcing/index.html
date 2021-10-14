@@ -1813,7 +1813,7 @@ implementation ready to make our solver go super fast!</p>
 <p>Well that's a little disappointing. At least, it is if you only look at the individual benchmarks.
 Two went up by around 5-15%, and one went down by over 50%. So while it wasn't a unilateral gain, it
 did give us a net benefit overall. And now, if we can improve our heuristic function somehow we can
-gain the benefit from that too. Let's take a look awt our explored states (and branching factor):</p>
+gain the benefit from that too. Let's take a look at our explored states (and branching factor):</p>
 <table><thead><tr><th>Puzzle</th><th align="right">Solution Length</th><th align="right">Before (BF)</th><th align="right">After (BF)</th><th align="right">Change</th></tr></thead><tbody>
 <tr><td>Square Dance</td><td align="right">12</td><td align="right">11401 (2.061)</td><td align="right">9737 (2.031)</td><td align="right">-14.595%</td></tr>
 <tr><td>Fractal</td><td align="right">13</td><td align="right">46253 (2.179)</td><td align="right">16593 (2.002)</td><td align="right">-64.126%</td></tr>
@@ -1986,9 +1986,9 @@ Finally, we also learned not to assume that any particular optimization will aff
 evenly, or even positively.</p>
 <p>In the future, the best gains will likely come from improving our heuristic function. For this
 relatively simple game, there might not be much of a better heuristic we can calculate. In a more
-complex game, we can often calculate leverage the information in the puzzle to make a much better
-function though. When writing a solver for Stephen's Sausage Roll, which permitted a more accurate
-heuristic, the gains from a heuristic function were much larger.</p>
+complex game, we can often leverage the information in the puzzle to make a much better function
+though. When writing a solver for Stephen's Sausage Roll, which permitted a more accurate heuristic,
+the gains from a heuristic function were much larger.</p>
 <p>Finally, you can actually use the solver written here right now! You can turn on the solver for any
 page that has a puzzle on it by adding <code>&amp;controls=true</code> to the URL
 (<a href="/blog/anima-playground?controls=true">here</a> for example). Here's one with the solver enabled, try
