@@ -10,6 +10,10 @@
         <loc>https://davidkoloski.me/blog/</loc>
     </url>
     <url>
+        <loc>https://davidkoloski.me/blog/abstract-types-in-rust/</loc>
+        <lastmod>2022-02-19</lastmod>
+    </url>
+    <url>
         <loc>https://davidkoloski.me/blog/anima-playground/</loc>
         <lastmod>2021-10-10</lastmod>
     </url>

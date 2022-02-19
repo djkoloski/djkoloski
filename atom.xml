@@ -5,15 +5,385 @@
 	<link href="https://davidkoloski.me/atom.xml" rel="self" type="application/atom+xml"/>
   <link href="https://davidkoloski.me"/>
 	<generator uri="https://www.getzola.org/">Zola</generator>
-	<updated>2021-10-10T00:00:00+00:00</updated>
+	<updated>2022-02-19T00:00:00+00:00</updated>
 	<id>https://davidkoloski.me/atom.xml</id>
+	<entry xml:lang="en">
+		<title>Abstract Types in Rust</title>
+		<published>2022-02-19T00:00:00+00:00</published>
+		<updated>2022-02-19T00:00:00+00:00</updated>
+		<link href="https://davidkoloski.me/blog/abstract-types-in-rust/" type="text/html"/>
+		<id>https://davidkoloski.me/blog/abstract-types-in-rust/</id>
+		<content type="html">&lt;h2 id=&quot;this-post-is-not-ready-to-share-yet&quot;&gt;This post is not ready to share yet&lt;&#x2F;h2&gt;
+&lt;p&gt;This post is still undergoing review and critique. If you&#x27;re here by chance or follow the RSS feed, please do not share this post yet. It will be ready soon!&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;foreword&quot;&gt;Foreword&lt;&#x2F;h2&gt;
+&lt;p&gt;This article is both an explanation and criticism of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;. A large portion of this text is dedicated to explaining and understanding the properties of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, but it is not &lt;em&gt;solely&lt;&#x2F;em&gt; an explainer. If you&#x27;re already familiar with the properties and mechanics of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, you can skip to &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;abstract-types-in-rust&#x2F;#impl-trait-and-a-new-type-abstraction-operator&quot;&gt;this section&lt;&#x2F;a&gt; to get to the meat of the criticism and the new ideas.&lt;&#x2F;p&gt;
+&lt;p&gt;I believe that the current implementation of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; is confusing and non-orthogonal. I propose an alternative formulation of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; that is more intuitive, restores orthogonality to the feature, and enables more precise and flexible use of abstraction.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-is-impl-trait&quot;&gt;What is &lt;code&gt;impl Trait&lt;&#x2F;code&gt;?&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;code&gt;impl Trait&lt;&#x2F;code&gt; is syntax sugar can be used in argument position or in return position. Let&#x27;s look at how it can be used and how it desugars to more fundamental Rust syntax.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;argument-position&quot;&gt;Argument position&lt;&#x2F;h3&gt;
+&lt;p&gt;When used in argument position, &lt;code&gt;impl Trait&lt;&#x2F;code&gt; is shorthand for a type that implements the requested traits. It takes a function like:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;log&lt;&#x2F;span&gt;&lt;span&gt;(x: impl Debug) {
+&lt;&#x2F;span&gt;&lt;span&gt;    dbg!(x);
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;And desugars it to:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;log&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;X: Debug&amp;gt;(x: X) {
+&lt;&#x2F;span&gt;&lt;span&gt;    dbg!(x);
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;In argument position, each &lt;code&gt;impl Trait&lt;&#x2F;code&gt; is assumed to be a different, unique type. If we wanted to take &lt;em&gt;two&lt;&#x2F;em&gt; arguments of the same type, we couldn&#x27;t use &lt;code&gt;impl Trait&lt;&#x2F;code&gt; any more and would have to be more explicit. This doesn&#x27;t work:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;pick&lt;&#x2F;span&gt;&lt;span&gt;(which: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;bool&lt;&#x2F;span&gt;&lt;span&gt;, x: impl Debug, y: impl Debug) -&amp;gt; impl Debug {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;if !&lt;&#x2F;span&gt;&lt;span&gt;which {
+&lt;&#x2F;span&gt;&lt;span&gt;        x
+&lt;&#x2F;span&gt;&lt;span&gt;    } &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;else &lt;&#x2F;span&gt;&lt;span&gt;{
+&lt;&#x2F;span&gt;&lt;span&gt;        y
+&lt;&#x2F;span&gt;&lt;span&gt;    }
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;With this error:&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#ffffff;color:#323232;&quot;&gt;&lt;code&gt;&lt;span&gt;error[E0308]: `if` and `else` have incompatible types
+&lt;&#x2F;span&gt;&lt;span&gt;= note:        expected type `impl Debug`
+&lt;&#x2F;span&gt;&lt;span&gt;        found type parameter `impl Debug`
+&lt;&#x2F;span&gt;&lt;span&gt;= note: a type parameter was expected, but a different one was found
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Because &lt;code&gt;x&lt;&#x2F;code&gt;&#x27;s &lt;code&gt;impl Debug&lt;&#x2F;code&gt; could be a different concrete type from &lt;code&gt;y&lt;&#x2F;code&gt;&#x27;s &lt;code&gt;impl Debug&lt;&#x2F;code&gt;. Instead, we must write:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;pick&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Debug&amp;gt;(which: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;bool&lt;&#x2F;span&gt;&lt;span&gt;, x: T, y: T) -&amp;gt; T {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;...
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Which tells the compiler that we expect two of the same type and will return that type. That&#x27;s easy enough, we just have to desugar it ourselves and give the compiler a little more information. Let&#x27;s move on.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;return-position&quot;&gt;Return position&lt;&#x2F;h3&gt;
+&lt;p&gt;When used in return position, &lt;code&gt;impl Traits&lt;&#x2F;code&gt; is &lt;em&gt;also&lt;&#x2F;em&gt; shorthand for a type that implements the requested traits. However, there&#x27;s a catch. It takes a function like:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Debug {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;And desugars it to something like:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Target&amp;lt;T: Debug &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;+ &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#f5f5f5;font-weight:bold;color:#b52a1d;&quot;&gt;?&lt;&#x2F;span&gt;&lt;span&gt;Sized&amp;gt;(T);
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Debug &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;+ &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#f5f5f5;font-weight:bold;color:#b52a1d;&quot;&gt;?&lt;&#x2F;span&gt;&lt;span&gt;Sized&amp;gt; Debug for Target&amp;lt;T&amp;gt; {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;fmt&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self, f: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;mut &lt;&#x2F;span&gt;&lt;span&gt;Formatter&amp;lt;&amp;#39;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;_&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt;) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;Result&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;(), Error&amp;gt; {
+&lt;&#x2F;span&gt;&lt;span&gt;        self.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;0.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;fmt&lt;&#x2F;span&gt;&lt;span&gt;(f)
+&lt;&#x2F;span&gt;&lt;span&gt;    }
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; Target&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&amp;#39;static str&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt; {
+&lt;&#x2F;span&gt;&lt;span&gt;    Target(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;)
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This desugaring has a special property: the return type gets &lt;em&gt;abstracted&lt;&#x2F;em&gt;. Let&#x27;s contrast this with an &lt;em&gt;unabstracted&lt;&#x2F;em&gt; return type:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&amp;#39;static str &lt;&#x2F;span&gt;&lt;span&gt;{
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;There&#x27;s a subtle but important difference between these two implementations. Normally, if you know the concrete type arguments to a function then you can deduce the corresponding concrete return type. Take this code for example:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;combine&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Add&amp;gt;(lhs: T, rhs: T) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;T::&lt;&#x2F;span&gt;&lt;span&gt;Output {
+&lt;&#x2F;span&gt;&lt;span&gt;    lhs.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;add&lt;&#x2F;span&gt;&lt;span&gt;(rhs)
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;{}&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;combine&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;1&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;2&lt;&#x2F;span&gt;&lt;span&gt;));
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Notice how &lt;code&gt;combine&lt;&#x2F;code&gt; doesn&#x27;t guarantee &lt;code&gt;T::Output: Display&lt;&#x2F;code&gt;? That means there&#x27;s no guarantee that &lt;code&gt;combine&lt;&#x2F;code&gt; returns something that implements &lt;code&gt;Display&lt;&#x2F;code&gt;, right? What&#x27;s going on?&lt;&#x2F;p&gt;
+&lt;p&gt;In this situation, the compiler is deducing the concrete return type of &lt;code&gt;combine&lt;&#x2F;code&gt; at the call site and then checking whether &lt;em&gt;that&lt;&#x2F;em&gt; type implements &lt;code&gt;Display&lt;&#x2F;code&gt;. We know that &lt;code&gt;combine(i32, i32)&lt;&#x2F;code&gt; will return an &lt;code&gt;i32&lt;&#x2F;code&gt;, and &lt;code&gt;i32&lt;&#x2F;code&gt; implements &lt;code&gt;Display&lt;&#x2F;code&gt;, so we have deduced that the return value of that specific call to &lt;code&gt;combine&lt;&#x2F;code&gt; will return something that implements &lt;code&gt;Display&lt;&#x2F;code&gt;. Problem solved!&lt;&#x2F;p&gt;
+&lt;p&gt;Abstraction prevents this kind of introspection by wrapping the output in an &lt;em&gt;abstract&lt;&#x2F;em&gt; wrapper type. In the previous example, the &lt;code&gt;Target&lt;&#x2F;code&gt; type proxied the &lt;code&gt;Debug&lt;&#x2F;code&gt; impl but &lt;em&gt;only&lt;&#x2F;em&gt; the &lt;code&gt;Debug&lt;&#x2F;code&gt; impl. Any other traits implemented by the wrapped &lt;code&gt;T&lt;&#x2F;code&gt; are &lt;em&gt;not&lt;&#x2F;em&gt; implemented by &lt;code&gt;Target&amp;lt;T&amp;gt;&lt;&#x2F;code&gt;, which prevents that type introspection. An alternate implementation of &lt;code&gt;combine&lt;&#x2F;code&gt; that uses &lt;code&gt;impl Trait&lt;&#x2F;code&gt; might look like this:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;combine&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Add&amp;gt;(lhs: T, rhs: T) -&amp;gt; impl Display
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;where
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;T::&lt;&#x2F;span&gt;&lt;span&gt;Output: Display,
+&lt;&#x2F;span&gt;&lt;span&gt;{
+&lt;&#x2F;span&gt;&lt;span&gt;    lhs.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;add&lt;&#x2F;span&gt;&lt;span&gt;(rhs)
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;{}&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;combine&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;1&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;2&lt;&#x2F;span&gt;&lt;span&gt;));
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;So everything still works like we expect. The difference comes when we do something like:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span&gt;println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;{:?}&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;combine&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;1&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;2&lt;&#x2F;span&gt;&lt;span&gt;));
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;In the unabstracted &lt;code&gt;combine&lt;&#x2F;code&gt;, we can deduce the concrete return type of &lt;code&gt;combine(1, 2)&lt;&#x2F;code&gt; and check whether it implements &lt;code&gt;Debug&lt;&#x2F;code&gt;. It does, so we can debug print it. However, in the abstracted &lt;code&gt;combine&lt;&#x2F;code&gt; we abstracted our return type and that abstracted type &lt;em&gt;does not&lt;&#x2F;em&gt; implement &lt;code&gt;Debug&lt;&#x2F;code&gt;. So this won&#x27;t compile with the abstracted implementation.&lt;&#x2F;p&gt;
+&lt;p&gt;So we actually have two options for our functions&#x27; return types. One of them is &lt;em&gt;unabstracted&lt;&#x2F;em&gt;, where the caller can introspect the concrete type and check whether it implements some unrelated traits. The other is &lt;em&gt;abstracted&lt;&#x2F;em&gt;, where we hide the concrete type from the caller in a wrapper and only expose exactly the traits that we choose to. That&#x27;s the very literal difference between them, but what does that actually &lt;em&gt;mean&lt;&#x2F;em&gt;?&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;should-you-abstract-your-types&quot;&gt;Should you abstract your types?&lt;&#x2F;h2&gt;
+&lt;p&gt;An abstract type restricts what someone else can know about some concrete type. In the &lt;code&gt;fn target() -&amp;gt; Target&lt;&#x2F;code&gt; example, whoever calls &lt;code&gt;target&lt;&#x2F;code&gt; knows that it&#x27;s not just returning any old &lt;code&gt;T: Debug&lt;&#x2F;code&gt;, it knows that it&#x27;s returning exactly &lt;code&gt;&amp;amp;&#x27;static str&lt;&#x2F;code&gt;. This can be both a blessing and a curse:&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;blessings&quot;&gt;Blessings&lt;&#x2F;h3&gt;
+&lt;p&gt;On one hand, knowing exactly what type it is lets you reason about its other properties:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span&gt;#[derive(Debug)]
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Wrapper&amp;lt;T&amp;gt;(T);
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;wrap&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T&amp;gt;(value: T) -&amp;gt; Wrapper&amp;lt;T&amp;gt; {
+&lt;&#x2F;span&gt;&lt;span&gt;    Wrapper(value)
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;{:?}&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;wrap&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;));
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;So even though &lt;code&gt;wrap&lt;&#x2F;code&gt; doesn&#x27;t guarantee that its return type implements &lt;code&gt;Debug&lt;&#x2F;code&gt;, we can figure out whether or not it does ourselves. This lets us &amp;quot;leak&amp;quot; our impls through the return type so we can be as helpful as possible with whoever calls our function.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;curses&quot;&gt;Curses&lt;&#x2F;h3&gt;
+&lt;p&gt;But some time in the future, we might change &lt;code&gt;Wrapper&lt;&#x2F;code&gt; so that it no longer implements &lt;code&gt;Debug&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Wrapper&amp;lt;T&amp;gt;(T);
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Oh no! That was just for debugging, nobody was supposed to rely on that being implemented! And now we&#x27;ve broken everyone who was relying on that trait. This situation gets worse for &lt;a href=&quot;https:&#x2F;&#x2F;doc.rust-lang.org&#x2F;reference&#x2F;special-types-and-traits.html#auto-traits&quot;&gt;auto traits&lt;&#x2F;a&gt; like &lt;code&gt;Send&lt;&#x2F;code&gt; and &lt;code&gt;Sync&lt;&#x2F;code&gt;, since we might change whether our type implements an auto trait just by changing its definition! That&#x27;s spooky action at a distance!&lt;&#x2F;p&gt;
+&lt;p&gt;This is a situation where abstraction can really help us. By limiting the introspection of our public types, we can prevent &lt;a href=&quot;https:&#x2F;&#x2F;www.hyrumslaw.com&#x2F;&quot;&gt;Hyrum&#x27;s Law&lt;&#x2F;a&gt; from breaking everything downstream from our library.&lt;&#x2F;p&gt;
+&lt;p&gt;Hold on though, something&#x27;s missing here. These have all been free functions; what happens if we do this in a trait?&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;impl-trait-in-traits&quot;&gt;&lt;code&gt;impl Trait&lt;&#x2F;code&gt; in traits&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;argument-position-traits&quot;&gt;Argument position (traits)&lt;&#x2F;h3&gt;
+&lt;p&gt;Not much is different for argument position &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in trait methods. Something like this:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Logger {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;log&lt;&#x2F;span&gt;&lt;span&gt;(x: impl Debug);
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;desugars to:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Logger {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;log&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;X: Debug&amp;gt;(x: X);
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Nice and easy, uncontroversial. But what about...&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;return-position-traits&quot;&gt;Return position (traits)&lt;&#x2F;h3&gt;
+&lt;p&gt;You can&#x27;t use &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position right now, but is that? Let&#x27;s consider a desugaring of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; as a return type in a trait:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;A straightforward desugaring of this would be:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine: Ore;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;But that doesn&#x27;t abstract the return type like we want. Instead, we should abstract that with a wrapper to hide the details of the concrete type:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;MinerOre&amp;lt;T: Ore&amp;gt;(T);
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Ore&amp;gt; Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;MinerOre&amp;lt;T&amp;gt; { &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;... &lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine: Ore;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; MinerOre&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine&amp;gt;;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Much better, this can be our canonical desugaring for now. Let&#x27;s go implement a &lt;code&gt;Miner&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore {
+&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite
+&lt;&#x2F;span&gt;&lt;span&gt;    }
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Which would then desugar to:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; Bauxite;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; MinerOre&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine&amp;gt; {
+&lt;&#x2F;span&gt;&lt;span&gt;        MinerOre(Bauxite)
+&lt;&#x2F;span&gt;&lt;span&gt;    }
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This makes sense, but something&#x27;s not quite right here. The trait is dictating whether the return type of the function is abstract, but shouldn&#x27;t the impl choose for itself whether to abstract its return type? After all, the impl is the one exposing that concrete type so it should also decide whether to let users introspect on it. Let&#x27;s consider an alternative desugaring:&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;return-position-traits-remixed&quot;&gt;Return position (traits, remixed)&lt;&#x2F;h3&gt;
+&lt;p&gt;Let&#x27;s change our original desugaring for our trait:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;So that it now desugars to:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine: Ore;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Hmm, that &lt;em&gt;does&lt;&#x2F;em&gt; seem more consistent with how the argument position &lt;code&gt;impl Trait&lt;&#x2F;code&gt; desugars. Interesting, let&#x27;s keep that in mind. Anyway, let&#x27;s write our &lt;code&gt;Miner&lt;&#x2F;code&gt; impl now:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore {
+&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite
+&lt;&#x2F;span&gt;&lt;span&gt;    }
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;We can now desugar this to:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;QuarryOre&amp;lt;T: Ore&amp;gt;(T);
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Ore&amp;gt; Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;QuarryOre&amp;lt;T&amp;gt; { &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;... &lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span&gt;QuarryOre&amp;lt;Bauxite&amp;gt;;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine {
+&lt;&#x2F;span&gt;&lt;span&gt;        QuarryOre(Bauxite)
+&lt;&#x2F;span&gt;&lt;span&gt;    }
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;And now it&#x27;s the &lt;em&gt;impl&lt;&#x2F;em&gt; that decides whether a return type should be abstract or not. Nice! Now we have a choice of whether or not to abstract our return type in our impl, but the syntax seems a little weird. If we chose not to abstract our return type, the trait and impl would look like this instead:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; Bauxite;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine {
+&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite
+&lt;&#x2F;span&gt;&lt;span&gt;    }
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Yeah, that&#x27;s really weird. There&#x27;s no associated type in the trait definition, but we have to use it to write our unabstracted trait implementation. This is really confusing me, why doesn&#x27;t the free function version of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; have this problem?&lt;&#x2F;p&gt;
+&lt;p&gt;Well actually, it does.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;return-position-remixed&quot;&gt;Return position (remixed)&lt;&#x2F;h3&gt;
+&lt;p&gt;Let&#x27;s take a look at our &lt;code&gt;target&lt;&#x2F;code&gt; function again:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Debug {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;An alternative desugaring would be:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Target: Debug &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= &amp;amp;&amp;#39;static str&lt;&#x2F;span&gt;&lt;span&gt;;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; Target {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;That would be more consistent, wouldn&#x27;t it? We aren&#x27;t hiding the concrete return type, and we&#x27;re bounding our return type with a trait. This is a lot more like the desugaring for &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in argument position. We had to determine the concrete &lt;code&gt;Target&lt;&#x2F;code&gt; type alias ourselves though, which is a little tedious. Wouldn&#x27;t it be nice if we could make the compiler do that for us?&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Target: Debug &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= _&lt;&#x2F;span&gt;&lt;span&gt;;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Much better, now we can let the compiler figure out the return type of &lt;code&gt;target&lt;&#x2F;code&gt;, ensure that it implements &lt;code&gt;Debug&lt;&#x2F;code&gt;, and return it unabstracted.&lt;&#x2F;p&gt;
+&lt;p&gt;But this leads us to an important question: which of these should be the &lt;em&gt;real&lt;&#x2F;em&gt; &lt;code&gt;impl Trait&lt;&#x2F;code&gt;? From here on out, I&#x27;ll present my &lt;em&gt;opinion&lt;&#x2F;em&gt; on this question and a possible solution to this problem. &lt;&#x2F;p&gt;
+&lt;h2 id=&quot;impl-trait-and-a-new-type-abstraction-operator&quot;&gt;&lt;code&gt;impl Trait&lt;&#x2F;code&gt; and a new type abstraction operator&lt;&#x2F;h2&gt;
+&lt;p&gt;I propose that the desugaring for &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position should not abstract the return type, and instead a new operator should be introduced for performing type abstraction. Let me be explicit:&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;a-new-desugaring&quot;&gt;A new desugaring&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position should desugar from this:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Debug {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore {
+&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite
+&lt;&#x2F;span&gt;&lt;span&gt;    }
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;To this:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;_&lt;&#x2F;span&gt;&lt;span&gt;: Debug {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;_&lt;&#x2F;span&gt;&lt;span&gt;: Ore;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;_&lt;&#x2F;span&gt;&lt;span&gt;: Ore {
+&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite
+&lt;&#x2F;span&gt;&lt;span&gt;    }
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;And finally into this:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Target: Debug &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= _&lt;&#x2F;span&gt;&lt;span&gt;;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; Target {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine: Ore;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine: Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= _&lt;&#x2F;span&gt;&lt;span&gt;;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine {
+&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite
+&lt;&#x2F;span&gt;&lt;span&gt;    }
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This requires two new features:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Bounds on type definitions (&lt;code&gt;type Target: Debug&lt;&#x2F;code&gt;, &lt;code&gt;type Mine: Ore&lt;&#x2F;code&gt;)&lt;&#x2F;li&gt;
+&lt;li&gt;Type inference in type definitions (&lt;code&gt;type Target = _&lt;&#x2F;code&gt;, &lt;code&gt;type Mine = _&lt;&#x2F;code&gt;)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;We can emulate bounds with a construction like:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;assert_impls_debug&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Debug&amp;gt;() {}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let _ = &lt;&#x2F;span&gt;&lt;span&gt;assert_impls_debug&amp;lt;Target&amp;gt;;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;assert_impls_ore&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Ore&amp;gt;() {}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let _ = &lt;&#x2F;span&gt;&lt;span&gt;assert_impls_ore&amp;lt;&amp;lt;Quarry &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;as&lt;&#x2F;span&gt;&lt;span&gt; Miner&amp;gt;::Mine&amp;gt;;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Which works, albeit with some ugly errors. Type inference is a truly new feature, but it may be able to leverage existing infrastructure for deducing types. I also propose a restriction for inferred type definitions:&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Inferred type definitions that are not bounded or otherwise constrained (&amp;quot;naked&amp;quot; type inference) result in a compiler warning.&lt;&#x2F;p&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;With that out of the way, we can get on to the big change:&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;as-impl-trait-as-the-type-abstraction-operator&quot;&gt;&lt;code&gt;as impl Trait&lt;&#x2F;code&gt; as the type abstraction operator&lt;&#x2F;h3&gt;
+&lt;p&gt;Consider this new syntax:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;foo&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&amp;#39;static str&lt;&#x2F;span&gt;&lt;span&gt; as impl Debug {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This new syntax would desugar to:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;ImplDebug&amp;lt;T: Debug&amp;gt;(T);
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Debug&amp;gt; Debug &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;ImplDebug&amp;lt;T&amp;gt; {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;fmt&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self, f: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;mut &lt;&#x2F;span&gt;&lt;span&gt;Formatter&amp;lt;&amp;#39;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;_&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt;) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;Result&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;(), Error&amp;gt; {
+&lt;&#x2F;span&gt;&lt;span&gt;        self.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;0.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;fmt&lt;&#x2F;span&gt;&lt;span&gt;(f)
+&lt;&#x2F;span&gt;&lt;span&gt;    }
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;foo&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; ImplDebug&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&amp;#39;static str&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt; {
+&lt;&#x2F;span&gt;&lt;span&gt;    ImplDebug(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;)
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This allows abstract types to be used anywhere a regular type would be, and not just in return position. It would separate the type abstraction of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position from the type inference of it in argument position and help solve a number of outstanding problems with type abstraction.&lt;&#x2F;p&gt;
+&lt;p&gt;Let&#x27;s take a look at some of those:&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;problems-solved&quot;&gt;Problems solved&lt;&#x2F;h2&gt;
+&lt;h3 id=&quot;return-position-impl-trait-in-trait-rpitit&quot;&gt;Return position impl trait in trait (RPITIT)&lt;&#x2F;h3&gt;
+&lt;p&gt;Associated types of traits leak concrete types. Someone might use &lt;code&gt;&amp;lt;MyFoo as Foo&amp;gt;::Bar&lt;&#x2F;code&gt; somewhere that it needs to be &lt;code&gt;Debug&lt;&#x2F;code&gt;, and the compiler will let them as long as it is. But that&#x27;s not part of our contract, and nobody should be allowed to depend on the fact that &lt;code&gt;MyBar&lt;&#x2F;code&gt; implements &lt;code&gt;Debug&lt;&#x2F;code&gt; if we don&#x27;t want them to. So what if we could say something like this instead:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Cloner&amp;lt;T: Clone&amp;gt; {
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Cloned;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;duplicate&lt;&#x2F;span&gt;&lt;span&gt;(x: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;T) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Cloned;
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;Clone&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt; Cloner&amp;lt;T&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Printer {
+&lt;&#x2F;span&gt;&lt;mark style=&quot;background-color:#f5f5f5;&quot;&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Cloned &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; T &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;as impl &lt;&#x2F;span&gt;&lt;span&gt;Clone;
+&lt;&#x2F;span&gt;&lt;&#x2F;mark&gt;&lt;span&gt;    fn duplicate(x: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;T) -&amp;gt; Self::Cloned {
+&lt;&#x2F;span&gt;&lt;span&gt;        x.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;clone&lt;&#x2F;span&gt;&lt;span&gt;() &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;as impl &lt;&#x2F;span&gt;&lt;span&gt;Clone
+&lt;&#x2F;span&gt;&lt;span&gt;    }
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Now, the associated &lt;code&gt;T&lt;&#x2F;code&gt; type isn&#x27;t &lt;code&gt;T&lt;&#x2F;code&gt;, it&#x27;s an &lt;em&gt;abstraction&lt;&#x2F;em&gt; of &lt;code&gt;T&lt;&#x2F;code&gt;. It&#x27;s an abstraction that only exposes the fact that &lt;code&gt;T&lt;&#x2F;code&gt; implements &lt;code&gt;Clone&lt;&#x2F;code&gt;, which is exactly what we want.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;publicly-abstracted-private-types&quot;&gt;Publicly abstracted private types&lt;&#x2F;h3&gt;
+&lt;p&gt;With a little more elbow grease, this would also allow constructions like:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;mark style=&quot;background-color:#f5f5f5;&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Thought;
+&lt;&#x2F;span&gt;&lt;&#x2F;mark&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub struct &lt;&#x2F;span&gt;&lt;span&gt;Brain;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Factory &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Brain {
+&lt;&#x2F;span&gt;&lt;mark style=&quot;background-color:#f5f5f5;&quot;&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Output &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; Thought &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;as impl &lt;&#x2F;span&gt;&lt;span&gt;Display;
+&lt;&#x2F;span&gt;&lt;&#x2F;mark&gt;&lt;span&gt;    fn produce() -&amp;gt; Self::Output {
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;...
+&lt;&#x2F;span&gt;&lt;span&gt;    }
+&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Note that &lt;code&gt;Thought&lt;&#x2F;code&gt; is &lt;em&gt;private&lt;&#x2F;em&gt;, yet we&#x27;re exposing it &lt;em&gt;through an abstraction&lt;&#x2F;em&gt; in our associated type. This makes it possible for us to swap out the concrete type of &lt;code&gt;&amp;lt;Brain as Factory&amp;gt;::Output&lt;&#x2F;code&gt; without it being a breaking change! &lt;code&gt;Thought&lt;&#x2F;code&gt; was private and inaccessible, and so we could remove it entirely without causing any semver violations.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;reusable-abstract-types&quot;&gt;Reusable abstract types&lt;&#x2F;h3&gt;
+&lt;p&gt;By leveraging our new type definition inference, we can use &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; in type aliases:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;mark style=&quot;background-color:#f5f5f5;&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub type &lt;&#x2F;span&gt;&lt;span&gt;Id &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= _ as impl &lt;&#x2F;span&gt;&lt;span&gt;Hash + Eq;
+&lt;&#x2F;span&gt;&lt;&#x2F;mark&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;pub fn generate_id() -&amp;gt; Id { &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;i32 &lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;clone_id&lt;&#x2F;span&gt;&lt;span&gt;(x: Id) -&amp;gt; Id { &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;... &lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This allows us to simultaneously abstract away the concrete type of &lt;code&gt;Id&lt;&#x2F;code&gt; while still guaranteeing that &lt;code&gt;generate_id&lt;&#x2F;code&gt; and &lt;code&gt;clone_id&lt;&#x2F;code&gt; return the same type.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;conclusion&quot;&gt;Conclusion&lt;&#x2F;h2&gt;
+&lt;p&gt;After reviewing the origins and inner workings of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, I have presented an alternative formulation of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; that restores orthogonality to type inference and abstraction. I then outlined a new &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; operator that performs type abstraction in more general contexts than &lt;code&gt;impl Trait&lt;&#x2F;code&gt; could. I believe these changes would make it easier to teach and use &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, and lay a foundation for more complex functionality to build on.&lt;&#x2F;p&gt;
+&lt;p&gt;Many of these ideas are not new, they have been discussed and considered before. However, I think we now have the experience necessary to fix our past mistakes and a growing need for these more general tools.&lt;&#x2F;p&gt;
+</content>
+	</entry>
 	<entry xml:lang="en">
 		<title>Anima Playground</title>
 		<published>2021-10-10T00:00:00+00:00</published>
 		<updated>2021-10-10T00:00:00+00:00</updated>
 		<link href="https://davidkoloski.me/blog/anima-playground/" type="text/html"/>
 		<id>https://davidkoloski.me/blog/anima-playground/</id>
-		<content type="html">&lt;script&gt;
+		<content type="html">
+
+&lt;script&gt;
     let wasm_bindgen;
 (function() {
     const __exports = {};
@@ -1154,8 +1524,7 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
 &lt;li&gt;&lt;strong&gt;Reset&lt;&#x2F;strong&gt;: Shift + Space (desktop), bottom left button&lt;&#x2F;li&gt;
 &lt;li&gt;&lt;strong&gt;Unfocus&lt;&#x2F;strong&gt;: Escape (desktop), click away, tap (mobile)&lt;&#x2F;li&gt;
 &lt;&#x2F;ul&gt;
-&lt;&#x2F;div&gt;&lt;&#x2F;div&gt;
-</content>
+&lt;&#x2F;div&gt;&lt;&#x2F;div&gt;</content>
 	</entry>
 	<entry xml:lang="en">
 		<title>Anima Puzzles</title>
@@ -1171,6 +1540,7 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
 &lt;li&gt;&lt;strong&gt;Unfocus&lt;&#x2F;strong&gt;: Escape (desktop), click away, tap (mobile)&lt;&#x2F;li&gt;
 &lt;&#x2F;ul&gt;
 &lt;&#x2F;div&gt;&lt;&#x2F;div&gt;
+
 &lt;script&gt;
     let wasm_bindgen;
 (function() {
@@ -2288,6 +2658,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 2
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -2314,6 +2694,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 6
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -2342,6 +2732,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 16
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -2383,6 +2783,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 16
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -2426,6 +2836,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 10
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -2469,6 +2889,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 13
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -2532,6 +2962,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 7
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -2575,6 +3015,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 12
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -2620,6 +3070,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 15
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -2648,6 +3108,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 16
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -2691,6 +3161,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 11
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -2722,6 +3202,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 6
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -2758,6 +3248,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 6
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -2801,6 +3301,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 10
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -2843,6 +3353,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 11
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -2884,6 +3404,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 8
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -2925,6 +3455,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 11
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -2970,6 +3510,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 13
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -3011,6 +3561,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 15
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -3056,6 +3616,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 14
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -3104,6 +3674,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 19
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -3142,6 +3722,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 20
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -3243,6 +3833,7 @@ together. Let&#x27;s do a few to get a feel for it:&lt;&#x2F;p&gt;
 &lt;li&gt;&lt;strong&gt;Unfocus&lt;&#x2F;strong&gt;: Escape (desktop), click away, tap (mobile)&lt;&#x2F;li&gt;
 &lt;&#x2F;ul&gt;
 &lt;&#x2F;div&gt;&lt;&#x2F;div&gt;
+
 &lt;script&gt;
     let wasm_bindgen;
 (function() {
@@ -4362,6 +4953,16 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
     &quot;optimalMoves&quot;: 6
 }
 &lt;&#x2F;script&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -4412,6 +5013,16 @@ puzzles nontrivial:&lt;&#x2F;p&gt;
 &lt;p&gt;These side-effects make it very difficult (impossible?) to predict how the system will behave after
 even a move or two, which is a hallmark of problems with high NP-complexity. We&#x27;ll add one more
 twist to make it a little more interesting:&lt;&#x2F;p&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -4445,6 +5056,16 @@ twist to make it a little more interesting:&lt;&#x2F;p&gt;
 &lt;&#x2F;script&gt;
 &lt;p&gt;Unlike red actors, blue actors move in the opposite direction you choose. If you choose left, blue
 actors will move right and vice-versa. This leads to one final implicit rule:&lt;&#x2F;p&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -4493,7 +5114,7 @@ all of these, they can get very hard. Just work with them until you feel compete
 &lt;p&gt;This is where we start writing our solver. You can follow along using the &lt;code&gt;start&lt;&#x2F;code&gt; tag on the
 &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;djkoloski&#x2F;anima_solver&quot;&gt;GitHub repo&lt;&#x2F;a&gt;, which will start you with all of the
 boilerplate:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;git clone --branch start https:&#x2F;&#x2F;github.com&#x2F;djkoloski&#x2F;anima_solver&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;pre data-lang=&quot;sh&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span&gt;git clone --branch start https:&#x2F;&#x2F;github.com&#x2F;djkoloski&#x2F;anima_solver&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;h2 id=&quot;a-basic-solver&quot;&gt;A basic solver&lt;&#x2F;h2&gt;
 &lt;p&gt;Our strategy for a basic solver will be to explore, one move at a time, out from
@@ -4557,6 +5178,16 @@ reach is not solved, and a &lt;code&gt;Success&lt;&#x2F;code&gt; transition mean
 direction was moved to transition. When we get a successful transition, we crawl back through the
 &lt;code&gt;parents&lt;&#x2F;code&gt; vector to reassemble the solution and return it. Let&#x27;s try it out!&lt;&#x2F;p&gt;
 &lt;p&gt;We&#x27;re going to use a nice and simple one to test:&lt;&#x2F;p&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -4581,7 +5212,7 @@ direction was moved to transition. When we get a successful transition, we crawl
     &quot;optimalMoves&quot;: 2
 }
 &lt;&#x2F;script&gt;
-&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;$ cargo run&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt; --&lt;&#x2F;span&gt;&lt;span&gt; puzzles&#x2F;line_dance.txt&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;pre data-lang=&quot;sh&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span&gt;$ cargo run&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt; --&lt;&#x2F;span&gt;&lt;span&gt; puzzles&#x2F;line_dance.txt&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;puzzles&#x2F;line_dance.txt:&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;Parse: 0.000201900s&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;Solve: 0.000017600s&lt;&#x2F;span&gt;&lt;span&gt;
@@ -4589,7 +5220,7 @@ direction was moved to transition. When we get a successful transition, we crawl
 &lt;&#x2F;span&gt;&lt;span&gt;Right, Right&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;Cool, it found it! And that looks right too, let&#x27;s see how fast it is in release mode:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;$ cargo run --release&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt; --&lt;&#x2F;span&gt;&lt;span&gt; puzzles&#x2F;line_dance.txt&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;pre data-lang=&quot;sh&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span&gt;$ cargo run --release&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt; --&lt;&#x2F;span&gt;&lt;span&gt; puzzles&#x2F;line_dance.txt&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;puzzles&#x2F;line_dance.txt:&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;Parse: 0.000122700s&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;Solve: 0.000009100s&lt;&#x2F;span&gt;&lt;span&gt;
@@ -4598,6 +5229,16 @@ direction was moved to transition. When we get a successful transition, we crawl
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;Roughly twice as fast, great! We&#x27;re going to be running exclusively in release mode from here on
 out. Now let&#x27;s step it up a little bit and try a harder puzzle:&lt;&#x2F;p&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -4624,7 +5265,7 @@ out. Now let&#x27;s step it up a little bit and try a harder puzzle:&lt;&#x2F;p&
     &quot;optimalMoves&quot;: 6
 }
 &lt;&#x2F;script&gt;
-&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;$ cargo run --release&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt; --&lt;&#x2F;span&gt;&lt;span&gt; puzzles&#x2F;u_turn.txt&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;pre data-lang=&quot;sh&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span&gt;$ cargo run --release&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt; --&lt;&#x2F;span&gt;&lt;span&gt; puzzles&#x2F;u_turn.txt&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;puzzles&#x2F;u_turn.txt:&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;Parse: 0.005942000s&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;Solve: 0.001093200s&lt;&#x2F;span&gt;&lt;span&gt;
@@ -4632,6 +5273,16 @@ out. Now let&#x27;s step it up a little bit and try a harder puzzle:&lt;&#x2F;p&
 &lt;&#x2F;span&gt;&lt;span&gt;Down, Down, Left, Left, Up, Up&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;Awesome, it got that one too! One more, this one&#x27;s really more of the same:&lt;&#x2F;p&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -4660,7 +5311,7 @@ out. Now let&#x27;s step it up a little bit and try a harder puzzle:&lt;&#x2F;p&
     &quot;optimalMoves&quot;: 16
 }
 &lt;&#x2F;script&gt;
-&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;$ cargo run --release&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt; --&lt;&#x2F;span&gt;&lt;span&gt; puzzles&#x2F;spiral.txt&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;pre data-lang=&quot;sh&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span&gt;$ cargo run --release&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt; --&lt;&#x2F;span&gt;&lt;span&gt; puzzles&#x2F;spiral.txt&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;...&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;Uh oh, this one doesn&#x27;t seem to be going anywhere fast. And if you don&#x27;t kill it soon, you might run
@@ -4677,7 +5328,7 @@ out of memory too! Looking at the timings explains why:&lt;&#x2F;p&gt;
 take a peek at how many states we&#x27;re exploring:&lt;&#x2F;p&gt;
 &lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span&gt;println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;Explored &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;{}&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt; states&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, parents.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;len&lt;&#x2F;span&gt;&lt;span&gt;());&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;$ cargo run --release&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt; --&lt;&#x2F;span&gt;&lt;span&gt; puzzles&#x2F;line_dance.txt&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;pre data-lang=&quot;sh&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span&gt;$ cargo run --release&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt; --&lt;&#x2F;span&gt;&lt;span&gt; puzzles&#x2F;line_dance.txt&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;Explored 3 states&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;$ cargo run --release&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt; --&lt;&#x2F;span&gt;&lt;span&gt; puzzles&#x2F;u_turn.txt&lt;&#x2F;span&gt;&lt;span&gt;
@@ -4711,14 +5362,14 @@ hash set and only exploring its children if it&#x27;s not already been visited:&
 &lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;Let&#x27;s see how this affects our cases so far:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;$ cargo run --release&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt; --&lt;&#x2F;span&gt;&lt;span&gt; puzzles&#x2F;u_turn.txt&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;pre data-lang=&quot;sh&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span&gt;$ cargo run --release&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt; --&lt;&#x2F;span&gt;&lt;span&gt; puzzles&#x2F;u_turn.txt&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;Explored 20 states&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;Solve: 0.000895100s&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;Found solution of length 6:   &lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;Down, Down, Left, Left, Up, Up&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;That looks much better! Maybe we can solve our new puzzle now?&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;$ cargo run --release&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt; --&lt;&#x2F;span&gt;&lt;span&gt; puzzles&#x2F;spiral.txt&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;pre data-lang=&quot;sh&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span&gt;$ cargo run --release&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt; --&lt;&#x2F;span&gt;&lt;span&gt; puzzles&#x2F;spiral.txt&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;Explored 51 states&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;puzzles&#x2F;spiral.txt:&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;Parse: 0.000212300s&lt;&#x2F;span&gt;&lt;span&gt;
@@ -4730,7 +5381,7 @@ hash set and only exploring its children if it&#x27;s not already been visited:&
 optimization alone brings all our sample puzzles into the realm of solvability! Now we can start
 benchmarking our solver more comprehensively. Let&#x27;s pick a few representatives from the
 &lt;a href=&quot;&#x2F;blog&#x2F;&quot;&gt;sample puzzles set&lt;&#x2F;a&gt; to bench:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;$ cargo bench&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;pre data-lang=&quot;sh&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span&gt;$ cargo bench&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;solve_square_dance      time:   &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;[&lt;&#x2F;span&gt;&lt;span&gt;16.658 ms 16.888 ms 17.125 ms&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;]&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;solve_fractal           time:   &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;[&lt;&#x2F;span&gt;&lt;span&gt;44.606 ms 45.193 ms 45.806 ms&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;]&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;solve_antiparticle      time:   &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;[&lt;&#x2F;span&gt;&lt;span&gt;1.8001 s 1.8308 s 1.8640 s&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;]&lt;&#x2F;span&gt;&lt;span&gt;
@@ -4774,7 +5425,7 @@ we transition our states:&lt;&#x2F;p&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;A good way to think of this is as removing any unnecessary entropy in the state. Let&#x27;s see how that
 affects our benchmarks:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;$ cargo bench&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;pre data-lang=&quot;sh&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span&gt;$ cargo bench&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;solve_square_dance      time:   &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;[&lt;&#x2F;span&gt;&lt;span&gt;4.4875 ms 4.5667 ms 4.6525 ms&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;]&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;                        change: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;[&lt;&#x2F;span&gt;&lt;span&gt;-73.527% &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;-&lt;&#x2F;span&gt;&lt;span&gt;72.960% &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;-&lt;&#x2F;span&gt;&lt;span&gt;72.308%&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;]&lt;&#x2F;span&gt;&lt;span&gt; (p = 0.00 &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;lt; &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;.05)&lt;&#x2F;span&gt;&lt;span&gt;
@@ -4808,6 +5459,16 @@ us avoid exploring states that are clearly dead ends and prioritize states that 
 function should be &lt;em&gt;easy to compute&lt;&#x2F;em&gt; and return an estimate that is &lt;em&gt;as high as possible&lt;&#x2F;em&gt; without
 overestimating. This is a tradeoff that we actively have to be conscious of. In most cases, it will
 be a net positive. Let&#x27;s think about what heuristics we can calculate for our puzzle:&lt;&#x2F;p&gt;
+
+
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -4917,7 +5578,7 @@ need to change our &lt;code&gt;push&lt;&#x2F;code&gt; operation to account for t
 &lt;p&gt;Instead of counting our states as we pop them off, we now need to keep track of which index our
 current state is in the &lt;code&gt;parents&lt;&#x2F;code&gt; list. And with that, we&#x27;re done! We have a fully-functional A*
 implementation ready to make our solver go super fast!&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;$ cargo bench&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;pre data-lang=&quot;sh&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span&gt;$ cargo bench&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;solve_square_dance      time:   &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;[&lt;&#x2F;span&gt;&lt;span&gt;4.4051 ms 4.4276 ms 4.4524 ms&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;]&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;                        change: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;[&lt;&#x2F;span&gt;&lt;span&gt;+3.7025% +4.6095% +5.4779%&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;]&lt;&#x2F;span&gt;&lt;span&gt; (p = 0.00 &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;lt; &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;.05)&lt;&#x2F;span&gt;&lt;span&gt;
@@ -4955,7 +5616,7 @@ we&#x27;ll always return four transitions. We can make this return an array inst
 &lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;Let&#x27;s see what that gets us:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;$ cargo bench&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;pre data-lang=&quot;sh&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span&gt;$ cargo bench&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;solve_square_dance      time:   &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;[&lt;&#x2F;span&gt;&lt;span&gt;4.4052 ms 4.4415 ms 4.4867 ms&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;]&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;                        change: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;[&lt;&#x2F;span&gt;&lt;span&gt;-7.0971% &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;-&lt;&#x2F;span&gt;&lt;span&gt;6.1140% &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;-&lt;&#x2F;span&gt;&lt;span&gt;4.9385%&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;]&lt;&#x2F;span&gt;&lt;span&gt; (p = 0.00 &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;lt; &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;.05)&lt;&#x2F;span&gt;&lt;span&gt;
@@ -4975,7 +5636,7 @@ our puzzles. Let&#x27;s pick eight for some headroom:&lt;&#x2F;p&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;How about that:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;$ cargo bench&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;pre data-lang=&quot;sh&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span&gt;$ cargo bench&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;solve_square_dance      time:   &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;[&lt;&#x2F;span&gt;&lt;span&gt;4.0299 ms 4.0567 ms 4.0854 ms&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;]&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;                        change: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;[&lt;&#x2F;span&gt;&lt;span&gt;-9.7690% &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;-&lt;&#x2F;span&gt;&lt;span&gt;8.6635% &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;-&lt;&#x2F;span&gt;&lt;span&gt;7.6778%&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;]&lt;&#x2F;span&gt;&lt;span&gt; (p = 0.00 &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;lt; &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;.05)&lt;&#x2F;span&gt;&lt;span&gt;
@@ -4991,6 +5652,7 @@ our puzzles. Let&#x27;s pick eight for some headroom:&lt;&#x2F;p&gt;
 &lt;p&gt;We&#x27;re out of low-hanging fruit, so let&#x27;s move on to doing some micro-optimization. There&#x27;s still
 plenty to be gained here though, and we can find it by doing some profiling. Running our benchmarks
 in Visual Studio gets us some interesting insights:&lt;&#x2F;p&gt;
+
 &lt;img src=&quot;https:&amp;#x2F;&amp;#x2F;davidkoloski.me&amp;#x2F;processed_images&amp;#x2F;44e6965e7b49e13a00.png&quot; &#x2F;&gt;
 &lt;p&gt;Here they are typed out:&lt;&#x2F;p&gt;
 &lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Function&lt;&#x2F;th&gt;&lt;th align=&quot;right&quot;&gt;Total CPU %&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
@@ -5036,7 +5698,7 @@ Well, I guess we can use a &lt;code&gt;HashMap&lt;&#x2F;code&gt; with a value of
 &lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;That should do the trick. Let&#x27;s see how that changed our runtime:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;$ cargo bench&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;pre data-lang=&quot;sh&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span&gt;$ cargo bench&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;solve_square_dance      time:   &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;[&lt;&#x2F;span&gt;&lt;span&gt;3.8785 ms 3.9364 ms 3.9998 ms&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;]&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;                        change: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;[&lt;&#x2F;span&gt;&lt;span&gt;+0.9796% +2.8698% +4.8065%&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;]&lt;&#x2F;span&gt;&lt;span&gt; (p = 0.00 &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;lt; &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;.05)&lt;&#x2F;span&gt;&lt;span&gt;
@@ -5062,7 +5724,7 @@ under some minimum size. I&#x27;ve picked some relatively arbitrary pre-sizes he
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;We should expect these to only impact any puzzles that don&#x27;t use memory above the pre-sizing
 threshold. Do we?&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;$ cargo bench&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;pre data-lang=&quot;sh&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span&gt;$ cargo bench&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;solve_square_dance      time:   &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;[&lt;&#x2F;span&gt;&lt;span&gt;3.7025 ms 3.7311 ms 3.7652 ms&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;]&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;                        change: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;[&lt;&#x2F;span&gt;&lt;span&gt;-9.7612% &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;-&lt;&#x2F;span&gt;&lt;span&gt;8.3409% &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;-&lt;&#x2F;span&gt;&lt;span&gt;6.9754%&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;]&lt;&#x2F;span&gt;&lt;span&gt; (p = 0.00 &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;lt; &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;.05)&lt;&#x2F;span&gt;&lt;span&gt;
@@ -5084,7 +5746,7 @@ be &lt;em&gt;small&lt;&#x2F;em&gt; or medium-sized and used &lt;em&gt;once or tw
 vector and direction primitives that we can inline, so those might help a little. Inlining our
 especially hot &lt;code&gt;transition&lt;&#x2F;code&gt; function for our puzzle state should also help eliminate some overhead.
 Let&#x27;s see how that impacts our performance:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;bash&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-bash &quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span&gt;$ cargo bench&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;pre data-lang=&quot;sh&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-sh &quot;&gt;&lt;code class=&quot;language-sh&quot; data-lang=&quot;sh&quot;&gt;&lt;span&gt;$ cargo bench&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;solve_square_dance      time:   &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;[&lt;&#x2F;span&gt;&lt;span&gt;3.7629 ms 3.8005 ms 3.8413 ms&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;]&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;                        change: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;[&lt;&#x2F;span&gt;&lt;span&gt;-10.293% &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;-&lt;&#x2F;span&gt;&lt;span&gt;8.6516% &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;-&lt;&#x2F;span&gt;&lt;span&gt;6.9645%&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;]&lt;&#x2F;span&gt;&lt;span&gt; (p = 0.00 &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;lt; &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;0&lt;&#x2F;span&gt;&lt;span&gt;.05)&lt;&#x2F;span&gt;&lt;span&gt;
@@ -5112,6 +5774,14 @@ page that has a puzzle on it by adding &lt;code&gt;&amp;amp;controls=true&lt;&#x
 (&lt;a href=&quot;&#x2F;blog&#x2F;anima-playground?controls=true&quot;&gt;here&lt;&#x2F;a&gt; for example). Here&#x27;s one with the solver enabled, try
 it out! You can also write, import, and share your own puzzles.&lt;&#x2F;p&gt;
 &lt;p&gt;Thanks for reading, and happy solving!&lt;&#x2F;p&gt;
+
+
+
+
+
+
+
+
 &lt;script
     class=&quot;anima-data&quot;
     type=&quot;application&#x2F;json&quot;
@@ -5340,80 +6010,80 @@ vertices and a normal vector.&lt;&#x2F;p&gt;
 &lt;h3 id=&quot;relative-pointers&quot;&gt;Relative pointers&lt;&#x2F;h3&gt;
 &lt;p&gt;The first hurdle for total zero-copy deserialization is that regular pointers are not serializable. A pointer is just some address in memory, and that means that it might not even be a valid location for your program on a subsequent run. Even if we could get all of our data back into memory, we would still have to fix up the pointers so they point to the right locations.&lt;&#x2F;p&gt;
 &lt;p&gt;Relative pointers are a technique where instead of writing an absolute pointer to disk (which wouldn&#x27;t come back pointing to the right place), we instead write an &lt;em&gt;offset&lt;&#x2F;em&gt; to some memory. That offset essentially points to &amp;quot;the address of this plus some bytes&amp;quot;. A simple example of a relative pointer to a string is these bytes:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;txt&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-txt &quot;&gt;&lt;code class=&quot;language-txt&quot; data-lang=&quot;txt&quot;&gt;&lt;span&gt;0x0000    04 00 00 00 68 65 6c 6c
-&lt;&#x2F;span&gt;&lt;span&gt;0x0008    6f 20 77 6f 72 6c 64 21
-&lt;&#x2F;span&gt;&lt;span&gt;...
+&lt;pre data-lang=&quot;txt&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-txt &quot;&gt;&lt;code class=&quot;language-txt&quot; data-lang=&quot;txt&quot;&gt;&lt;span&gt;0x0000    04 00 00 00 68 65 6c 6c&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;0x0008    6f 20 77 6f 72 6c 64 21&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;...&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;We&#x27;ll assume that our relative pointers use 32-bit offsets. The first four bytes of the archive are the relative pointer, which encodes the offset to the string. The first four bytes are &lt;code&gt;04 00 00 00&lt;&#x2F;code&gt;, which is four on little endian machines. This means that the data is located four bytes forward from the address of the offset. Since the offset is located at &lt;code&gt;0x0000&lt;&#x2F;code&gt;, we should look for the data at &lt;code&gt;0x0000 + 4 = 0x0004&lt;&#x2F;code&gt;!&lt;&#x2F;p&gt;
 &lt;p&gt;Taking a peek at that location reveals some bytes that look like ASCII, but we don&#x27;t know how many yet! Along with the data for the bytes of a string, we also need to encode the length of the string. Let&#x27;s update our example:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;txt&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-txt &quot;&gt;&lt;code class=&quot;language-txt&quot; data-lang=&quot;txt&quot;&gt;&lt;span&gt;0x0000    08 00 00 00 0c 00 00 00
-&lt;&#x2F;span&gt;&lt;span&gt;0x0008    68 65 6c 6c 6f 20 77 6f
-&lt;&#x2F;span&gt;&lt;span&gt;0x0010    72 6c 64 21 cd cd cd cd
-&lt;&#x2F;span&gt;&lt;span&gt;...
+&lt;pre data-lang=&quot;txt&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-txt &quot;&gt;&lt;code class=&quot;language-txt&quot; data-lang=&quot;txt&quot;&gt;&lt;span&gt;0x0000    08 00 00 00 0c 00 00 00&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;0x0008    68 65 6c 6c 6f 20 77 6f&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;0x0010    72 6c 64 21 cd cd cd cd&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;...&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;Now there&#x27;s two four-byte values: first the relative pointer and second the string length. The relative pointer now has bytes &lt;code&gt;08 00 00 00&lt;&#x2F;code&gt;, four more than before since we now need to skip over the string length bytes. So the data is now located at &lt;code&gt;0x0000 + 8 = 0x0008&lt;&#x2F;code&gt;. The length bytes tell us there should be 12 bytes at that location. Reading off the first 12 bytes from there gives us &lt;code&gt;&amp;quot;hello world!&amp;quot;&lt;&#x2F;code&gt;! Success!&lt;&#x2F;p&gt;
 &lt;p&gt;In order to map those bytes into a structure in memory, we might put our &lt;code&gt;ArchivedString&lt;&#x2F;code&gt; together like this:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub struct &lt;&#x2F;span&gt;&lt;span&gt;ArchivedString {
-&lt;&#x2F;span&gt;&lt;span&gt;    ptr: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;i32&lt;&#x2F;span&gt;&lt;span&gt;,
-&lt;&#x2F;span&gt;&lt;span&gt;    len: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;u32&lt;&#x2F;span&gt;&lt;span&gt;,
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub struct &lt;&#x2F;span&gt;&lt;span&gt;ArchivedString {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    ptr: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;i32&lt;&#x2F;span&gt;&lt;span&gt;,&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    len: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;u32&lt;&#x2F;span&gt;&lt;span&gt;,&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;ArchivedString {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;as_bytes&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;[&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;u8&lt;&#x2F;span&gt;&lt;span&gt;] {
-&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;unsafe &lt;&#x2F;span&gt;&lt;span&gt;{
-&lt;&#x2F;span&gt;&lt;span&gt;            &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; ptr &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span&gt;(self &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;as *const Self&lt;&#x2F;span&gt;&lt;span&gt;)
-&lt;&#x2F;span&gt;&lt;span&gt;                .cast::&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;u8&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt;()
-&lt;&#x2F;span&gt;&lt;span&gt;                .&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;add&lt;&#x2F;span&gt;&lt;span&gt;(self.ptr);
-&lt;&#x2F;span&gt;&lt;span&gt;            slice::from_raw_parts(ptr, self.len &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;as usize&lt;&#x2F;span&gt;&lt;span&gt;)
-&lt;&#x2F;span&gt;&lt;span&gt;        }
-&lt;&#x2F;span&gt;&lt;span&gt;    }
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;ArchivedString {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;as_bytes&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;[&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;u8&lt;&#x2F;span&gt;&lt;span&gt;] {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;unsafe &lt;&#x2F;span&gt;&lt;span&gt;{&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;            &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; ptr &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span&gt;(self &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;as *const Self&lt;&#x2F;span&gt;&lt;span&gt;)&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;                .cast::&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;u8&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt;()&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;                .&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;add&lt;&#x2F;span&gt;&lt;span&gt;(self.ptr);&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;            slice::from_raw_parts(ptr, self.len &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;as usize&lt;&#x2F;span&gt;&lt;span&gt;)&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;as_str&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;str &lt;&#x2F;span&gt;&lt;span&gt;{
-&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;unsafe &lt;&#x2F;span&gt;&lt;span&gt;{
-&lt;&#x2F;span&gt;&lt;span&gt;            &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;str&lt;&#x2F;span&gt;&lt;span&gt;::from_utf8_unchecked(self.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;as_bytes&lt;&#x2F;span&gt;&lt;span&gt;())
-&lt;&#x2F;span&gt;&lt;span&gt;        }
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;as_str&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;str &lt;&#x2F;span&gt;&lt;span&gt;{&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;unsafe &lt;&#x2F;span&gt;&lt;span&gt;{&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;            &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;str&lt;&#x2F;span&gt;&lt;span&gt;::from_utf8_unchecked(self.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;as_bytes&lt;&#x2F;span&gt;&lt;span&gt;())&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;The reality is just a little bit more complicated than this, but this is pretty close to the same code you can find in rkyv right now. The general idea behind rkyv is to take build these structures for all of our types so that we can serialize them out and get them back later without having to deserialize.&lt;&#x2F;p&gt;
 &lt;h3 id=&quot;archiving-dependencies&quot;&gt;Archiving dependencies&lt;&#x2F;h3&gt;
 &lt;p&gt;The next problem we have to tackle is actually creating those relative pointers. In order to make one, we need to know the locations of &lt;em&gt;both&lt;&#x2F;em&gt; the target memory and the relative pointer itself. This is a problem; how can we know where the relative pointer should point if we haven&#x27;t written it yet?&lt;&#x2F;p&gt;
 &lt;p&gt;Imagine that we had some struct that had two strings in it:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Pair {
-&lt;&#x2F;span&gt;&lt;span&gt;    key: String,
-&lt;&#x2F;span&gt;&lt;span&gt;    value: String,
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Pair {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    key: String,&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    value: String,&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;It&#x27;s archived version would look like this:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;ArchivedPair {
-&lt;&#x2F;span&gt;&lt;span&gt;    key: ArchivedString,
-&lt;&#x2F;span&gt;&lt;span&gt;    value: ArchivedString,
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;ArchivedPair {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    key: ArchivedString,&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    value: ArchivedString,&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;In order to make our archived pair, we have to write the bytes of the key and value first, then construct the relative pointers for the strings. Let&#x27;s brainstorm roughly what that would look like:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Pair {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;archive&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self, writer: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;mut&lt;&#x2F;span&gt;&lt;span&gt; Write) -&amp;gt; ArchivedPair {
-&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; key_pos &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; writer.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;write&lt;&#x2F;span&gt;&lt;span&gt;(self.key.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;as_bytes&lt;&#x2F;span&gt;&lt;span&gt;());
-&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; value_pos &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; writer.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;write&lt;&#x2F;span&gt;&lt;span&gt;(self.value.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;as_bytes&lt;&#x2F;span&gt;&lt;span&gt;());
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Pair {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;archive&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self, writer: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;mut&lt;&#x2F;span&gt;&lt;span&gt; Write) -&amp;gt; ArchivedPair {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; key_pos &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; writer.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;write&lt;&#x2F;span&gt;&lt;span&gt;(self.key.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;as_bytes&lt;&#x2F;span&gt;&lt;span&gt;());&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; value_pos &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; writer.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;write&lt;&#x2F;span&gt;&lt;span&gt;(self.value.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;as_bytes&lt;&#x2F;span&gt;&lt;span&gt;());&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; base &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; writer.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;pos&lt;&#x2F;span&gt;&lt;span&gt;();
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; base &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; writer.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;pos&lt;&#x2F;span&gt;&lt;span&gt;();&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; key_off &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span&gt;offset_of!(ArchivedPair, key);
-&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; value_off &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span&gt;offset_of!(ArchivedPair, value);
-&lt;&#x2F;span&gt;&lt;span&gt;        ArchivedPair {
-&lt;&#x2F;span&gt;&lt;span&gt;            key: ArchivedString::new(
-&lt;&#x2F;span&gt;&lt;span&gt;                base &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;+&lt;&#x2F;span&gt;&lt;span&gt; key_off,
-&lt;&#x2F;span&gt;&lt;span&gt;                key_pos,
-&lt;&#x2F;span&gt;&lt;span&gt;                self.key.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;len&lt;&#x2F;span&gt;&lt;span&gt;()
-&lt;&#x2F;span&gt;&lt;span&gt;            ),
-&lt;&#x2F;span&gt;&lt;span&gt;            value: ArchivedString::new(
-&lt;&#x2F;span&gt;&lt;span&gt;                base &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;+&lt;&#x2F;span&gt;&lt;span&gt; value_off,
-&lt;&#x2F;span&gt;&lt;span&gt;                value_pos,
-&lt;&#x2F;span&gt;&lt;span&gt;                self.value.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;len&lt;&#x2F;span&gt;&lt;span&gt;()
-&lt;&#x2F;span&gt;&lt;span&gt;            ),
-&lt;&#x2F;span&gt;&lt;span&gt;        }
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; key_off &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span&gt;offset_of!(ArchivedPair, key);&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; value_off &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span&gt;offset_of!(ArchivedPair, value);&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        ArchivedPair {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;            key: ArchivedString::new(&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;                base &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;+&lt;&#x2F;span&gt;&lt;span&gt; key_off,&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;                key_pos,&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;                self.key.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;len&lt;&#x2F;span&gt;&lt;span&gt;()&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;            ),&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;            value: ArchivedString::new(&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;                base &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;+&lt;&#x2F;span&gt;&lt;span&gt; value_off,&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;                value_pos,&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;                self.value.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;len&lt;&#x2F;span&gt;&lt;span&gt;()&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;            ),&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;Right off the bat, we&#x27;ve introduced some new concepts:&lt;&#x2F;p&gt;
 &lt;ul&gt;
@@ -5431,30 +6101,30 @@ vertices and a normal vector.&lt;&#x2F;p&gt;
 &lt;p&gt;This translates to the two core traits in rkyv: &lt;code&gt;Archive&lt;&#x2F;code&gt; and &lt;code&gt;Resolve&lt;&#x2F;code&gt;. The first step is handled by &lt;code&gt;Archive&lt;&#x2F;code&gt; and the second is handled by &lt;code&gt;Resolve&lt;&#x2F;code&gt;. So what do these traits do?&lt;&#x2F;p&gt;
 &lt;h3 id=&quot;archive-and-resolve&quot;&gt;&lt;code&gt;Archive&lt;&#x2F;code&gt; and &lt;code&gt;Resolve&lt;&#x2F;code&gt;&lt;&#x2F;h3&gt;
 &lt;p&gt;&lt;code&gt;Archive&lt;&#x2F;code&gt; writes out the dependencies of the type and returns a &lt;em&gt;resolver&lt;&#x2F;em&gt;. A resolver is a struct that contains the extra information we need to make an archived version of our type from the writer position and original value. A string&#x27;s implementation might look like this:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Archive &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;String {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Resolver &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= usize&lt;&#x2F;span&gt;&lt;span&gt;;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Archive &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;String {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Resolver &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= usize&lt;&#x2F;span&gt;&lt;span&gt;;&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;archive&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self, writer: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;mut&lt;&#x2F;span&gt;&lt;span&gt; Writer) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Resolver {
-&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; pos &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; writer.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;pos&lt;&#x2F;span&gt;&lt;span&gt;();
-&lt;&#x2F;span&gt;&lt;span&gt;        writer.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;write&lt;&#x2F;span&gt;&lt;span&gt;(self.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;as_bytes&lt;&#x2F;span&gt;&lt;span&gt;());
-&lt;&#x2F;span&gt;&lt;span&gt;        pos
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;archive&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self, writer: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;mut&lt;&#x2F;span&gt;&lt;span&gt; Writer) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Resolver {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; pos &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; writer.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;pos&lt;&#x2F;span&gt;&lt;span&gt;();&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        writer.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;write&lt;&#x2F;span&gt;&lt;span&gt;(self.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;as_bytes&lt;&#x2F;span&gt;&lt;span&gt;());&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        pos&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Resolve &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;String {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Archived &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; ArchivedString;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Resolve &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;String {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Archived &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; ArchivedString;&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;resolve&lt;&#x2F;span&gt;&lt;span&gt;(
-&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self,
-&lt;&#x2F;span&gt;&lt;span&gt;        pos: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;usize&lt;&#x2F;span&gt;&lt;span&gt;,
-&lt;&#x2F;span&gt;&lt;span&gt;        resolver: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;usize
-&lt;&#x2F;span&gt;&lt;span&gt;    ) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Archived {
-&lt;&#x2F;span&gt;&lt;span&gt;        ArchivedString {
-&lt;&#x2F;span&gt;&lt;span&gt;            ptr: RelPtr::from_to(pos, resolver),
-&lt;&#x2F;span&gt;&lt;span&gt;            len: self.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;len&lt;&#x2F;span&gt;&lt;span&gt;(),
-&lt;&#x2F;span&gt;&lt;span&gt;        }
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;resolve&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self,&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        pos: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;usize&lt;&#x2F;span&gt;&lt;span&gt;,&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        resolver: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;usize&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    ) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Archived {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        ArchivedString {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;            ptr: RelPtr::from_to(pos, resolver),&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;            len: self.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;len&lt;&#x2F;span&gt;&lt;span&gt;(),&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;In the archive step, we write out the bytes for the string and return the position those bytes were written to. In the resolve step, we take that position and make a new relative pointer that points to them. Now if we wanted to archive an array of strings, we can archive them all and &lt;em&gt;then&lt;&#x2F;em&gt; resolve them all.&lt;&#x2F;p&gt;
 &lt;p&gt;Once again, this is very simplified for the sake of example. But the real implementations of these are not too different!&lt;&#x2F;p&gt;
@@ -5531,9 +6201,9 @@ vertices and a normal vector.&lt;&#x2F;p&gt;
 &lt;p&gt;Zola also supports &lt;a href=&quot;https:&#x2F;&#x2F;www.getzola.org&#x2F;documentation&#x2F;content&#x2F;overview&#x2F;#assets-colocation&quot;&gt;&amp;quot;assets colocation&amp;quot;&lt;&#x2F;a&gt;, which is a fancy way of saying that if you put non-Markdown files under the &lt;code&gt;content&lt;&#x2F;code&gt; directory, they&#x27;ll be copied over right next to other Markdown files&#x27; compiled HTML pages. This makes it really easy to organize pages that require custom assets like images and javascript files.&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;conclusion&quot;&gt;Conclusion&lt;&#x2F;h2&gt;
 &lt;p&gt;After working with Zola for a while, the overall experience has been very pleasant. At first I found Zola&#x27;s notion of sections and pages and little unintuitive, but I think that part of that is due to some confusing wording in their site&#x27;s documentation. It was really easy to set up and the iteration loop is fast and efficient. While it&#x27;s still a bit rough around the edges&lt;a href=&quot;#footnote-3&quot; id=&quot;citation-3&quot; class=&quot;citation&quot;&gt;3&lt;&#x2F;a&gt;, I can definitely recommend it for anyone looking to make a site like mine.&lt;&#x2F;p&gt;
-&lt;p id=&quot;footnote-1&quot; class=&quot;footnote&quot;&gt;&lt;a href=&quot;#citation-1&quot;&gt;1&lt;&#x2F;a&gt; For all sections except the top-level index, you also need to add an &lt;code&gt;_index.md&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;p id=&quot;footnote-1&quot; class=&quot;footnote&quot;&gt;&lt;a href=&quot;#citation-1&quot;&gt;1&lt;&#x2F;a&gt; For all sections except the top-level index, you also need to add an &lt;code&gt;_index.md&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
 &lt;p id=&quot;footnote-2&quot; class=&quot;footnote&quot;&gt;&lt;a href=&quot;#citation-2&quot;&gt;2&lt;&#x2F;a&gt; With the exception of any &lt;code&gt;_index.md&lt;&#x2F;code&gt; files.&lt;&#x2F;p&gt;
-&lt;p id=&quot;footnote-3&quot; class=&quot;footnote&quot;&gt;&lt;a href=&quot;#citation-3&quot;&gt;3&lt;&#x2F;a&gt; I had problems with the built-in pagination functionality. It seems like it either doesn&#x27;t work right or I don&#x27;t understand it and the docs are too sparse. The server works pretty well for content serving, but every once in a while I managed to crash it with some syntax errors. The system that refreshes the browser page when the server rebuilds content also seems to mess up every once in a while, but restarting the server fixes it.&lt;&#x2F;p&gt;
+&lt;p id=&quot;footnote-3&quot; class=&quot;footnote&quot;&gt;&lt;a href=&quot;#citation-3&quot;&gt;3&lt;&#x2F;a&gt; I had problems with the built-in pagination functionality. It seems like it either doesn&#x27;t work right or I don&#x27;t understand it and the docs are too sparse. The server works pretty well for content serving, but every once in a while I managed to crash it with some syntax errors. The system that refreshes the browser page when the server rebuilds content also seems to mess up every once in a while, but restarting the server fixes it.&lt;&#x2F;p&gt;&lt;&#x2F;p&gt;
 </content>
 	</entry>
 </feed>

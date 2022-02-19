@@ -18,6 +18,7 @@
 
     <!-- fonts and styles -->
     <link href="https://fonts.googleapis.com/css?family=Rubik:400,700" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Inconsolata:500,800" rel="stylesheet">
     <link href="https://davidkoloski.me/style.css" rel="stylesheet">
 
     <!-- scripts -->
@@ -127,6 +128,7 @@ together. Let's do a few to get a feel for it:</p>
 <li><strong>Unfocus</strong>: Escape (desktop), click away, tap (mobile)</li>
 </ul>
 </div></div>
+
 <script>
     let wasm_bindgen;
 (function() {
@@ -1246,6 +1248,16 @@ window.customElements.define('anima-puzzle', Puzzle)
     "optimalMoves": 6
 }
 </script>
+
+
+
+
+
+
+
+
+
+
 <script
     class="anima-data"
     type="application/json"
@@ -1296,6 +1308,16 @@ puzzles nontrivial:</p>
 <p>These side-effects make it very difficult (impossible?) to predict how the system will behave after
 even a move or two, which is a hallmark of problems with high NP-complexity. We'll add one more
 twist to make it a little more interesting:</p>
+
+
+
+
+
+
+
+
+
+
 <script
     class="anima-data"
     type="application/json"
@@ -1329,6 +1351,16 @@ twist to make it a little more interesting:</p>
 </script>
 <p>Unlike red actors, blue actors move in the opposite direction you choose. If you choose left, blue
 actors will move right and vice-versa. This leads to one final implicit rule:</p>
+
+
+
+
+
+
+
+
+
+
 <script
     class="anima-data"
     type="application/json"
@@ -1377,7 +1409,7 @@ all of these, they can get very hard. Just work with them until you feel compete
 <p>This is where we start writing our solver. You can follow along using the <code>start</code> tag on the
 <a href="https://github.com/djkoloski/anima_solver">GitHub repo</a>, which will start you with all of the
 boilerplate:</p>
-<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>git clone --branch start https://github.com/djkoloski/anima_solver</span><span>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>git clone --branch start https://github.com/djkoloski/anima_solver</span><span>
 </span></code></pre>
 <h2 id="a-basic-solver">A basic solver</h2>
 <p>Our strategy for a basic solver will be to explore, one move at a time, out from
@@ -1441,6 +1473,16 @@ reach is not solved, and a <code>Success</code> transition means that it is.</li
 direction was moved to transition. When we get a successful transition, we crawl back through the
 <code>parents</code> vector to reassemble the solution and return it. Let's try it out!</p>
 <p>We're going to use a nice and simple one to test:</p>
+
+
+
+
+
+
+
+
+
+
 <script
     class="anima-data"
     type="application/json"
@@ -1465,7 +1507,7 @@ direction was moved to transition. When we get a successful transition, we crawl
     "optimalMoves": 2
 }
 </script>
-<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo run</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/line_dance.txt</span><span>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>$ cargo run</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/line_dance.txt</span><span>
 </span><span>puzzles/line_dance.txt:</span><span>
 </span><span>Parse: 0.000201900s</span><span>
 </span><span>Solve: 0.000017600s</span><span>
@@ -1473,7 +1515,7 @@ direction was moved to transition. When we get a successful transition, we crawl
 </span><span>Right, Right</span><span>
 </span></code></pre>
 <p>Cool, it found it! And that looks right too, let's see how fast it is in release mode:</p>
-<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/line_dance.txt</span><span>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/line_dance.txt</span><span>
 </span><span>puzzles/line_dance.txt:</span><span>
 </span><span>Parse: 0.000122700s</span><span>
 </span><span>Solve: 0.000009100s</span><span>
@@ -1482,6 +1524,16 @@ direction was moved to transition. When we get a successful transition, we crawl
 </span></code></pre>
 <p>Roughly twice as fast, great! We're going to be running exclusively in release mode from here on
 out. Now let's step it up a little bit and try a harder puzzle:</p>
+
+
+
+
+
+
+
+
+
+
 <script
     class="anima-data"
     type="application/json"
@@ -1508,7 +1560,7 @@ out. Now let's step it up a little bit and try a harder puzzle:</p>
     "optimalMoves": 6
 }
 </script>
-<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/u_turn.txt</span><span>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/u_turn.txt</span><span>
 </span><span>puzzles/u_turn.txt:</span><span>
 </span><span>Parse: 0.005942000s</span><span>
 </span><span>Solve: 0.001093200s</span><span>
@@ -1516,6 +1568,16 @@ out. Now let's step it up a little bit and try a harder puzzle:</p>
 </span><span>Down, Down, Left, Left, Up, Up</span><span>
 </span></code></pre>
 <p>Awesome, it got that one too! One more, this one's really more of the same:</p>
+
+
+
+
+
+
+
+
+
+
 <script
     class="anima-data"
     type="application/json"
@@ -1544,7 +1606,7 @@ out. Now let's step it up a little bit and try a harder puzzle:</p>
     "optimalMoves": 16
 }
 </script>
-<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/spiral.txt</span><span>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/spiral.txt</span><span>
 </span><span>...</span><span>
 </span></code></pre>
 <p>Uh oh, this one doesn't seem to be going anywhere fast. And if you don't kill it soon, you might run
@@ -1561,7 +1623,7 @@ out of memory too! Looking at the timings explains why:</p>
 take a peek at how many states we're exploring:</p>
 <pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span>println!(</span><span style="color:#183691;">&quot;Explored </span><span style="color:#0086b3;">{}</span><span style="color:#183691;"> states&quot;</span><span>, parents.</span><span style="color:#62a35c;">len</span><span>());</span><span>
 </span></code></pre>
-<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/line_dance.txt</span><span>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/line_dance.txt</span><span>
 </span><span>Explored 3 states</span><span>
 </span><span>
 </span><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/u_turn.txt</span><span>
@@ -1595,14 +1657,14 @@ hash set and only exploring its children if it's not already been visited:</p>
 </span><span>}</span><span>
 </span></code></pre>
 <p>Let's see how this affects our cases so far:</p>
-<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/u_turn.txt</span><span>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/u_turn.txt</span><span>
 </span><span>Explored 20 states</span><span>
 </span><span>Solve: 0.000895100s</span><span>
 </span><span>Found solution of length 6:   </span><span>
 </span><span>Down, Down, Left, Left, Up, Up</span><span>
 </span></code></pre>
 <p>That looks much better! Maybe we can solve our new puzzle now?</p>
-<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/spiral.txt</span><span>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>$ cargo run --release</span><span style="font-weight:bold;color:#a71d5d;"> --</span><span> puzzles/spiral.txt</span><span>
 </span><span>Explored 51 states</span><span>
 </span><span>puzzles/spiral.txt:</span><span>
 </span><span>Parse: 0.000212300s</span><span>
@@ -1614,7 +1676,7 @@ hash set and only exploring its children if it's not already been visited:</p>
 optimization alone brings all our sample puzzles into the realm of solvability! Now we can start
 benchmarking our solver more comprehensively. Let's pick a few representatives from the
 <a href="/blog/">sample puzzles set</a> to bench:</p>
-<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo bench</span><span>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>$ cargo bench</span><span>
 </span><span>solve_square_dance      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>16.658 ms 16.888 ms 17.125 ms</span><span style="font-weight:bold;color:#a71d5d;">]</span><span>
 </span><span>solve_fractal           time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>44.606 ms 45.193 ms 45.806 ms</span><span style="font-weight:bold;color:#a71d5d;">]</span><span>
 </span><span>solve_antiparticle      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>1.8001 s 1.8308 s 1.8640 s</span><span style="font-weight:bold;color:#a71d5d;">]</span><span>
@@ -1658,7 +1720,7 @@ we transition our states:</p>
 </span></code></pre>
 <p>A good way to think of this is as removing any unnecessary entropy in the state. Let's see how that
 affects our benchmarks:</p>
-<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo bench</span><span>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>$ cargo bench</span><span>
 </span><span>
 </span><span>solve_square_dance      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>4.4875 ms 4.5667 ms 4.6525 ms</span><span style="font-weight:bold;color:#a71d5d;">]</span><span>
 </span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-73.527% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>72.960% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>72.308%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)</span><span>
@@ -1692,6 +1754,16 @@ us avoid exploring states that are clearly dead ends and prioritize states that 
 function should be <em>easy to compute</em> and return an estimate that is <em>as high as possible</em> without
 overestimating. This is a tradeoff that we actively have to be conscious of. In most cases, it will
 be a net positive. Let's think about what heuristics we can calculate for our puzzle:</p>
+
+
+
+
+
+
+
+
+
+
 <script
     class="anima-data"
     type="application/json"
@@ -1801,7 +1873,7 @@ need to change our <code>push</code> operation to account for the new fields we 
 <p>Instead of counting our states as we pop them off, we now need to keep track of which index our
 current state is in the <code>parents</code> list. And with that, we're done! We have a fully-functional A*
 implementation ready to make our solver go super fast!</p>
-<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo bench</span><span>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>$ cargo bench</span><span>
 </span><span>
 </span><span>solve_square_dance      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>4.4051 ms 4.4276 ms 4.4524 ms</span><span style="font-weight:bold;color:#a71d5d;">]</span><span>
 </span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>+3.7025% +4.6095% +5.4779%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)</span><span>
@@ -1839,7 +1911,7 @@ we'll always return four transitions. We can make this return an array instead:<
 </span><span>}</span><span>
 </span></code></pre>
 <p>Let's see what that gets us:</p>
-<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo bench</span><span>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>$ cargo bench</span><span>
 </span><span>
 </span><span>solve_square_dance      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>4.4052 ms 4.4415 ms 4.4867 ms</span><span style="font-weight:bold;color:#a71d5d;">]</span><span>
 </span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-7.0971% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>6.1140% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>4.9385%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)</span><span>
@@ -1859,7 +1931,7 @@ our puzzles. Let's pick eight for some headroom:</p>
 </span><span>}</span><span>
 </span></code></pre>
 <p>How about that:</p>
-<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo bench</span><span>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>$ cargo bench</span><span>
 </span><span>
 </span><span>solve_square_dance      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>4.0299 ms 4.0567 ms 4.0854 ms</span><span style="font-weight:bold;color:#a71d5d;">]</span><span>
 </span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-9.7690% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>8.6635% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>7.6778%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)</span><span>
@@ -1875,6 +1947,7 @@ our puzzles. Let's pick eight for some headroom:</p>
 <p>We're out of low-hanging fruit, so let's move on to doing some micro-optimization. There's still
 plenty to be gained here though, and we can find it by doing some profiling. Running our benchmarks
 in Visual Studio gets us some interesting insights:</p>
+
 <img src="https:&#x2F;&#x2F;davidkoloski.me&#x2F;processed_images&#x2F;44e6965e7b49e13a00.png" />
 <p>Here they are typed out:</p>
 <table><thead><tr><th>Function</th><th align="right">Total CPU %</th></tr></thead><tbody>
@@ -1920,7 +1993,7 @@ Well, I guess we can use a <code>HashMap</code> with a value of <code>()</code> 
 </span><span>}</span><span>
 </span></code></pre>
 <p>That should do the trick. Let's see how that changed our runtime:</p>
-<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo bench</span><span>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>$ cargo bench</span><span>
 </span><span>
 </span><span>solve_square_dance      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>3.8785 ms 3.9364 ms 3.9998 ms</span><span style="font-weight:bold;color:#a71d5d;">]</span><span>
 </span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>+0.9796% +2.8698% +4.8065%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)</span><span>
@@ -1946,7 +2019,7 @@ under some minimum size. I've picked some relatively arbitrary pre-sizes here:</
 </span></code></pre>
 <p>We should expect these to only impact any puzzles that don't use memory above the pre-sizing
 threshold. Do we?</p>
-<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo bench</span><span>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>$ cargo bench</span><span>
 </span><span>
 </span><span>solve_square_dance      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>3.7025 ms 3.7311 ms 3.7652 ms</span><span style="font-weight:bold;color:#a71d5d;">]</span><span>
 </span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-9.7612% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>8.3409% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>6.9754%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)</span><span>
@@ -1968,7 +2041,7 @@ be <em>small</em> or medium-sized and used <em>once or twice</em>. We have a lot
 vector and direction primitives that we can inline, so those might help a little. Inlining our
 especially hot <code>transition</code> function for our puzzle state should also help eliminate some overhead.
 Let's see how that impacts our performance:</p>
-<pre data-lang="bash" style="background-color:#ffffff;color:#323232;" class="language-bash "><code class="language-bash" data-lang="bash"><span>$ cargo bench</span><span>
+<pre data-lang="sh" style="background-color:#ffffff;color:#323232;" class="language-sh "><code class="language-sh" data-lang="sh"><span>$ cargo bench</span><span>
 </span><span>
 </span><span>solve_square_dance      time:   </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>3.7629 ms 3.8005 ms 3.8413 ms</span><span style="font-weight:bold;color:#a71d5d;">]</span><span>
 </span><span>                        change: </span><span style="font-weight:bold;color:#a71d5d;">[</span><span>-10.293% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>8.6516% </span><span style="font-weight:bold;color:#a71d5d;">-</span><span>6.9645%</span><span style="font-weight:bold;color:#a71d5d;">]</span><span> (p = 0.00 </span><span style="font-weight:bold;color:#a71d5d;">&lt; </span><span style="color:#0086b3;">0</span><span>.05)</span><span>
@@ -1996,6 +2069,14 @@ page that has a puzzle on it by adding <code>&amp;controls=true</code> to the UR
 (<a href="/blog/anima-playground?controls=true">here</a> for example). Here's one with the solver enabled, try
 it out! You can also write, import, and share your own puzzles.</p>
 <p>Thanks for reading, and happy solving!</p>
+
+
+
+
+
+
+
+
 <script
     class="anima-data"
     type="application/json"
@@ -2049,7 +2130,7 @@ it out! You can also write, import, and share your own puzzles.</p>
 </div>
 
     <div class="section footer">
-        &copy; 2021 David Koloski
+        &copy; 2022 David Koloski
         <a href="/atom.xml"><img width="16" height="16" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 455 455'%3E%3Cpath d='M0 0v455h455V0H0zm141.435 372.387c-7.656 7.59-18.047 12.219-29.614 12.219-11.555 0-21.945-4.646-29.549-12.219C74.681 364.801 70 354.462 70 342.961s4.681-21.875 12.272-29.483c7.621-7.569 17.994-12.237 29.549-12.237 11.567 0 21.958 4.668 29.579 12.254 7.621 7.621 12.272 17.964 12.307 29.466-.035 11.501-4.686 21.822-12.272 29.426zM217.468 385s0-.101-.017-.101c-.066-39.41-15.431-76.597-43.221-104.352-27.786-27.838-64.925-43.256-104.195-43.291v-60.139c57.299.035 109.169 23.327 146.833 61.014 37.651 37.682 60.944 89.565 60.996 146.869h-60.396zm107.24 0c-.105-140.495-114.196-254.774-254.572-254.879V70c86.817.035 165.432 35.359 222.495 92.422C349.659 219.485 384.965 298.165 385 385h-60.292z' fill-rule='evenodd' fill='%23fff'/%3E%3C/svg%3E"></a>
     </div>
 </body>
