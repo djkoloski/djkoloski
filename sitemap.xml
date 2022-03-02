@@ -10,8 +10,20 @@
         <loc>https://davidkoloski.me/blog/</loc>
     </url>
     <url>
-        <loc>https://davidkoloski.me/blog/abstract-types-in-rust/</loc>
+        <loc>https://davidkoloski.me/blog/abstract-types-in-rust-1/</loc>
         <lastmod>2022-02-19</lastmod>
+    </url>
+    <url>
+        <loc>https://davidkoloski.me/blog/abstract-types-in-rust-2/</loc>
+        <lastmod>2022-02-24</lastmod>
+    </url>
+    <url>
+        <loc>https://davidkoloski.me/blog/abstract-types-in-rust-3/</loc>
+        <lastmod>2022-02-25</lastmod>
+    </url>
+    <url>
+        <loc>https://davidkoloski.me/blog/abstract-types-in-rust-4/</loc>
+        <lastmod>2022-03-02</lastmod>
     </url>
     <url>
         <loc>https://davidkoloski.me/blog/anima-playground/</loc>

@@ -5,18 +5,532 @@
 	<link href="https://davidkoloski.me/atom.xml" rel="self" type="application/atom+xml"/>
   <link href="https://davidkoloski.me"/>
 	<generator uri="https://www.getzola.org/">Zola</generator>
-	<updated>2022-02-19T00:00:00+00:00</updated>
+	<updated>2022-03-02T00:00:00+00:00</updated>
 	<id>https://davidkoloski.me/atom.xml</id>
 	<entry xml:lang="en">
-		<title>Abstract Types in Rust</title>
+		<title>Abstract Types in Rust 4</title>
+		<published>2022-03-02T00:00:00+00:00</published>
+		<updated>2022-03-02T00:00:00+00:00</updated>
+		<link href="https://davidkoloski.me/blog/abstract-types-in-rust-4/" type="text/html"/>
+		<id>https://davidkoloski.me/blog/abstract-types-in-rust-4/</id>
+		<content type="html">&lt;h2&gt;This post is not ready to share yet&lt;&#x2F;h2&gt;
+&lt;p&gt;This post is still undergoing review and critique. If you&#x27;re here by chance or follow the &lt;a href=&quot;&#x2F;atom.xml&quot;&gt;RSS feed&lt;&#x2F;a&gt;, please do not share this post yet. It will be ready soon!&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-right-frame-of-mind&quot;&gt;The right frame of mind&lt;&#x2F;h2&gt;
+&lt;p&gt;This post is the culmination of the previous three posts, which discussed the &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;abstract-types-in-rust-1&#x2F;&quot;&gt;nature of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;&lt;&#x2F;a&gt;, &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;abstract-types-in-rust-2&#x2F;&quot;&gt;how to improve it&lt;&#x2F;a&gt;, and &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;abstract-types-in-rust-3&#x2F;&quot;&gt;prior work on &lt;code&gt;impl Trait&lt;&#x2F;code&gt;&lt;&#x2F;a&gt;. Finally, I will give my formal recommendation on a path forward for &lt;code&gt;impl Trait&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;recap&quot;&gt;Recap&lt;&#x2F;h3&gt;
+&lt;p&gt;As a quick recap, I suggest introducing a new &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; language feature that abstracts types in general. Augmented with named unnameable types, this change would enable all existing functionality while making code clearer and more orthogonal.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;stepping-stones&quot;&gt;Stepping stones&lt;&#x2F;h2&gt;
+&lt;p&gt;We&#x27;ve been breezing through many different examples and suggestions without really consolidating our knowledge. Let&#x27;s take some time to build up some higher-level facts that we can use to inform our final analysis.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;the-lesser-of-two-evils&quot;&gt;The lesser of two evils&lt;&#x2F;h3&gt;
+&lt;p&gt;In this case, the two evils are &lt;strong&gt;type inference&lt;&#x2F;strong&gt; and &lt;strong&gt;named unnameable types&lt;&#x2F;strong&gt;. In order for &lt;code&gt;impl Trait&lt;&#x2F;code&gt; to function, we must choose one of these. Note that since we already have &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, we have already chosen one of these (type inference). Having worked through some of the consequences, I do not pretend to know which would be cleaner, clearer, and most in line with Rust design goals. Let&#x27;s consult a motivating example:&lt;&#x2F;p&gt;
+&lt;p&gt;I would like to have some function &lt;code&gt;a&lt;&#x2F;code&gt; return a closure that yields some given value. Then, I would like to have some function &lt;code&gt;b&lt;&#x2F;code&gt; call &lt;code&gt;a&lt;&#x2F;code&gt; with a predefined value and return the same type. &lt;code&gt;a&lt;&#x2F;code&gt;&#x27;s return type must either be &lt;em&gt;inferred&lt;&#x2F;em&gt; or &lt;em&gt;named&lt;&#x2F;em&gt;.&lt;&#x2F;p&gt;
+&lt;h4 id=&quot;inferred&quot;&gt;Inferred&lt;&#x2F;h4&gt;
+&lt;p&gt;If &lt;code&gt;a&lt;&#x2F;code&gt;&#x27;s return type is inferred, then &lt;code&gt;b&lt;&#x2F;code&gt; must either:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Refer to &lt;code&gt;a&lt;&#x2F;code&gt; to name its return type (i.e. &lt;code&gt;fn b() -&amp;gt; &amp;lt;a as Fn&amp;lt;(T,)&amp;gt;&amp;gt;::Output&lt;&#x2F;code&gt;)&lt;&#x2F;li&gt;
+&lt;li&gt;Infer it from its body (i.e. &lt;code&gt;fn b() -&amp;gt; _&lt;&#x2F;code&gt;)&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;A type alias doesn&#x27;t change the situation here, as it would also either state &lt;code&gt;type Output = &amp;lt;a as Fn(T)&amp;gt;::Output&lt;&#x2F;code&gt; or &lt;code&gt;type Output = _&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;In the case of inference, we end up long-range type inference and spooky action at a distance. This proposal has the additional downside that it opens the door for inference to be used in places where it&#x27;s not strictly necessary. This could lead to further confusion and would render the feature more harm than good.&lt;&#x2F;p&gt;
+&lt;p&gt;In the case of function outputs, we end up with &lt;code&gt;a&lt;&#x2F;code&gt; only performing local inference which is arguably better. However, we suffer from the explicit function output signature, especially when we want to change the definition of &lt;code&gt;a&lt;&#x2F;code&gt;. Modifying its arguments would require modifying the type signature of &lt;code&gt;b&lt;&#x2F;code&gt; (or equivalently, the signature of the type alias) even when the return type has not changed. It makes maintenance more difficult at the same time as making discoverability more difficult.&lt;&#x2F;p&gt;
+&lt;h4 id=&quot;named&quot;&gt;Named&lt;&#x2F;h4&gt;
+&lt;p&gt;If we can name &lt;code&gt;a&lt;&#x2F;code&gt;&#x27;s return type, then &lt;code&gt;b&lt;&#x2F;code&gt; can just refer to that:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;a&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T&amp;gt;(value: T) -&amp;gt; type &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;#39;Closure&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;#39;Closure&amp;lt;&lt;&#x2F;span&gt;&lt;span&gt;T&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;gt;&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;move ||&lt;&#x2F;span&gt;&lt;span&gt; value&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;b&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; type &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;#39;Closure&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;i32&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;a&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;42&lt;&#x2F;span&gt;&lt;span&gt;)&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This opens up new possibilities with closures, and extends nicely to async blocks which are the other main unnameable type. This also alleviates a major problem with naming these types, which was previously done by creating a type alias and using inference to achieve the same result.&lt;&#x2F;p&gt;
+&lt;p&gt;The obvious downside is that this breaks encapsulation. This is not to be taken lightly, and I don&#x27;t intend to take it so. There are also some very thorny questions regarding generics for closures that depend on type arguments. As a result, making such a change must not be required for &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; and should be kept as a separable clause.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;how-opaque-are-abstract-types&quot;&gt;How opaque are abstract types?&lt;&#x2F;h3&gt;
+&lt;p&gt;With a new syntax &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; to perform type abstraction, we need to figure out some fundamental questions:&lt;&#x2F;p&gt;
+&lt;h4 id=&quot;are-all-i32-as-impl-debug-the-same-type&quot;&gt;Are all &lt;code&gt;i32 as impl Debug&lt;&#x2F;code&gt; the same type?&lt;&#x2F;h4&gt;
+&lt;p&gt;As an example:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;a&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;i32&lt;&#x2F;span&gt;&lt;span&gt; as impl Debug {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;42&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;b&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;i32&lt;&#x2F;span&gt;&lt;span&gt; as impl Debug {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;10&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Could we compare &lt;code&gt;a() == b()&lt;&#x2F;code&gt;? Or after stating &lt;code&gt;let mut x = a()&lt;&#x2F;code&gt; set &lt;code&gt;x = b()&lt;&#x2F;code&gt;? These run contrary to the idea that &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; creates a new type that only exposes a minimum of traits and information, so the answer here must be &lt;em&gt;no&lt;&#x2F;em&gt;. This leads naturally to the idea of &lt;code&gt;as impl Debug&lt;&#x2F;code&gt; as the desugaring site for abstraction itself:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;A&amp;lt;T: Debug&amp;gt;(T);&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;a&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; A&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;i32&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    A(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;42&lt;&#x2F;span&gt;&lt;span&gt;)&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;B&amp;lt;T: Debug&amp;gt;(T);&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;b&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; B&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;i32&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    B(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;10&lt;&#x2F;span&gt;&lt;span&gt;)&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Now it is evident that &lt;code&gt;a&lt;&#x2F;code&gt; and &lt;code&gt;b&lt;&#x2F;code&gt; do not return types that can be meaningfully compared or exchanged. To unify them:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Output &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= i32 as impl &lt;&#x2F;span&gt;&lt;span&gt;Debug;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;fn a() -&amp;gt; Output {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;42&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;b&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; Output {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;10&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Would then desugar to:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Output&amp;lt;T: Debug&amp;gt;(T);&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;a&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; Output&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;i32&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    Output(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;42&lt;&#x2F;span&gt;&lt;span&gt;)&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;b&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; Output&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;i32&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    Output(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;10&lt;&#x2F;span&gt;&lt;span&gt;)&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;In which case we can see that the return values of &lt;code&gt;a&lt;&#x2F;code&gt; and &lt;code&gt;b&lt;&#x2F;code&gt; can support those operations.&lt;&#x2F;p&gt;
+&lt;h4 id=&quot;unnamed-in-return-position&quot;&gt;Unnamed in return position&lt;&#x2F;h4&gt;
+&lt;p&gt;It&#x27;s worth noting that this still suffers from the same composability restrictions that &lt;code&gt;impl Trait&lt;&#x2F;code&gt; does in return position:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F; crate `a`&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;a&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;i32&lt;&#x2F;span&gt;&lt;span&gt; as impl Debug { &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;42 &lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F; crate `b`&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;b&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;?? &lt;&#x2F;span&gt;&lt;span&gt;{ &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;a&lt;&#x2F;span&gt;&lt;span&gt;() }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Because &lt;code&gt;b&lt;&#x2F;code&gt; must return the same type as &lt;code&gt;a&lt;&#x2F;code&gt;, it needs some way to return to &lt;code&gt;a&lt;&#x2F;code&gt;&#x27;s return type. The most commonly suggested way to do this is to use &lt;code&gt;Fn&lt;&#x2F;code&gt; traits:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;b&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &amp;lt;a &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;as &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;Fn&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;()&amp;gt;&amp;gt;::Output { &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;a&lt;&#x2F;span&gt;&lt;span&gt;() }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Which works, but suffers from the verbosity of the syntax. This is a problem already discussed as a feature of a type-inferent solution to &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, so this example may motivate that as a more complete approach.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;final-proposal&quot;&gt;Final proposal&lt;&#x2F;h2&gt;
+&lt;p&gt;Alright, with all that out of the way I can finally get around to my final recommendations. First, I&#x27;ll talk about the theoretical ideal and where I think we could be at the end of the road. Second, I&#x27;ll discuss how that will never happen and where we should set our expectations and exert our effort instead.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;the-zealot-s-guide-to-impl-trait&quot;&gt;The zealot&#x27;s guide to &lt;code&gt;impl Trait&lt;&#x2F;code&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;This is a maximally-offensive revision of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;. This is where the evidence leads but implementing it would be insanely destructive. I recommend that we look to this for guidance but do not actually do this.&lt;&#x2F;p&gt;
+&lt;p&gt;I believe that return position &lt;code&gt;impl Trait&lt;&#x2F;code&gt; should be deprecated entirely in favor of &lt;code&gt;as impl Trait&lt;&#x2F;code&gt;. Additionally, some way of naming the return value of a function should be settled on or &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; should be banned in return position. This would effectively relegate it to syntax sugar for creating abstracted types, which is sufficiently simple. Remember that the &lt;code&gt;?&lt;&#x2F;code&gt; operator was a huge quality of life improvement and yet is relatively simple syntax sugar.&lt;&#x2F;p&gt;
+&lt;p&gt;We must choose between inferring and explicit solutions to naming types, and they both have their pros and cons. Local inference could be used, but it will still require naming function return values. Any longer-range inference will just propagate type inference problems further. Explicitly naming unnameable types requires exotic syntax and may cause more problems than it solves by raising questions about syntax.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;impl Trait&lt;&#x2F;code&gt; in argument position would be acceptable to keep, as its sugar is sufficiently simple and its purpose is orthogonal to other language features. I would be in support of removing it entirely to keep the language clean if others preferred that.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;the-engineer-s-guide-to-impl-trait&quot;&gt;The engineer&#x27;s guide to &lt;code&gt;impl Trait&lt;&#x2F;code&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;Now that that&#x27;s out of our system, we can get down to business. We have some fundamentally conflicting and overlapping systems that we need to reconcile.&lt;&#x2F;p&gt;
+&lt;p&gt;Because &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; provides the functionality of type abstraction, we can now desugar &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position to &lt;code&gt;_ as impl Trait&lt;&#x2F;code&gt; and allow the compiler to infer the concrete return type. This requires local inference, but we already had this and we&#x27;re continuing to abstract the concrete type so this should all be above-board.&lt;&#x2F;p&gt;
+&lt;p&gt;We may either allow &lt;code&gt;impl Trait&lt;&#x2F;code&gt; to desugar to &lt;code&gt;_ as impl Trait&lt;&#x2F;code&gt; and allow for nonlocal inference when used in type aliases (TAIT), or we may ban type inference for nameable types. I think that either outcome is acceptable and perhaps a lint for nameable inferred abstracted types would be the best path:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Output &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= impl &lt;&#x2F;span&gt;&lt;span&gt;Debug;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F;            ^^^^^^^^^^&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F; WARNING: Output is nameable type `i32` and should be declared as:&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F;   type Output = i32 as impl Debug;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This would help push users to use the more explicit &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; syntax and help prevent errors down the line from confusing inference situations. Similarly, we should ban or lint on &lt;code&gt;impl Trait&lt;&#x2F;code&gt; used on nameable types in return position:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Debug {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F;             ^^^^^^^^^^&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F; WARNING: return type is nameable type `i32` and should be declared as:&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F;          fn target() -&amp;gt; i32 as impl Debug&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;42&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;However we must acknowledge that there are still situations where we must allow closures and async blocks to take advantage of inference.&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Clone {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;|| &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;42&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;And if we want to allow local inference, perhaps a lint would be best in this case as well:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Clone {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F;             ^^^^^^^^^^&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F; WARNING: impl Trait is deprecated&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F; NOTE:    use explicit inference instead: `_ as impl Clone`&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;|| &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;42&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;And finally, we must wait for consensus to be built for one of the naming candidates before we can have unabstracted unnameable types. It&#x27;s sad, but it&#x27;s reality and we have to acknowledge it.&lt;&#x2F;p&gt;
+&lt;p&gt;A primary benefit of this proposal is that if we do come to a consensus on how to name unnameable types, we can very easily deprecate &lt;code&gt;impl Trait&lt;&#x2F;code&gt; completely. That would allow us to complete the transition and resolve many longstanding issues related to &lt;code&gt;impl Trait&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;h4 id=&quot;naming-options&quot;&gt;Naming options&lt;&#x2F;h4&gt;
+&lt;p&gt;The options I suggest for naming unnameable types are, in order from least to most radical:&lt;&#x2F;p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Local return type inference plus &lt;code&gt;Fn&lt;&#x2F;code&gt; traits&lt;&#x2F;strong&gt;: I think the syntax is not great but tolerable.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Named unnameable types&lt;&#x2F;strong&gt;: Potentially complex but much cleaner than LRTI + &lt;code&gt;Fn&lt;&#x2F;code&gt; traits.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Nonlocal type inference&lt;&#x2F;strong&gt;: I think this brings so much baggage along with it that it will immediately stall out and fail. Death by a thousand RFC comments.&lt;&#x2F;li&gt;
+&lt;&#x2F;ol&gt;
+&lt;p&gt;I hope for #2 but realistically predict #1 if any of these succeed.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;conclusion&quot;&gt;Conclusion&lt;&#x2F;h2&gt;
+&lt;p&gt;Whew, that was a lot of work. Hopefully I&#x27;ve gotten some gears turning and thoughts running. Let&#x27;s have some lively debate about &lt;code&gt;impl Trait&lt;&#x2F;code&gt; and see if we can make Rust a better language for everyone.&lt;&#x2F;p&gt;
+&lt;p&gt;Thanks to &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;computerdruid&quot;&gt;@computerdruid&lt;&#x2F;a&gt; and &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;tmandry&quot;&gt;@tmandry&lt;&#x2F;a&gt; in particular for reviewing this series of posts and helping me sharpen and deepen my understanding of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;. I couldn&#x27;t have done it without the help!&lt;&#x2F;p&gt;
+</content>
+	</entry>
+	<entry xml:lang="en">
+		<title>Abstract Types in Rust 3</title>
+		<published>2022-02-25T00:00:00+00:00</published>
+		<updated>2022-02-25T00:00:00+00:00</updated>
+		<link href="https://davidkoloski.me/blog/abstract-types-in-rust-3/" type="text/html"/>
+		<id>https://davidkoloski.me/blog/abstract-types-in-rust-3/</id>
+		<content type="html">&lt;h2&gt;This post is not ready to share yet&lt;&#x2F;h2&gt;
+&lt;p&gt;This post is still undergoing review and critique. If you&#x27;re here by chance or follow the &lt;a href=&quot;&#x2F;atom.xml&quot;&gt;RSS feed&lt;&#x2F;a&gt;, please do not share this post yet. It will be ready soon!&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;prior-work&quot;&gt;Prior work&lt;&#x2F;h2&gt;
+&lt;p&gt;The concepts behind &lt;code&gt;impl Trait&lt;&#x2F;code&gt; have been around for a surprisingly long time. I&#x27;ve done my best to collect relevant RFCs, successful and failed, review them and compare them to my proposal. There are five RFCs that are directly relevant to &lt;code&gt;impl Trait&lt;&#x2F;code&gt; and type abstraction. Let&#x27;s go in chronological order.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;the-original-impl-trait&quot;&gt;The original &lt;code&gt;impl Trait&lt;&#x2F;code&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;The &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;rust-lang&#x2F;rfcs&#x2F;pull&#x2F;105&#x2F;files&quot;&gt;first &lt;code&gt;impl Trait&lt;&#x2F;code&gt; RFC&lt;&#x2F;a&gt; from &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;aturon&quot;&gt;@aturon&lt;&#x2F;a&gt; was not accepted, but a proposed &lt;a href=&quot;https:&#x2F;&#x2F;rust-lang.github.io&#x2F;rfcs&#x2F;1522-conservative-impl-trait.html&quot;&gt;more conservative version&lt;&#x2F;a&gt; of it was accepted.&lt;&#x2F;p&gt;
+&lt;p&gt;In many ways, this RFC has the same goals as my recommendation. Specifically, it addresses the following by name:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Returning unboxed closures - this now also applies to unboxed &lt;code&gt;Futures&lt;&#x2F;code&gt; generated by &lt;code&gt;async&lt;&#x2F;code&gt; blocks&lt;&#x2F;li&gt;
+&lt;li&gt;Preventing leaky APIs - this is related to trait leakage when returning unabstracted types, one of the problems that we&#x27;re trying to solve&lt;&#x2F;li&gt;
+&lt;li&gt;Simplifying complex types - the given example is heavily-composed iterator types&lt;&#x2F;li&gt;
+&lt;li&gt;Documentation - namely making it easier to understand complex return types&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;It even proposed allowing &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in any type position, which &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; also aims to allow. Thare are places in the thread where &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; is even used, albeit in the context of a value. So why was the more conservative version accepted instead of the original?&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;impl-trait-anywhere&quot;&gt;&lt;code&gt;impl Trait&lt;&#x2F;code&gt; anywhere&lt;&#x2F;h3&gt;
+&lt;p&gt;The original proposal didn&#x27;t have a concrete use-case for &lt;code&gt;impl Trait&lt;&#x2F;code&gt; outside of function signatures. With a more current need for TAIT, I would say that we now have a motivating use case for it.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;named-return-types&quot;&gt;Named return types&lt;&#x2F;h3&gt;
+&lt;p&gt;The original proposal suggested syntax like &lt;code&gt;collect_to_set::&amp;lt;T, I&amp;gt;::impl&lt;&#x2F;code&gt; to refer to the &lt;code&gt;impl Trait&lt;&#x2F;code&gt; return type of the function &lt;code&gt;collect_to_set&lt;&#x2F;code&gt;. This raised questions about how to refer to nested return types. &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; does not have this problem, since the correct approach in this case would be to separate the return type into a type alias. Nested &lt;code&gt;as impl Trait&lt;&#x2F;code&gt;s can be approached in the same way.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;trait-object-confusion&quot;&gt;Trait object confusion&lt;&#x2F;h3&gt;
+&lt;p&gt;There was a lot of concern that it would be easy to confuse &lt;code&gt;impl Trait&lt;&#x2F;code&gt; (a statically-dispatched abstract type) with &lt;code&gt;Trait&lt;&#x2F;code&gt;. At the time, &lt;code&gt;Trait&lt;&#x2F;code&gt; was the syntax for trait objects. It has since been replaced with &lt;code&gt;dyn Trait&lt;&#x2F;code&gt; and deprecated, so the risk of confusion is lower now than ever. Additionally, I think that &lt;code&gt;Type as impl Trait&lt;&#x2F;code&gt; conveys a much larger difference from &lt;code&gt;dyn Trait&lt;&#x2F;code&gt; than &lt;code&gt;impl Trait&lt;&#x2F;code&gt; does.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;impl-trait-is-not-powerful-enough&quot;&gt;&lt;code&gt;impl Trait&lt;&#x2F;code&gt; is not powerful enough&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;code&gt;impl Trait&lt;&#x2F;code&gt; was proposed as being a very general-purpose equivalent of existential types, which &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; does not. There was some reluctance to having two ways to express the same concept, which isn&#x27;t as much of a problem with the newer desugaring.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;coupled-sugarings&quot;&gt;Coupled sugarings&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;pnkfelix&quot;&gt;@pnkfelix&lt;&#x2F;a&gt; actually calls this out explicitly in &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;rust-lang&#x2F;rfcs&#x2F;pull&#x2F;105#issuecomment-45329909&quot;&gt;a comment&lt;&#x2F;a&gt;, how &lt;code&gt;impl Trait&lt;&#x2F;code&gt; has two different uses depending on whether it&#x27;s used in argument position or return position. There&#x27;s also discussion about how covariant and contravariant appearances of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; have different desugarings, and even a suggestion that &lt;code&gt;some Trait&lt;&#x2F;code&gt; be introduced to capture that notion. This parallels a lot of what was discussed in the first and second posts.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;leaky-auto-traits&quot;&gt;Leaky auto traits&lt;&#x2F;h3&gt;
+&lt;p&gt;This was a controversial aspect at the time, but it&#x27;s now well-known that abstractions leak auto traits. This hasn&#x27;t changed, and the previous discussion is extensive and not worth rehashing.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;conclusion&quot;&gt;Conclusion&lt;&#x2F;h3&gt;
+&lt;p&gt;At the end of it all, @aturon closed the RFC in favor of working towards some alternatives with other interested members.&lt;&#x2F;p&gt;
+&lt;p&gt;This first RFC does somewhat of a whirlwind tour of the problems that &lt;code&gt;impl Trait&lt;&#x2F;code&gt; attempts to solve. Existential types made an appearance, conditional trait bounds showed up, and there was speculative syntax galore. It properly sets the stage for:&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;conservative-impl-trait&quot;&gt;Conservative &lt;code&gt;impl Trait&lt;&#x2F;code&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;a href=&quot;https:&#x2F;&#x2F;rust-lang.github.io&#x2F;rfcs&#x2F;2071-impl-trait-existential-types.html&quot;&gt;This RFC&lt;&#x2F;a&gt; is essentially just a limited version of the original proposal. It only allows &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in argument and return position on free and inherent functions. Unfortunately, there&#x27;s not much to comment on here since it&#x27;s a subset of the previous RFC. Some notes:&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;abstract-vs-anonymous&quot;&gt;Abstract vs anonymous&lt;&#x2F;h3&gt;
+&lt;p&gt;There are a few places here where the terminology around these types are questioned. I prefer &amp;quot;abstract&amp;quot; to draw a clearer separation between abstracted types and unnameable types, both of which could be confused as &amp;quot;anonymous&amp;quot; by non-experts (sorry @eddyb!).&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;named-output-types&quot;&gt;Named output types&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;eddyb&quot;&gt;@eddyb&lt;&#x2F;a&gt; suggests naming the return types of functions, which is very similar to my suggestion for named unnameable types. Even down to the use of the &lt;code&gt;type&lt;&#x2F;code&gt; keyword.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;anxiety-of-impl-trait-overuse&quot;&gt;Anxiety of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; overuse&lt;&#x2F;h3&gt;
+&lt;p&gt;The downsides of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; are known, and a few people pointed out that encouraging the use of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in more places could lead to undesirable situations. We discussed this problem when we talked about whether we want our trait implementations to leak.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;bikeshedding-impl-vs-type&quot;&gt;Bikeshedding: &lt;code&gt;impl&lt;&#x2F;code&gt; vs &lt;code&gt;type&lt;&#x2F;code&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;There seem to be some strong opinions about which syntax would be better. &lt;code&gt;impl Trait&lt;&#x2F;code&gt; won evidently.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;an-unclear-future-for-impl-trait&quot;&gt;An unclear future for &lt;code&gt;impl Trait&lt;&#x2F;code&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;A really poignant critique of the RFC was that the original failed because many people wanted different futures for it. This RFC was effectively just the lowest common denominator, but doesn&#x27;t resolve the question of which future &lt;code&gt;impl Trait&lt;&#x2F;code&gt; should have. That is the core of the question I want to answer.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;for-blocks&quot;&gt;&lt;code&gt;for&lt;&#x2F;code&gt; blocks&lt;&#x2F;h3&gt;
+&lt;p&gt;&lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;glaebhoerl&quot;&gt;@glaebhoerl&lt;&#x2F;a&gt; suggests using &lt;code&gt;for&lt;&#x2F;code&gt; blocks to desugar return-position &lt;code&gt;impl Trait&lt;&#x2F;code&gt; for generic free functions. It&#x27;s a cool idea, but doesn&#x27;t get much further exploration as the RFC period was winding down.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;expanded-impl-trait&quot;&gt;Expanded &lt;code&gt;impl Trait&lt;&#x2F;code&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;a href=&quot;https:&#x2F;&#x2F;rust-lang.github.io&#x2F;rfcs&#x2F;1951-expand-impl-trait.html&quot;&gt;This RFC&lt;&#x2F;a&gt;, in essence, took on all the bikeshedding that wasn&#x27;t ultimately essential to the first RFC. It does manage to introduce &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in argument position, resolve bikeshedding around syntax, and come to a conclusion about type and lifetime parameters interacting with &lt;code&gt;impl Trait&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;There&#x27;s honestly not too much to discuss here that hasn&#x27;t already been discussed. Most of this RFC is consensus building and cornering &lt;code&gt;impl Trait&lt;&#x2F;code&gt; to prevent it from getting out of hand. This is a valuable RFC to read if you want to understand the specific semantics of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;impl-trait-existential-types&quot;&gt;&lt;code&gt;impl Trait&lt;&#x2F;code&gt; existential types&lt;&#x2F;h2&gt;
+&lt;p&gt;We&#x27;ve finally caught up and are moving on to the more experimental RFCs. &lt;a href=&quot;https:&#x2F;&#x2F;rust-lang.github.io&#x2F;rfcs&#x2F;2071-impl-trait-existential-types.html&quot;&gt;This RFC&lt;&#x2F;a&gt; aims to introduce &lt;em&gt;existential types&lt;&#x2F;em&gt; and expand &lt;code&gt;impl Trait&lt;&#x2F;code&gt; to more places. I have some real critiques of this RFC, so let&#x27;s get into them.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;as-impl-trait-in-spirit&quot;&gt;&lt;code&gt;as impl Trait&lt;&#x2F;code&gt; in spirit&lt;&#x2F;h3&gt;
+&lt;p&gt;One of the first sections of this RFC suggests this syntax for abstracted types:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; displayable: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Display = &amp;quot;Hello, world!&amp;quot;;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This doesn&#x27;t include the concrete underlying type, and so I think this would be much clearer as:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; displayable: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&amp;#39;static str as impl &lt;&#x2F;span&gt;&lt;span&gt;Display = &amp;quot;Hello, world!&amp;quot;;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F; or&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;let displayable: _ as impl Display = &amp;quot;Hello, world!&amp;quot;;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This addresses the same problems, but with an arguably clearer syntax:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F; Concrete&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;const &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;DISPLAYABLE&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&amp;#39;static str = &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;Hello, world!&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F; Abstract&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;const &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;DISPLAYABLE&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&amp;#39;static str as impl &lt;&#x2F;span&gt;&lt;span&gt;Display = &amp;quot;Hello, world!&amp;quot;;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;And can handle unnameable types with local inference if you let it:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;const &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;MY_CLOSURE&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;_ as impl &lt;&#x2F;span&gt;&lt;span&gt;Fn(i32) -&amp;gt; i32 = |x| x + 1;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;h3 id=&quot;existential-types&quot;&gt;Existential types&lt;&#x2F;h3&gt;
+&lt;p&gt;This section in particular muddies the water with &lt;code&gt;impl Trait&lt;&#x2F;code&gt;. The introduction of existential types is &lt;em&gt;intended&lt;&#x2F;em&gt; to provide the same type-abstracting functionality as &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, but with the added benefit of being usable in more positions. There is a particular focus on type aliases and associated types, where the concrete underlying type is inferred based on its use.&lt;&#x2F;p&gt;
+&lt;p&gt;I believe that inferring this concrete type is a mistake, and leads to the same inference issues discussed in the last post. Additionally, there is a large focus on not naming the concrete type to prevent trait impls from leaking. However I think this confuses the abstraction of a type with the naming of it. It&#x27;s clearer to name a type and explicitly abstract it.&lt;&#x2F;p&gt;
+&lt;p&gt;Fundamentally, I believe that existential types are a less clear formulation of &lt;code&gt;as impl Trait&lt;&#x2F;code&gt;. That&#x27;s a very subjective opinion. I&#x27;ll save any further discussion for the final post.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;type-alias-impl-trait&quot;&gt;Type alias impl trait&lt;&#x2F;h2&gt;
+&lt;p&gt;Finally, &lt;a href=&quot;https:&#x2F;&#x2F;rust-lang.github.io&#x2F;rfcs&#x2F;2515-type_alias_impl_trait.html&quot;&gt;this RFC&lt;&#x2F;a&gt; is nice and light. It simply builds on the existential types RFC by explicitly setting the syntax to use &lt;code&gt;impl Trait&lt;&#x2F;code&gt;. There is a lot of language lawyering and nailing down the very specific semantics, and it does a good job of explaining why additional syntax hinders learnability and results in confusion. Overall, I like this RFC but I think we can do better.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;conclusion-1&quot;&gt;Conclusion&lt;&#x2F;h2&gt;
+&lt;p&gt;&lt;code&gt;impl Trait&lt;&#x2F;code&gt; has taken a long journey to reach where it is now. Along the way there has been great ambition, as well as great confusion. For some, &lt;code&gt;impl Trait&lt;&#x2F;code&gt; has the promise of becoming as great as its original ambition. For others, the idea that it could do that is unthinkable. I cannot stress enough that there are very strong convictions on both sides, and I suspect that I will probably raise some of these tensions from the dead.&lt;&#x2F;p&gt;
+&lt;p&gt;In my &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;abstract-types-in-rust-4&#x2F;&quot;&gt;final post&lt;&#x2F;a&gt;, I hope to bring the past three posts together into a coherent framework and provide a final recommendation on what should be done with &lt;code&gt;impl Trait&lt;&#x2F;code&gt;. If you&#x27;ve made it this far, I appreciate it a lot and hope you can hang on for just a little while longer.&lt;&#x2F;p&gt;
+</content>
+	</entry>
+	<entry xml:lang="en">
+		<title>Abstract Types in Rust 2</title>
+		<published>2022-02-24T00:00:00+00:00</published>
+		<updated>2022-02-24T00:00:00+00:00</updated>
+		<link href="https://davidkoloski.me/blog/abstract-types-in-rust-2/" type="text/html"/>
+		<id>https://davidkoloski.me/blog/abstract-types-in-rust-2/</id>
+		<content type="html">&lt;h2&gt;This post is not ready to share yet&lt;&#x2F;h2&gt;
+&lt;p&gt;This post is still undergoing review and critique. If you&#x27;re here by chance or follow the &lt;a href=&quot;&#x2F;atom.xml&quot;&gt;RSS feed&lt;&#x2F;a&gt;, please do not share this post yet. It will be ready soon!&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;where-we-left-off&quot;&gt;Where we left off&lt;&#x2F;h2&gt;
+&lt;p&gt;In part 1, I laid the foundation of an alternative desugaring for &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position. This new desugaring left the return type &lt;em&gt;unabstracted&lt;&#x2F;em&gt;, allowing the caller to introspect the type and learn more about it than the type signature provides. In this post, I will explore that idea more fully and try to discover the logical implications of it. If you&#x27;re feeling goal-oriented, you can skip to &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;abstract-types-in-rust-3&#x2F;&quot;&gt;the next post&lt;&#x2F;a&gt; where I discuss prior art and compare my proposal.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;implications-of-unabstracted-impl-trait&quot;&gt;Implications of unabstracted &lt;code&gt;impl Trait&lt;&#x2F;code&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;So we&#x27;ve got two possible desugarings for &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;Abstracted: a function returning &lt;code&gt;impl Trait&lt;&#x2F;code&gt; actually returns a new type that only implements exactly the traits specified. The underlying concrete type is hidden from the caller.&lt;&#x2F;li&gt;
+&lt;li&gt;Unabstracted: a function returning &lt;code&gt;impl Trait&lt;&#x2F;code&gt; infers the concrete return type, which is not hidden from the caller.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;Correspondingly, we have a couple options for what we could do:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Choose abstraction&lt;&#x2F;strong&gt;: unabstracted return types should always be concrete&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;strong&gt;Choose unabstraction&lt;&#x2F;strong&gt;: abstracted return types should always be manually wrapped&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;Right now, we&#x27;re at &amp;quot;choose abstraction&amp;quot;. In order to build motivation for any alternative desugarings, we&#x27;ll have to come up with some differences between them and leverage them into situations where we get undesirable behavior. So let&#x27;s do that.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;unnameable-types&quot;&gt;Unnameable types&lt;&#x2F;h2&gt;
+&lt;p&gt;I&#x27;ve got some odd code. Let&#x27;s take a look:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;generate&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T&amp;gt;(value: T) -&amp;gt; impl FnOnce() -&amp;gt; T {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;move ||&lt;&#x2F;span&gt;&lt;span&gt; value&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;main&lt;&#x2F;span&gt;&lt;span&gt;() {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F; This works&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;eighteen &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span&gt;|| &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;18&lt;&#x2F;span&gt;&lt;span&gt;;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; also_eighteen &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; eighteen.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;clone&lt;&#x2F;span&gt;&lt;span&gt;();&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F; This doesn&amp;#39;t?&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; forty_two &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;generate&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;42&lt;&#x2F;span&gt;&lt;span&gt;);&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; also_forty_two &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; forty_two.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;clone&lt;&#x2F;span&gt;&lt;span&gt;();&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;&lt;code&gt;generate&lt;&#x2F;code&gt; is a function that takes a value and returns a closure that returns that value. Well &lt;em&gt;technically&lt;&#x2F;em&gt;, it really returns an &lt;code&gt;impl FnOnce() -&amp;gt; T&lt;&#x2F;code&gt; which is an abstract type. In fact, because it&#x27;s a closure, the &lt;em&gt;only&lt;&#x2F;em&gt; way we can return it is as an &lt;code&gt;impl Trait&lt;&#x2F;code&gt;. We can&#x27;t refer to the type of the closure by name, so it can&#x27;t be used as a concrete type. That&#x27;s not a problem unless we want to take advantage of some concrete properties of it.&lt;&#x2F;p&gt;
+&lt;p&gt;Closures have a special property that we can take advantage of:&lt;&#x2F;p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;a href=&quot;https:&#x2F;&#x2F;doc.rust-lang.org&#x2F;reference&#x2F;types&#x2F;closure.html#other-traits&quot;&gt;&lt;em&gt;Closure types&lt;&#x2F;em&gt;&lt;&#x2F;a&gt;&lt;&#x2F;p&gt;
+&lt;p&gt;All closure types implement &lt;code&gt;Sized&lt;&#x2F;code&gt;. Additionally, closure types implement the following traits if allowed to do so by the types of the captures it stores:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;Clone&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Copy&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Sync&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Send&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;&#x2F;blockquote&gt;
+&lt;p&gt;&lt;code&gt;Sized&lt;&#x2F;code&gt;, &lt;code&gt;Sync&lt;&#x2F;code&gt;, and &lt;code&gt;Send&lt;&#x2F;code&gt; are all auto-traits. For &lt;a href=&quot;https:&#x2F;&#x2F;twitter.com&#x2F;Gankra_&#x2F;status&#x2F;1141413230905966593&quot;&gt;complicated reasons&lt;&#x2F;a&gt;, we&#x27;ll ignore these for now and focus on &lt;code&gt;Clone&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;Because we&#x27;re returning our closure abstracted, we can&#x27;t leak whether our closure implements &lt;code&gt;Clone&lt;&#x2F;code&gt; back to the caller. And we can&#x27;t return our closure unabstracted, so we&#x27;re stuck. The closure that we made locally can be cloned because it&#x27;s not abstracted, but as soon as it&#x27;s returned by a function we can no longer clone it!&lt;&#x2F;p&gt;
+&lt;p&gt;We could do something like this:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;generate_cloneable&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;Clone&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt;(value: T) -&amp;gt; impl (Clone + FnOnce() -&amp;gt; T) {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;move ||&lt;&#x2F;span&gt;&lt;span&gt; value&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;But now we have two copies of &lt;code&gt;generate&lt;&#x2F;code&gt;, and anything that calls it will also need two copies. And so on and so forth. That&#x27;s pretty inconvenient, but in all fairness, it could be worse.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;forward-thinking&quot;&gt;Forward thinking&lt;&#x2F;h3&gt;
+&lt;p&gt;Presumably, new traits will be added to the standard library over time. Maybe some of them will be useful enough that closures will implement them, much like they do for &lt;code&gt;Clone&lt;&#x2F;code&gt; right now. For now, let&#x27;s say that we&#x27;ve decided to implement &lt;code&gt;Debug&lt;&#x2F;code&gt; for closures. That would be cool, now people can for example check what variables are captured by a closure. In this future, we&#x27;ve just created a huge headache for everyone who wants to return one of them.&lt;&#x2F;p&gt;
+&lt;p&gt;To cover all the possible use cases, it&#x27;s no longer suitable to have two copies of a function with different return types. Now, we need &lt;em&gt;four&lt;&#x2F;em&gt; copies:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;impl Fn() -&amp;gt; T&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Clone + impl Fn() -&amp;gt; T&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Debug + impl Fn() -&amp;gt; T&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;Clone + Debug + impl Fn() -&amp;gt; T&lt;&#x2F;code&gt;&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;And four copies of whatever calls those, and so on. That&#x27;s not sustainable. In a technical sense, we&#x27;re already here since closures eagerly implement &lt;code&gt;Clone&lt;&#x2F;code&gt; and &lt;code&gt;Copy&lt;&#x2F;code&gt;. If we want to return a closure that may implement either of these, we need different functions that all return different &lt;code&gt;impl Trait&lt;&#x2F;code&gt;s.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;applying-impl-trait&quot;&gt;Applying &lt;code&gt;impl Trait&lt;&#x2F;code&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;Let&#x27;s consider what impacts our options have on this situation:&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;choose-abstraction&quot;&gt;Choose abstraction&lt;&#x2F;h3&gt;
+&lt;p&gt;This is the situation we&#x27;re currently in. We can&#x27;t leak the implemented traits of our closure, so we&#x27;re stuck implementing multiple copies of our functions to support everything that might call them. This has the downside of duplicating code, as well as preventing us from exploiting other traits implemented on the return type.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;choose-unabstraction&quot;&gt;Choose unabstraction&lt;&#x2F;h3&gt;
+&lt;p&gt;With unabstracted return types, we can leak our implemented traits! Now we only need one copy of our closure-returning function. What are the downsides?&lt;&#x2F;p&gt;
+&lt;p&gt;Here&#x27;s one:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;return_mystery&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Any {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;it&amp;#39;s a mystery!&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Which would desugar to:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mystery &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= _&lt;&#x2F;span&gt;&lt;span&gt;;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;return_mystery&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; Mystery&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;where&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    Mystery: Any,&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;{&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;it&amp;#39;s a mystery!&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;We know that &lt;code&gt;Mystery&lt;&#x2F;code&gt; is actually &lt;code&gt;&amp;amp;&#x27;static str&lt;&#x2F;code&gt;, but nobody else who glances at our source code will be able to. It&#x27;s not in our function signature, it&#x27;s inferred from our surroundings. And yet, anyone can rely on all the concrete properties of &lt;code&gt;&amp;amp;&#x27;static str&lt;&#x2F;code&gt; on accident or on purpose.&lt;&#x2F;p&gt;
+&lt;p&gt;Some of these downsides could be mitigated by, for example, linting for these cases. Places where &lt;code&gt;impl Trait&lt;&#x2F;code&gt; is used in return position, but the return type can be named. That would be the most extreme, but it would work.&lt;&#x2F;p&gt;
+&lt;p&gt;But then what&#x27;s really the point? I felt like we were on the verge of a great idea, only to run head first into reality and hurt our heads.&lt;&#x2F;p&gt;
+&lt;p&gt;Let&#x27;s keep exploring, maybe we&#x27;ll come to some sort of conclusion.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;abstract-associated-types&quot;&gt;Abstract associated types&lt;&#x2F;h2&gt;
+&lt;p&gt;So we&#x27;ve got the abstracting version of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position. Last post, we identified that traits have a bit of a strange interaction with it:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine: Ore;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; Bauxite;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;We&#x27;re returning &lt;code&gt;Bauxite&lt;&#x2F;code&gt; unabstracted in &lt;code&gt;Quarry&lt;&#x2F;code&gt;&#x27;s implementation of &lt;code&gt;Mine&lt;&#x2F;code&gt;, but we actually want to abstract it. That way we can prevent people from relying on properties that we don&#x27;t want to guarantee will remain stable. We want to write something like this:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore { &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;... &lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;We could always manually desugar it ourselves:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;ImplOre&amp;lt;T: Ore&amp;gt;(T);&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Ore&amp;gt; Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;ImplOre&amp;lt;T&amp;gt; { &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;... &lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span&gt;ImplOre&amp;lt;Bauxite&amp;gt;;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        ImplOre(Bauxite)&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;That&#x27;s pretty reasonable, but especially in complex cases we do not want to have to write out that same wrapper type over and over again. We can&#x27;t just use &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position though, since we need to fill out that associated type.&lt;&#x2F;p&gt;
+&lt;p&gt;There are currently proposals for allowing &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position (RPITIT). I think they miss the mark, either because they don&#x27;t allow abstraction at the impl level, or because they end up with extremely confusing code like this:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= impl &lt;&#x2F;span&gt;&lt;span&gt;Ore;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    fn mine() -&amp;gt; Self::Mine {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This is also a problem these proposals share with type alias impl trait (TAIT), which allows code like this:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Target &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= impl &lt;&#x2F;span&gt;&lt;span&gt;Debug;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;fn target() -&amp;gt; Target {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;These two features which, on the surface, appear to be completely unrelated to one another, are just addressing two sides of the problem with return position &lt;code&gt;impl Trait&lt;&#x2F;code&gt;. RPITIT addresses the problem for type aliases, and TAIT addresses the problem for free functions. This is a gross over-simplification, but it gets at the core of the issue.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;what-i-don-t-like&quot;&gt;What I don&#x27;t like&lt;&#x2F;h2&gt;
+&lt;p&gt;To be clear, I don&#x27;t think either of these proposals are bad. I just think they miss the mark, and it&#x27;s not their fault. Here&#x27;s why:&lt;&#x2F;p&gt;
+&lt;p&gt;When we desugar return position &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, it gets hidden in a wrapper type and that &lt;em&gt;type&lt;&#x2F;em&gt; is abstract. In fact, that type is &lt;em&gt;an abstraction&lt;&#x2F;em&gt; over the concrete type. I argue that we&#x27;re missing that extra informaiton, and it&#x27;s leading us down the path of type inference. Instead of declaring our type aliases and leveraging those for inference, we instead have to declare our alias and then be painfully specific everywhere that we use it:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span&gt;#![feature(type_alias_impl_trait)]&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;use &lt;&#x2F;span&gt;&lt;span&gt;::core::{fmt::Debug, ptr::null};&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Handle &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= impl &lt;&#x2F;span&gt;&lt;span&gt;Debug;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;fn a() -&amp;gt; Handle {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    null::&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;i32&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt;()&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;b&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; Handle {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;null&lt;&#x2F;span&gt;&lt;span&gt;()&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;If you thought that this would compile, I don&#x27;t blame you! We should have all the information we need to deduce that &lt;code&gt;Integer&lt;&#x2F;code&gt; is an abstract pointer to an &lt;code&gt;i32&lt;&#x2F;code&gt;. However, that&#x27;s not what we get:&lt;&#x2F;p&gt;
+&lt;pre style=&quot;background-color:#ffffff;color:#323232;&quot;&gt;&lt;code&gt;&lt;span&gt;error[E0282]: type annotations needed&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;  --&amp;gt; src&#x2F;lib.rs:12:5&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;   |&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;12 |     null()&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;   |     ^^^^ cannot infer type for type parameter `T` declared on the function `null`&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Because we&#x27;re inferring the type of &lt;code&gt;Integer&lt;&#x2F;code&gt;, and we don&#x27;t want to accidentally infer the wrong type in a situation where we&#x27;re &lt;em&gt;actually&lt;&#x2F;em&gt; confused. Compare this to a concrete type alias:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span&gt;#![feature(type_alias_impl_trait)]&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;use &lt;&#x2F;span&gt;&lt;span&gt;::core::ptr::null;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Handle &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= *const i32&lt;&#x2F;span&gt;&lt;span&gt;;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;null_handle&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; Handle {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;null&lt;&#x2F;span&gt;&lt;span&gt;()&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;In this situation, we can infer the type arguments to &lt;code&gt;null()&lt;&#x2F;code&gt; and don&#x27;t have to use a turbofish to specify that it&#x27;s specifically &lt;code&gt;null::&amp;lt;i32&amp;gt;()&lt;&#x2F;code&gt;. This reversal of the inference flow strikes me as ripe for confusing errors and unintuitive type inference problems.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;my-proposal&quot;&gt;My proposal&lt;&#x2F;h2&gt;
+&lt;p&gt;I propose that we introduce new syntax for performing type abstraction. Instead of focusing on the call site, this will instead directly abstract a given concrete type, and I propose that it should be:&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;as-impl-trait&quot;&gt;&lt;code&gt;as impl Trait&lt;&#x2F;code&gt;&lt;&#x2F;h3&gt;
+&lt;p&gt;Consider this new syntax:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;foo&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&amp;#39;static str&lt;&#x2F;span&gt;&lt;span&gt; as impl Debug {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This new syntax would desugar to:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;ImplDebug&amp;lt;T: Debug&amp;gt;(T);&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Debug&amp;gt; Debug &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;ImplDebug&amp;lt;T&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;fmt&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self, f: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;mut &lt;&#x2F;span&gt;&lt;span&gt;Formatter&amp;lt;&amp;#39;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;_&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt;) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;Result&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;(), Error&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        self.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;0.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;fmt&lt;&#x2F;span&gt;&lt;span&gt;(f)&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;foo&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; ImplDebug&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&amp;#39;static str&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    ImplDebug(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;)&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;In this situation, &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; would serve as the site where the abstracted type is generated. This gives us more control over when these wrappers are created and allows us to guarantee that multiple functions return the same abstracted type.&lt;&#x2F;p&gt;
+&lt;p&gt;This also allows abstract types to be used anywhere a regular type would be, and not just in return position. It would separate the type abstraction of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position from the type inference of it in argument position and help solve a number of outstanding problems with type abstraction.&lt;&#x2F;p&gt;
+&lt;p&gt;Let&#x27;s take a look at how this would apply to RPITIT and TAIT.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;return-position-impl-trait-in-trait-rpitit&quot;&gt;Return position impl trait in trait (RPITIT)&lt;&#x2F;h3&gt;
+&lt;p&gt;Associated types of traits leak concrete types. Someone might use &lt;code&gt;&amp;lt;MyFoo as Foo&amp;gt;::Bar&lt;&#x2F;code&gt; somewhere that it needs to be &lt;code&gt;Debug&lt;&#x2F;code&gt;, and the compiler will let them do it as long as the constraints check out. But that&#x27;s not part of our contract, and nobody should be allowed to depend on the fact that &lt;code&gt;MyBar&lt;&#x2F;code&gt; implements &lt;code&gt;Debug&lt;&#x2F;code&gt; if we don&#x27;t want them to. So what if we could say something like this instead:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Transformer&amp;lt;T&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Output;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;transform&lt;&#x2F;span&gt;&lt;span&gt;(x: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;T) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Output;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;Clone&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt; Transformer&amp;lt;T&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Replicator {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Output &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; T &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;as impl &lt;&#x2F;span&gt;&lt;span&gt;Clone;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    fn transform(x: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;T) -&amp;gt; Self::Cloned {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        x.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;clone&lt;&#x2F;span&gt;&lt;span&gt;()&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Now, the associated &lt;code&gt;T&lt;&#x2F;code&gt; type isn&#x27;t &lt;code&gt;T&lt;&#x2F;code&gt;, it&#x27;s an &lt;em&gt;abstraction&lt;&#x2F;em&gt; of &lt;code&gt;T&lt;&#x2F;code&gt;. It&#x27;s an abstraction that only exposes the fact that &lt;code&gt;T&lt;&#x2F;code&gt; implements &lt;code&gt;Clone&lt;&#x2F;code&gt;, which is exactly what we want.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;type-alias-impl-trait-tait&quot;&gt;Type alias impl trait (TAIT)&lt;&#x2F;h3&gt;
+&lt;p&gt;A new approach to TAIT would look like this instead:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;use &lt;&#x2F;span&gt;&lt;span&gt;::core::{fmt::Debug, ptr::null};&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Handle &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= *const i32 as impl &lt;&#x2F;span&gt;&lt;span&gt;Debug;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;fn a() -&amp;gt; Handle {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    null::&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;i32&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt;()&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;b&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; Handle {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;null&lt;&#x2F;span&gt;&lt;span&gt;()&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;This time, everything checks out. We know that &lt;code&gt;Handle&lt;&#x2F;code&gt; is not just any &lt;code&gt;impl Debug&lt;&#x2F;code&gt;, it&#x27;s specifically &lt;code&gt;*const i32 as impl Debug&lt;&#x2F;code&gt;. That allows us to use type inference everywhere; we don&#x27;t even need to turbofish in &lt;code&gt;a()&lt;&#x2F;code&gt; this time. And to cap it all off, we still get an abstracted type to hide any trait implementations we want to keep private.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;publicly-abstracted-private-types&quot;&gt;Publicly abstracted private types&lt;&#x2F;h3&gt;
+&lt;p&gt;With a little more elbow grease, this would also allow constructions like:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Thought;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub struct &lt;&#x2F;span&gt;&lt;span&gt;Brain;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Factory &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Brain {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Output &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; Thought &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;as impl &lt;&#x2F;span&gt;&lt;span&gt;Display;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    fn produce() -&amp;gt; Self::Output {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;...&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;Note that &lt;code&gt;Thought&lt;&#x2F;code&gt; is &lt;em&gt;private&lt;&#x2F;em&gt;, yet we&#x27;re exposing it &lt;em&gt;through an abstraction&lt;&#x2F;em&gt; in our associated type. This makes it possible for us to swap out the concrete type of &lt;code&gt;&amp;lt;Brain as Factory&amp;gt;::Output&lt;&#x2F;code&gt; without it being a breaking change! &lt;code&gt;Thought&lt;&#x2F;code&gt; was private and inaccessible, and so we could remove it entirely without causing any semver violations.&lt;&#x2F;p&gt;
+&lt;h3 id=&quot;clarity-and-concreteness&quot;&gt;Clarity and concreteness&lt;&#x2F;h3&gt;
+&lt;p&gt;Because the concrete type of the abstraction is preserved, we can still reason about and use the concrete underlying type. If we wanted to, we could even provide the same type abstracted in some places, and unabstracted in others. We could easily abstract types we didn&#x27;t make, and use concrete types internally while still exposing them as abstracted externally.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;but-there-is-a-problem&quot;&gt;But there is a problem&lt;&#x2F;h2&gt;
+&lt;p&gt;Think back to our closure example:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;generate&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T&amp;gt;(value: T) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;?? as impl &lt;&#x2F;span&gt;&lt;span&gt;FnOnce() -&amp;gt; T {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;move ||&lt;&#x2F;span&gt;&lt;span&gt; value&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;We&#x27;ve dug ourselves a hole. In order to use &lt;code&gt;as impl Trait&lt;&#x2F;code&gt;, we need to name the concrete type of our closure. But we can&#x27;t do that! We&#x27;re in a predicament, but there is a surprisingly straightforward way out.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;name-the-unnameable&quot;&gt;Name the unnameable&lt;&#x2F;h2&gt;
+&lt;p&gt;Why couldn&#x27;t we just give that closure a name? Maybe something like:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;generate&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T&amp;gt;(value: T) -&amp;gt; type &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;#39;A&lt;&#x2F;span&gt;&lt;span&gt; as impl FnOnce() -&amp;gt; T {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &amp;#39;A: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;move ||&lt;&#x2F;span&gt;&lt;span&gt; value&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;So here&#x27;s some more new syntax. Similarly to how we label loops, we can label the creation sites of unnameable types. That way, we can uniquely refer to them in other places. This would solve both of our outstanding problems:&lt;&#x2F;p&gt;
+&lt;p&gt;Because we labeled our closure, we can now refer to it in our return type as &lt;code&gt;type &#x27;A&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;Additionally, we can leave off the &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; to return our closure concretely. This solves our earlier problem of returning a closure that &lt;em&gt;may be&lt;&#x2F;em&gt; &lt;code&gt;Clone&lt;&#x2F;code&gt;!&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;generate&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T&amp;gt;(value: T) -&amp;gt; type &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;#39;A&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;where&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    type &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;#39;A&lt;&#x2F;span&gt;&lt;span&gt;: Fn() -&amp;gt; T,&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;{&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &amp;#39;A: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;move ||&lt;&#x2F;span&gt;&lt;span&gt; value&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
+&lt;p&gt;I&#x27;m not married to the syntax. It&#x27;s functional, but I don&#x27;t think it&#x27;s great. I&#x27;ll talk more about this in the next post.&lt;&#x2F;p&gt;
+&lt;h2 id=&quot;conclusion&quot;&gt;Conclusion&lt;&#x2F;h2&gt;
+&lt;p&gt;In the first post, I stated that I would propose an alternative formulation of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; that restores orthogonality. That comes in two parts:&lt;&#x2F;p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;as impl Trait&lt;&#x2F;code&gt; now handles only type abstraction. Unnameable types like closures and async blocks use their own syntax to be named.&lt;&#x2F;li&gt;
+&lt;li&gt;&lt;code&gt;type &#x27;A&lt;&#x2F;code&gt; labels for unnameable types enable them to be returned concretely and abstracted cleanly.&lt;&#x2F;li&gt;
+&lt;&#x2F;ul&gt;
+&lt;p&gt;Neither of these ideas are new, they have been discussed and considered before. However, I think we now have the experience necessary to fix our past mistakes and a growing need for these more general tools.&lt;&#x2F;p&gt;
+&lt;p&gt;In the &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;abstract-types-in-rust-3&#x2F;&quot;&gt;third post&lt;&#x2F;a&gt;, I&#x27;ll discuss existing proposals and prior art and compare my proposal against them.&lt;&#x2F;p&gt;
+</content>
+	</entry>
+	<entry xml:lang="en">
+		<title>Abstract Types in Rust 1</title>
 		<published>2022-02-19T00:00:00+00:00</published>
 		<updated>2022-02-19T00:00:00+00:00</updated>
-		<link href="https://davidkoloski.me/blog/abstract-types-in-rust/" type="text/html"/>
-		<id>https://davidkoloski.me/blog/abstract-types-in-rust/</id>
-		<content type="html">&lt;h2 id=&quot;this-post-is-not-ready-to-share-yet&quot;&gt;This post is not ready to share yet&lt;&#x2F;h2&gt;
-&lt;p&gt;This post is still undergoing review and critique. If you&#x27;re here by chance or follow the RSS feed, please do not share this post yet. It will be ready soon!&lt;&#x2F;p&gt;
+		<link href="https://davidkoloski.me/blog/abstract-types-in-rust-1/" type="text/html"/>
+		<id>https://davidkoloski.me/blog/abstract-types-in-rust-1/</id>
+		<content type="html">&lt;h2&gt;This post is not ready to share yet&lt;&#x2F;h2&gt;
+&lt;p&gt;This post is still undergoing review and critique. If you&#x27;re here by chance or follow the &lt;a href=&quot;&#x2F;atom.xml&quot;&gt;RSS feed&lt;&#x2F;a&gt;, please do not share this post yet. It will be ready soon!&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;foreword&quot;&gt;Foreword&lt;&#x2F;h2&gt;
-&lt;p&gt;This article is both an explanation and criticism of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;. A large portion of this text is dedicated to explaining and understanding the properties of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, but it is not &lt;em&gt;solely&lt;&#x2F;em&gt; an explainer. If you&#x27;re already familiar with the properties and mechanics of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, you can skip to &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;abstract-types-in-rust&#x2F;#impl-trait-and-a-new-type-abstraction-operator&quot;&gt;this section&lt;&#x2F;a&gt; to get to the meat of the criticism and the new ideas.&lt;&#x2F;p&gt;
+&lt;p&gt;This series is both an explanation and criticism of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;. A large portion of this text is dedicated to explaining and understanding the properties of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, but it is not &lt;em&gt;solely&lt;&#x2F;em&gt; an explainer. If you&#x27;re already familiar with the properties and mechanics of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, you can skip to &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;abstract-types-in-rust-2&#x2F;&quot;&gt;the next post&lt;&#x2F;a&gt; to get to the meat of the criticism and the new ideas.&lt;&#x2F;p&gt;
 &lt;p&gt;I believe that the current implementation of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; is confusing and non-orthogonal. I propose an alternative formulation of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; that is more intuitive, restores orthogonality to the feature, and enables more precise and flexible use of abstraction.&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;what-is-impl-trait&quot;&gt;What is &lt;code&gt;impl Trait&lt;&#x2F;code&gt;?&lt;&#x2F;h2&gt;
 &lt;p&gt;&lt;code&gt;impl Trait&lt;&#x2F;code&gt; is syntax sugar can be used in argument position or in return position. Let&#x27;s look at how it can be used and how it desugars to more fundamental Rust syntax.&lt;&#x2F;p&gt;
@@ -135,7 +649,7 @@
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;Nice and easy, uncontroversial. But what about...&lt;&#x2F;p&gt;
 &lt;h3 id=&quot;return-position-traits&quot;&gt;Return position (traits)&lt;&#x2F;h3&gt;
-&lt;p&gt;You can&#x27;t use &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position right now, but is that? Let&#x27;s consider a desugaring of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; as a return type in a trait:&lt;&#x2F;p&gt;
+&lt;p&gt;You can&#x27;t use &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position right now, but why is that? Let&#x27;s consider a desugaring of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; as a return type in a trait:&lt;&#x2F;p&gt;
 &lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
 &lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore;
 &lt;&#x2F;span&gt;&lt;span&gt;}
@@ -175,7 +689,7 @@
 &lt;&#x2F;span&gt;&lt;span&gt;    }
 &lt;&#x2F;span&gt;&lt;span&gt;}
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;p&gt;This makes sense, but something&#x27;s not quite right here. The trait is dictating whether the return type of the function is abstract, but shouldn&#x27;t the impl choose for itself whether to abstract its return type? After all, the impl is the one exposing that concrete type so it should also decide whether to let users introspect on it. Let&#x27;s consider an alternative desugaring:&lt;&#x2F;p&gt;
+&lt;p&gt;This makes sense, but something&#x27;s not quite right here. The trait is dictating whether the return type of the function is abstract, but shouldn&#x27;t the impl choose for itself whether to abstract its return type? After all, the impl is the one exposing that concrete type. It should also decide whether to let users introspect on it. Let&#x27;s consider an alternative desugaring:&lt;&#x2F;p&gt;
 &lt;h3 id=&quot;return-position-traits-remixed&quot;&gt;Return position (traits, remixed)&lt;&#x2F;h3&gt;
 &lt;p&gt;Let&#x27;s change our original desugaring for our trait:&lt;&#x2F;p&gt;
 &lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
@@ -234,145 +748,20 @@
 &lt;&#x2F;span&gt;&lt;span&gt;}
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;An alternative desugaring would be:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Target: Debug &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= &amp;amp;&amp;#39;static str&lt;&#x2F;span&gt;&lt;span&gt;;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; Target {
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Target &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= &amp;amp;&amp;#39;static str&lt;&#x2F;span&gt;&lt;span&gt;;
+&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; Target
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;where
+&lt;&#x2F;span&gt;&lt;span&gt;    Target: Debug,
+&lt;&#x2F;span&gt;&lt;span&gt;{
 &lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;
 &lt;&#x2F;span&gt;&lt;span&gt;}
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;p&gt;That would be more consistent, wouldn&#x27;t it? We aren&#x27;t hiding the concrete return type, and we&#x27;re bounding our return type with a trait. This is a lot more like the desugaring for &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in argument position. We had to determine the concrete &lt;code&gt;Target&lt;&#x2F;code&gt; type alias ourselves though, which is a little tedious. Wouldn&#x27;t it be nice if we could make the compiler do that for us?&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Target: Debug &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= _&lt;&#x2F;span&gt;&lt;span&gt;;
+&lt;p&gt;That would be more consistent, wouldn&#x27;t it? We aren&#x27;t hiding the concrete return type, and we&#x27;re bounding our return type with a trait. This is a lot more like the desugaring for &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in argument position. The main sticking point is that this desugaring has to infer the concrete type of &lt;code&gt;Target&lt;&#x2F;code&gt;. This is equivalent to writing:&lt;&#x2F;p&gt;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Target &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= _&lt;&#x2F;span&gt;&lt;span&gt;;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;p&gt;Much better, now we can let the compiler figure out the return type of &lt;code&gt;target&lt;&#x2F;code&gt;, ensure that it implements &lt;code&gt;Debug&lt;&#x2F;code&gt;, and return it unabstracted.&lt;&#x2F;p&gt;
-&lt;p&gt;But this leads us to an important question: which of these should be the &lt;em&gt;real&lt;&#x2F;em&gt; &lt;code&gt;impl Trait&lt;&#x2F;code&gt;? From here on out, I&#x27;ll present my &lt;em&gt;opinion&lt;&#x2F;em&gt; on this question and a possible solution to this problem. &lt;&#x2F;p&gt;
-&lt;h2 id=&quot;impl-trait-and-a-new-type-abstraction-operator&quot;&gt;&lt;code&gt;impl Trait&lt;&#x2F;code&gt; and a new type abstraction operator&lt;&#x2F;h2&gt;
-&lt;p&gt;I propose that the desugaring for &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position should not abstract the return type, and instead a new operator should be introduced for performing type abstraction. Let me be explicit:&lt;&#x2F;p&gt;
-&lt;h3 id=&quot;a-new-desugaring&quot;&gt;A new desugaring&lt;&#x2F;h3&gt;
-&lt;p&gt;&lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position should desugar from this:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Debug {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;
-&lt;&#x2F;span&gt;&lt;span&gt;}
-&lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore;
-&lt;&#x2F;span&gt;&lt;span&gt;}
-&lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore {
-&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
-&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;p&gt;To this:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;_&lt;&#x2F;span&gt;&lt;span&gt;: Debug {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;
-&lt;&#x2F;span&gt;&lt;span&gt;}
-&lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;_&lt;&#x2F;span&gt;&lt;span&gt;: Ore;
-&lt;&#x2F;span&gt;&lt;span&gt;}
-&lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;_&lt;&#x2F;span&gt;&lt;span&gt;: Ore {
-&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
-&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;p&gt;And finally into this:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Target: Debug &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= _&lt;&#x2F;span&gt;&lt;span&gt;;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; Target {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;
-&lt;&#x2F;span&gt;&lt;span&gt;}
-&lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine: Ore;
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine;
-&lt;&#x2F;span&gt;&lt;span&gt;}
-&lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine: Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= _&lt;&#x2F;span&gt;&lt;span&gt;;
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine {
-&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
-&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;p&gt;This requires two new features:&lt;&#x2F;p&gt;
-&lt;ul&gt;
-&lt;li&gt;Bounds on type definitions (&lt;code&gt;type Target: Debug&lt;&#x2F;code&gt;, &lt;code&gt;type Mine: Ore&lt;&#x2F;code&gt;)&lt;&#x2F;li&gt;
-&lt;li&gt;Type inference in type definitions (&lt;code&gt;type Target = _&lt;&#x2F;code&gt;, &lt;code&gt;type Mine = _&lt;&#x2F;code&gt;)&lt;&#x2F;li&gt;
-&lt;&#x2F;ul&gt;
-&lt;p&gt;We can emulate bounds with a construction like:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;assert_impls_debug&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Debug&amp;gt;() {}
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let _ = &lt;&#x2F;span&gt;&lt;span&gt;assert_impls_debug&amp;lt;Target&amp;gt;;
-&lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;assert_impls_ore&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Ore&amp;gt;() {}
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let _ = &lt;&#x2F;span&gt;&lt;span&gt;assert_impls_ore&amp;lt;&amp;lt;Quarry &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;as&lt;&#x2F;span&gt;&lt;span&gt; Miner&amp;gt;::Mine&amp;gt;;
-&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;p&gt;Which works, albeit with some ugly errors. Type inference is a truly new feature, but it may be able to leverage existing infrastructure for deducing types. I also propose a restriction for inferred type definitions:&lt;&#x2F;p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;Inferred type definitions that are not bounded or otherwise constrained (&amp;quot;naked&amp;quot; type inference) result in a compiler warning.&lt;&#x2F;p&gt;
-&lt;&#x2F;blockquote&gt;
-&lt;p&gt;With that out of the way, we can get on to the big change:&lt;&#x2F;p&gt;
-&lt;h3 id=&quot;as-impl-trait-as-the-type-abstraction-operator&quot;&gt;&lt;code&gt;as impl Trait&lt;&#x2F;code&gt; as the type abstraction operator&lt;&#x2F;h3&gt;
-&lt;p&gt;Consider this new syntax:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;foo&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&amp;#39;static str&lt;&#x2F;span&gt;&lt;span&gt; as impl Debug {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;
-&lt;&#x2F;span&gt;&lt;span&gt;}
-&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;p&gt;This new syntax would desugar to:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;ImplDebug&amp;lt;T: Debug&amp;gt;(T);
-&lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Debug&amp;gt; Debug &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;ImplDebug&amp;lt;T&amp;gt; {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;fmt&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self, f: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;mut &lt;&#x2F;span&gt;&lt;span&gt;Formatter&amp;lt;&amp;#39;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;_&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt;) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;Result&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;(), Error&amp;gt; {
-&lt;&#x2F;span&gt;&lt;span&gt;        self.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;0.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;fmt&lt;&#x2F;span&gt;&lt;span&gt;(f)
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
-&lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;foo&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; ImplDebug&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&amp;#39;static str&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt; {
-&lt;&#x2F;span&gt;&lt;span&gt;    ImplDebug(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;)
-&lt;&#x2F;span&gt;&lt;span&gt;}
-&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;p&gt;This allows abstract types to be used anywhere a regular type would be, and not just in return position. It would separate the type abstraction of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position from the type inference of it in argument position and help solve a number of outstanding problems with type abstraction.&lt;&#x2F;p&gt;
-&lt;p&gt;Let&#x27;s take a look at some of those:&lt;&#x2F;p&gt;
-&lt;h2 id=&quot;problems-solved&quot;&gt;Problems solved&lt;&#x2F;h2&gt;
-&lt;h3 id=&quot;return-position-impl-trait-in-trait-rpitit&quot;&gt;Return position impl trait in trait (RPITIT)&lt;&#x2F;h3&gt;
-&lt;p&gt;Associated types of traits leak concrete types. Someone might use &lt;code&gt;&amp;lt;MyFoo as Foo&amp;gt;::Bar&lt;&#x2F;code&gt; somewhere that it needs to be &lt;code&gt;Debug&lt;&#x2F;code&gt;, and the compiler will let them as long as it is. But that&#x27;s not part of our contract, and nobody should be allowed to depend on the fact that &lt;code&gt;MyBar&lt;&#x2F;code&gt; implements &lt;code&gt;Debug&lt;&#x2F;code&gt; if we don&#x27;t want them to. So what if we could say something like this instead:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Cloner&amp;lt;T: Clone&amp;gt; {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Cloned;
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;duplicate&lt;&#x2F;span&gt;&lt;span&gt;(x: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;T) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Cloned;
-&lt;&#x2F;span&gt;&lt;span&gt;}
-&lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;Clone&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt; Cloner&amp;lt;T&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Printer {
-&lt;&#x2F;span&gt;&lt;mark style=&quot;background-color:#f5f5f5;&quot;&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Cloned &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; T &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;as impl &lt;&#x2F;span&gt;&lt;span&gt;Clone;
-&lt;&#x2F;span&gt;&lt;&#x2F;mark&gt;&lt;span&gt;    fn duplicate(x: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;T) -&amp;gt; Self::Cloned {
-&lt;&#x2F;span&gt;&lt;span&gt;        x.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;clone&lt;&#x2F;span&gt;&lt;span&gt;() &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;as impl &lt;&#x2F;span&gt;&lt;span&gt;Clone
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
-&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;p&gt;Now, the associated &lt;code&gt;T&lt;&#x2F;code&gt; type isn&#x27;t &lt;code&gt;T&lt;&#x2F;code&gt;, it&#x27;s an &lt;em&gt;abstraction&lt;&#x2F;em&gt; of &lt;code&gt;T&lt;&#x2F;code&gt;. It&#x27;s an abstraction that only exposes the fact that &lt;code&gt;T&lt;&#x2F;code&gt; implements &lt;code&gt;Clone&lt;&#x2F;code&gt;, which is exactly what we want.&lt;&#x2F;p&gt;
-&lt;h3 id=&quot;publicly-abstracted-private-types&quot;&gt;Publicly abstracted private types&lt;&#x2F;h3&gt;
-&lt;p&gt;With a little more elbow grease, this would also allow constructions like:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;mark style=&quot;background-color:#f5f5f5;&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Thought;
-&lt;&#x2F;span&gt;&lt;&#x2F;mark&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub struct &lt;&#x2F;span&gt;&lt;span&gt;Brain;
-&lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Factory &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Brain {
-&lt;&#x2F;span&gt;&lt;mark style=&quot;background-color:#f5f5f5;&quot;&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Output &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; Thought &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;as impl &lt;&#x2F;span&gt;&lt;span&gt;Display;
-&lt;&#x2F;span&gt;&lt;&#x2F;mark&gt;&lt;span&gt;    fn produce() -&amp;gt; Self::Output {
-&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;...
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
-&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;p&gt;Note that &lt;code&gt;Thought&lt;&#x2F;code&gt; is &lt;em&gt;private&lt;&#x2F;em&gt;, yet we&#x27;re exposing it &lt;em&gt;through an abstraction&lt;&#x2F;em&gt; in our associated type. This makes it possible for us to swap out the concrete type of &lt;code&gt;&amp;lt;Brain as Factory&amp;gt;::Output&lt;&#x2F;code&gt; without it being a breaking change! &lt;code&gt;Thought&lt;&#x2F;code&gt; was private and inaccessible, and so we could remove it entirely without causing any semver violations.&lt;&#x2F;p&gt;
-&lt;h3 id=&quot;reusable-abstract-types&quot;&gt;Reusable abstract types&lt;&#x2F;h3&gt;
-&lt;p&gt;By leveraging our new type definition inference, we can use &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; in type aliases:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;mark style=&quot;background-color:#f5f5f5;&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub type &lt;&#x2F;span&gt;&lt;span&gt;Id &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= _ as impl &lt;&#x2F;span&gt;&lt;span&gt;Hash + Eq;
-&lt;&#x2F;span&gt;&lt;&#x2F;mark&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span&gt;pub fn generate_id() -&amp;gt; Id { &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;i32 &lt;&#x2F;span&gt;&lt;span&gt;}
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;clone_id&lt;&#x2F;span&gt;&lt;span&gt;(x: Id) -&amp;gt; Id { &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;... &lt;&#x2F;span&gt;&lt;span&gt;}
-&lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;p&gt;This allows us to simultaneously abstract away the concrete type of &lt;code&gt;Id&lt;&#x2F;code&gt; while still guaranteeing that &lt;code&gt;generate_id&lt;&#x2F;code&gt; and &lt;code&gt;clone_id&lt;&#x2F;code&gt; return the same type.&lt;&#x2F;p&gt;
-&lt;h2 id=&quot;conclusion&quot;&gt;Conclusion&lt;&#x2F;h2&gt;
-&lt;p&gt;After reviewing the origins and inner workings of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, I have presented an alternative formulation of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; that restores orthogonality to type inference and abstraction. I then outlined a new &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; operator that performs type abstraction in more general contexts than &lt;code&gt;impl Trait&lt;&#x2F;code&gt; could. I believe these changes would make it easier to teach and use &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, and lay a foundation for more complex functionality to build on.&lt;&#x2F;p&gt;
-&lt;p&gt;Many of these ideas are not new, they have been discussed and considered before. However, I think we now have the experience necessary to fix our past mistakes and a growing need for these more general tools.&lt;&#x2F;p&gt;
+&lt;p&gt;And allowing the compiler to infer the return type. This kind of type inference is not great, but it&#x27;s an option.&lt;&#x2F;p&gt;
+&lt;p&gt;This leads us to an important question: which of these should be the &lt;em&gt;real&lt;&#x2F;em&gt; &lt;code&gt;impl Trait&lt;&#x2F;code&gt;? In &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;abstract-types-in-rust-2&#x2F;&quot;&gt;part 2&lt;&#x2F;a&gt;, I present my opinion on this question and a possible solution to this problem.&lt;&#x2F;p&gt;
 </content>
 	</entry>
 	<entry xml:lang="en">

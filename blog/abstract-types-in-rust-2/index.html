@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Software Engineer, Game Designer, Web Developer">
+    <meta name="author" content="David Koloski">
+
+    <!-- favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- fonts and styles -->
+    <link href="https://fonts.googleapis.com/css?family=Rubik:400,700" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Inconsolata:500,800" rel="stylesheet">
+    <link href="https://davidkoloski.me/style.css" rel="stylesheet">
+
+    <!-- scripts -->
+    <script src="/elasticlunr.min.js" async></script>
+    <script src="/search_index.en.js" async></script>
+    <script src="/search.js" async></script>
+
+    <title>
+        
+            Abstract Types in Rust 2
+        
+    </title>
+</head>
+<body>
+    <div class="section header">
+        <div class="logo">
+            <a href="/" class="logo-image" width="100"></a>
+        </div>
+        <div class="links">
+            
+            
+                <a href="https://davidkoloski.me/about/">About</a>
+            
+                <a href="https://davidkoloski.me/resume/">Resume</a>
+            
+            
+                
+                <a href="https://davidkoloski.me/blog/">Blog</a>
+            
+        </div>
+        <div class="search">
+            <input id="search-checkbox" type="checkbox" autocomplete="off">
+            <input id="search-input" type="text" placeholder="Search">
+            <label id="search-show" for="search-checkbox"></label>
+        </div>
+    </div>
+    
+<div class="section title">
+    Abstract Types in Rust 2
+    <div class="subtitle">
+        Will the real <code>impl Trait</code> please stand up
+    </div>
+    <div class="subtitle">
+        Feb 24, 2022 &ndash; 13 min read
+    </div>
+</div>
+<div class="section taxonomies">
+    
+    <div class="categories">
+        
+            <a href="https://davidkoloski.me/categories/rust/">Rust</a>
+        
+    </div>
+    
+    <div class="tags">
+        
+            <a href="https://davidkoloski.me/tags/rust/">Rust</a>
+        
+    </div>
+    
+</div>
+<div class="section content">
+    <h2>This post is not ready to share yet</h2>
+<p>This post is still undergoing review and critique. If you're here by chance or follow the <a href="/atom.xml">RSS feed</a>, please do not share this post yet. It will be ready soon!</p>
+<h2 id="where-we-left-off">Where we left off</h2>
+<p>In part 1, I laid the foundation of an alternative desugaring for <code>impl Trait</code> in return position. This new desugaring left the return type <em>unabstracted</em>, allowing the caller to introspect the type and learn more about it than the type signature provides. In this post, I will explore that idea more fully and try to discover the logical implications of it. If you're feeling goal-oriented, you can skip to <a href="https://davidkoloski.me/blog/abstract-types-in-rust-3/">the next post</a> where I discuss prior art and compare my proposal.</p>
+<h2 id="implications-of-unabstracted-impl-trait">Implications of unabstracted <code>impl Trait</code></h2>
+<p>So we've got two possible desugarings for <code>impl Trait</code> in return position:</p>
+<ul>
+<li>Abstracted: a function returning <code>impl Trait</code> actually returns a new type that only implements exactly the traits specified. The underlying concrete type is hidden from the caller.</li>
+<li>Unabstracted: a function returning <code>impl Trait</code> infers the concrete return type, which is not hidden from the caller.</li>
+</ul>
+<p>Correspondingly, we have a couple options for what we could do:</p>
+<ul>
+<li><strong>Choose abstraction</strong>: unabstracted return types should always be concrete</li>
+<li><strong>Choose unabstraction</strong>: abstracted return types should always be manually wrapped</li>
+</ul>
+<p>Right now, we're at &quot;choose abstraction&quot;. In order to build motivation for any alternative desugarings, we'll have to come up with some differences between them and leverage them into situations where we get undesirable behavior. So let's do that.</p>
+<h2 id="unnameable-types">Unnameable types</h2>
+<p>I've got some odd code. Let's take a look:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">generate</span><span>&lt;T&gt;(value: T) -&gt; impl FnOnce() -&gt; T {</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">move ||</span><span> value</span><span>
+</span><span>}</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">main</span><span>() {</span><span>
+</span><span>    </span><span style="font-style:italic;color:#969896;">// This works</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">let </span><span style="font-weight:bold;color:#795da3;">eighteen </span><span style="font-weight:bold;color:#a71d5d;">= </span><span>|| </span><span style="color:#0086b3;">18</span><span>;</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">let</span><span> also_eighteen </span><span style="font-weight:bold;color:#a71d5d;">=</span><span> eighteen.</span><span style="color:#62a35c;">clone</span><span>();</span><span>
+</span><span>
+</span><span>    </span><span style="font-style:italic;color:#969896;">// This doesn&#39;t?</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">let</span><span> forty_two </span><span style="font-weight:bold;color:#a71d5d;">= </span><span style="color:#62a35c;">generate</span><span>(</span><span style="color:#0086b3;">42</span><span>);</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">let</span><span> also_forty_two </span><span style="font-weight:bold;color:#a71d5d;">=</span><span> forty_two.</span><span style="color:#62a35c;">clone</span><span>();</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p><code>generate</code> is a function that takes a value and returns a closure that returns that value. Well <em>technically</em>, it really returns an <code>impl FnOnce() -&gt; T</code> which is an abstract type. In fact, because it's a closure, the <em>only</em> way we can return it is as an <code>impl Trait</code>. We can't refer to the type of the closure by name, so it can't be used as a concrete type. That's not a problem unless we want to take advantage of some concrete properties of it.</p>
+<p>Closures have a special property that we can take advantage of:</p>
+<blockquote>
+<p><a href="https://doc.rust-lang.org/reference/types/closure.html#other-traits"><em>Closure types</em></a></p>
+<p>All closure types implement <code>Sized</code>. Additionally, closure types implement the following traits if allowed to do so by the types of the captures it stores:</p>
+<ul>
+<li><code>Clone</code></li>
+<li><code>Copy</code></li>
+<li><code>Sync</code></li>
+<li><code>Send</code></li>
+</ul>
+</blockquote>
+<p><code>Sized</code>, <code>Sync</code>, and <code>Send</code> are all auto-traits. For <a href="https://twitter.com/Gankra_/status/1141413230905966593">complicated reasons</a>, we'll ignore these for now and focus on <code>Clone</code>.</p>
+<p>Because we're returning our closure abstracted, we can't leak whether our closure implements <code>Clone</code> back to the caller. And we can't return our closure unabstracted, so we're stuck. The closure that we made locally can be cloned because it's not abstracted, but as soon as it's returned by a function we can no longer clone it!</p>
+<p>We could do something like this:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">generate_cloneable</span><span>&lt;T: </span><span style="color:#0086b3;">Clone</span><span>&gt;(value: T) -&gt; impl (Clone + FnOnce() -&gt; T) {</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">move ||</span><span> value</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p>But now we have two copies of <code>generate</code>, and anything that calls it will also need two copies. And so on and so forth. That's pretty inconvenient, but in all fairness, it could be worse.</p>
+<h3 id="forward-thinking">Forward thinking</h3>
+<p>Presumably, new traits will be added to the standard library over time. Maybe some of them will be useful enough that closures will implement them, much like they do for <code>Clone</code> right now. For now, let's say that we've decided to implement <code>Debug</code> for closures. That would be cool, now people can for example check what variables are captured by a closure. In this future, we've just created a huge headache for everyone who wants to return one of them.</p>
+<p>To cover all the possible use cases, it's no longer suitable to have two copies of a function with different return types. Now, we need <em>four</em> copies:</p>
+<ul>
+<li><code>impl Fn() -&gt; T</code></li>
+<li><code>Clone + impl Fn() -&gt; T</code></li>
+<li><code>Debug + impl Fn() -&gt; T</code></li>
+<li><code>Clone + Debug + impl Fn() -&gt; T</code></li>
+</ul>
+<p>And four copies of whatever calls those, and so on. That's not sustainable. In a technical sense, we're already here since closures eagerly implement <code>Clone</code> and <code>Copy</code>. If we want to return a closure that may implement either of these, we need different functions that all return different <code>impl Trait</code>s.</p>
+<h2 id="applying-impl-trait">Applying <code>impl Trait</code></h2>
+<p>Let's consider what impacts our options have on this situation:</p>
+<h3 id="choose-abstraction">Choose abstraction</h3>
+<p>This is the situation we're currently in. We can't leak the implemented traits of our closure, so we're stuck implementing multiple copies of our functions to support everything that might call them. This has the downside of duplicating code, as well as preventing us from exploiting other traits implemented on the return type.</p>
+<h3 id="choose-unabstraction">Choose unabstraction</h3>
+<p>With unabstracted return types, we can leak our implemented traits! Now we only need one copy of our closure-returning function. What are the downsides?</p>
+<p>Here's one:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">return_mystery</span><span>() -&gt; impl Any {</span><span>
+</span><span>    </span><span style="color:#183691;">&quot;it&#39;s a mystery!&quot;</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p>Which would desugar to:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">type </span><span>Mystery </span><span style="font-weight:bold;color:#a71d5d;">= _</span><span>;</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">return_mystery</span><span>() -&gt; Mystery</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">where</span><span>
+</span><span>    Mystery: Any,</span><span>
+</span><span>{</span><span>
+</span><span>    </span><span style="color:#183691;">&quot;it&#39;s a mystery!&quot;</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p>We know that <code>Mystery</code> is actually <code>&amp;'static str</code>, but nobody else who glances at our source code will be able to. It's not in our function signature, it's inferred from our surroundings. And yet, anyone can rely on all the concrete properties of <code>&amp;'static str</code> on accident or on purpose.</p>
+<p>Some of these downsides could be mitigated by, for example, linting for these cases. Places where <code>impl Trait</code> is used in return position, but the return type can be named. That would be the most extreme, but it would work.</p>
+<p>But then what's really the point? I felt like we were on the verge of a great idea, only to run head first into reality and hurt our heads.</p>
+<p>Let's keep exploring, maybe we'll come to some sort of conclusion.</p>
+<h2 id="abstract-associated-types">Abstract associated types</h2>
+<p>So we've got the abstracting version of <code>impl Trait</code> in return position. Last post, we identified that traits have a bit of a strange interaction with it:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">trait </span><span>Miner {</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Mine: Ore;</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">Self::</span><span>Mine;</span><span>
+</span><span>}</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">struct </span><span>Quarry;</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl </span><span>Miner </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Quarry {</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Mine </span><span style="font-weight:bold;color:#a71d5d;">=</span><span> Bauxite;</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">Self::</span><span>Mine {</span><span>
+</span><span>        Bauxite</span><span>
+</span><span>    }</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p>We're returning <code>Bauxite</code> unabstracted in <code>Quarry</code>'s implementation of <code>Mine</code>, but we actually want to abstract it. That way we can prevent people from relying on properties that we don't want to guarantee will remain stable. We want to write something like this:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">impl </span><span>Miner </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Quarry {</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>() -&gt; impl Ore { </span><span style="font-weight:bold;color:#a71d5d;">... </span><span>}</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p>We could always manually desugar it ourselves:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">struct </span><span>ImplOre&lt;T: Ore&gt;(T);</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl</span><span>&lt;T: Ore&gt; Ore </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>ImplOre&lt;T&gt; { </span><span style="font-weight:bold;color:#a71d5d;">... </span><span>}</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">struct </span><span>Quarry;</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl </span><span>Miner </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Quarry {</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Mine </span><span style="font-weight:bold;color:#a71d5d;">= </span><span>ImplOre&lt;Bauxite&gt;;</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">Self::</span><span>Mine {</span><span>
+</span><span>        ImplOre(Bauxite)</span><span>
+</span><span>    }</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p>That's pretty reasonable, but especially in complex cases we do not want to have to write out that same wrapper type over and over again. We can't just use <code>impl Trait</code> in return position though, since we need to fill out that associated type.</p>
+<p>There are currently proposals for allowing <code>impl Trait</code> in return position (RPITIT). I think they miss the mark, either because they don't allow abstraction at the impl level, or because they end up with extremely confusing code like this:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">impl </span><span>Miner </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Quarry {</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Mine </span><span style="font-weight:bold;color:#a71d5d;">= impl </span><span>Ore;</span><span>
+</span><span>    fn mine() -&gt; Self::Mine {</span><span>
+</span><span>        Bauxite</span><span>
+</span><span>    }</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p>This is also a problem these proposals share with type alias impl trait (TAIT), which allows code like this:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">type </span><span>Target </span><span style="font-weight:bold;color:#a71d5d;">= impl </span><span>Debug;</span><span>
+</span><span>fn target() -&gt; Target {</span><span>
+</span><span>    </span><span style="color:#183691;">&quot;hello world&quot;</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p>These two features which, on the surface, appear to be completely unrelated to one another, are just addressing two sides of the problem with return position <code>impl Trait</code>. RPITIT addresses the problem for type aliases, and TAIT addresses the problem for free functions. This is a gross over-simplification, but it gets at the core of the issue.</p>
+<h2 id="what-i-don-t-like">What I don't like</h2>
+<p>To be clear, I don't think either of these proposals are bad. I just think they miss the mark, and it's not their fault. Here's why:</p>
+<p>When we desugar return position <code>impl Trait</code>, it gets hidden in a wrapper type and that <em>type</em> is abstract. In fact, that type is <em>an abstraction</em> over the concrete type. I argue that we're missing that extra informaiton, and it's leading us down the path of type inference. Instead of declaring our type aliases and leveraging those for inference, we instead have to declare our alias and then be painfully specific everywhere that we use it:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span>#![feature(type_alias_impl_trait)]</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">use </span><span>::core::{fmt::Debug, ptr::null};</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Handle </span><span style="font-weight:bold;color:#a71d5d;">= impl </span><span>Debug;</span><span>
+</span><span>
+</span><span>fn a() -&gt; Handle {</span><span>
+</span><span>    null::&lt;</span><span style="font-weight:bold;color:#a71d5d;">i32</span><span>&gt;()</span><span>
+</span><span>}</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">b</span><span>() -&gt; Handle {</span><span>
+</span><span>    </span><span style="color:#62a35c;">null</span><span>()</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p>If you thought that this would compile, I don't blame you! We should have all the information we need to deduce that <code>Integer</code> is an abstract pointer to an <code>i32</code>. However, that's not what we get:</p>
+<pre style="background-color:#ffffff;color:#323232;"><code><span>error[E0282]: type annotations needed</span><span>
+</span><span>  --&gt; src/lib.rs:12:5</span><span>
+</span><span>   |</span><span>
+</span><span>12 |     null()</span><span>
+</span><span>   |     ^^^^ cannot infer type for type parameter `T` declared on the function `null`</span><span>
+</span></code></pre>
+<p>Because we're inferring the type of <code>Integer</code>, and we don't want to accidentally infer the wrong type in a situation where we're <em>actually</em> confused. Compare this to a concrete type alias:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span>#![feature(type_alias_impl_trait)]</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">use </span><span>::core::ptr::null;</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Handle </span><span style="font-weight:bold;color:#a71d5d;">= *const i32</span><span>;</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">null_handle</span><span>() -&gt; Handle {</span><span>
+</span><span>    </span><span style="color:#62a35c;">null</span><span>()</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p>In this situation, we can infer the type arguments to <code>null()</code> and don't have to use a turbofish to specify that it's specifically <code>null::&lt;i32&gt;()</code>. This reversal of the inference flow strikes me as ripe for confusing errors and unintuitive type inference problems.</p>
+<h2 id="my-proposal">My proposal</h2>
+<p>I propose that we introduce new syntax for performing type abstraction. Instead of focusing on the call site, this will instead directly abstract a given concrete type, and I propose that it should be:</p>
+<h3 id="as-impl-trait"><code>as impl Trait</code></h3>
+<p>Consider this new syntax:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">foo</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">&amp;&#39;static str</span><span> as impl Debug {</span><span>
+</span><span>    </span><span style="color:#183691;">&quot;hello world&quot;</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p>This new syntax would desugar to:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">struct </span><span>ImplDebug&lt;T: Debug&gt;(T);</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl</span><span>&lt;T: Debug&gt; Debug </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>ImplDebug&lt;T&gt; {</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">fmt</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self, f: </span><span style="font-weight:bold;color:#a71d5d;">&amp;mut </span><span>Formatter&lt;&#39;</span><span style="font-weight:bold;color:#a71d5d;">_</span><span>&gt;) -&gt; </span><span style="color:#0086b3;">Result</span><span>&lt;(), Error&gt; {</span><span>
+</span><span>        self.</span><span style="color:#0086b3;">0.</span><span style="color:#62a35c;">fmt</span><span>(f)</span><span>
+</span><span>    }</span><span>
+</span><span>}</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">foo</span><span>() -&gt; ImplDebug&lt;</span><span style="font-weight:bold;color:#a71d5d;">&amp;&#39;static str</span><span>&gt; {</span><span>
+</span><span>    ImplDebug(</span><span style="color:#183691;">&quot;hello world&quot;</span><span>)</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p>In this situation, <code>as impl Trait</code> would serve as the site where the abstracted type is generated. This gives us more control over when these wrappers are created and allows us to guarantee that multiple functions return the same abstracted type.</p>
+<p>This also allows abstract types to be used anywhere a regular type would be, and not just in return position. It would separate the type abstraction of <code>impl Trait</code> in return position from the type inference of it in argument position and help solve a number of outstanding problems with type abstraction.</p>
+<p>Let's take a look at how this would apply to RPITIT and TAIT.</p>
+<h3 id="return-position-impl-trait-in-trait-rpitit">Return position impl trait in trait (RPITIT)</h3>
+<p>Associated types of traits leak concrete types. Someone might use <code>&lt;MyFoo as Foo&gt;::Bar</code> somewhere that it needs to be <code>Debug</code>, and the compiler will let them do it as long as the constraints check out. But that's not part of our contract, and nobody should be allowed to depend on the fact that <code>MyBar</code> implements <code>Debug</code> if we don't want them to. So what if we could say something like this instead:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">trait </span><span>Transformer&lt;T&gt; {</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Output;</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">transform</span><span>(x: </span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>T) -&gt; </span><span style="font-weight:bold;color:#a71d5d;">Self::</span><span>Output;</span><span>
+</span><span>}</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl</span><span>&lt;T: </span><span style="color:#0086b3;">Clone</span><span>&gt; Transformer&lt;T&gt; </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Replicator {</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Output </span><span style="font-weight:bold;color:#a71d5d;">=</span><span> T </span><span style="font-weight:bold;color:#a71d5d;">as impl </span><span>Clone;</span><span>
+</span><span>    fn transform(x: </span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>T) -&gt; Self::Cloned {</span><span>
+</span><span>        x.</span><span style="color:#62a35c;">clone</span><span>()</span><span>
+</span><span>    }</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p>Now, the associated <code>T</code> type isn't <code>T</code>, it's an <em>abstraction</em> of <code>T</code>. It's an abstraction that only exposes the fact that <code>T</code> implements <code>Clone</code>, which is exactly what we want.</p>
+<h3 id="type-alias-impl-trait-tait">Type alias impl trait (TAIT)</h3>
+<p>A new approach to TAIT would look like this instead:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">use </span><span>::core::{fmt::Debug, ptr::null};</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Handle </span><span style="font-weight:bold;color:#a71d5d;">= *const i32 as impl </span><span>Debug;</span><span>
+</span><span>
+</span><span>fn a() -&gt; Handle {</span><span>
+</span><span>    null::&lt;</span><span style="font-weight:bold;color:#a71d5d;">i32</span><span>&gt;()</span><span>
+</span><span>}</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">b</span><span>() -&gt; Handle {</span><span>
+</span><span>    </span><span style="color:#62a35c;">null</span><span>()</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p>This time, everything checks out. We know that <code>Handle</code> is not just any <code>impl Debug</code>, it's specifically <code>*const i32 as impl Debug</code>. That allows us to use type inference everywhere; we don't even need to turbofish in <code>a()</code> this time. And to cap it all off, we still get an abstracted type to hide any trait implementations we want to keep private.</p>
+<h3 id="publicly-abstracted-private-types">Publicly abstracted private types</h3>
+<p>With a little more elbow grease, this would also allow constructions like:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">struct </span><span>Thought;</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">pub struct </span><span>Brain;</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl </span><span>Factory </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Brain {</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Output </span><span style="font-weight:bold;color:#a71d5d;">=</span><span> Thought </span><span style="font-weight:bold;color:#a71d5d;">as impl </span><span>Display;</span><span>
+</span><span>    fn produce() -&gt; Self::Output {</span><span>
+</span><span>        </span><span style="font-weight:bold;color:#a71d5d;">...</span><span>
+</span><span>    }</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p>Note that <code>Thought</code> is <em>private</em>, yet we're exposing it <em>through an abstraction</em> in our associated type. This makes it possible for us to swap out the concrete type of <code>&lt;Brain as Factory&gt;::Output</code> without it being a breaking change! <code>Thought</code> was private and inaccessible, and so we could remove it entirely without causing any semver violations.</p>
+<h3 id="clarity-and-concreteness">Clarity and concreteness</h3>
+<p>Because the concrete type of the abstraction is preserved, we can still reason about and use the concrete underlying type. If we wanted to, we could even provide the same type abstracted in some places, and unabstracted in others. We could easily abstract types we didn't make, and use concrete types internally while still exposing them as abstracted externally.</p>
+<h2 id="but-there-is-a-problem">But there is a problem</h2>
+<p>Think back to our closure example:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">generate</span><span>&lt;T&gt;(value: T) -&gt; </span><span style="font-weight:bold;color:#a71d5d;">?? as impl </span><span>FnOnce() -&gt; T {</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">move ||</span><span> value</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p>We've dug ourselves a hole. In order to use <code>as impl Trait</code>, we need to name the concrete type of our closure. But we can't do that! We're in a predicament, but there is a surprisingly straightforward way out.</p>
+<h2 id="name-the-unnameable">Name the unnameable</h2>
+<p>Why couldn't we just give that closure a name? Maybe something like:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">generate</span><span>&lt;T&gt;(value: T) -&gt; type </span><span style="font-weight:bold;color:#a71d5d;">&#39;A</span><span> as impl FnOnce() -&gt; T {</span><span>
+</span><span>    &#39;A: </span><span style="font-weight:bold;color:#a71d5d;">move ||</span><span> value</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p>So here's some more new syntax. Similarly to how we label loops, we can label the creation sites of unnameable types. That way, we can uniquely refer to them in other places. This would solve both of our outstanding problems:</p>
+<p>Because we labeled our closure, we can now refer to it in our return type as <code>type 'A</code>.</p>
+<p>Additionally, we can leave off the <code>as impl Trait</code> to return our closure concretely. This solves our earlier problem of returning a closure that <em>may be</em> <code>Clone</code>!</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">generate</span><span>&lt;T&gt;(value: T) -&gt; type </span><span style="font-weight:bold;color:#a71d5d;">&#39;A</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">where</span><span>
+</span><span>    type </span><span style="font-weight:bold;color:#a71d5d;">&#39;A</span><span>: Fn() -&gt; T,</span><span>
+</span><span>{</span><span>
+</span><span>    &#39;A: </span><span style="font-weight:bold;color:#a71d5d;">move ||</span><span> value</span><span>
+</span><span>}</span><span>
+</span></code></pre>
+<p>I'm not married to the syntax. It's functional, but I don't think it's great. I'll talk more about this in the next post.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>In the first post, I stated that I would propose an alternative formulation of <code>impl Trait</code> that restores orthogonality. That comes in two parts:</p>
+<ul>
+<li><code>as impl Trait</code> now handles only type abstraction. Unnameable types like closures and async blocks use their own syntax to be named.</li>
+<li><code>type 'A</code> labels for unnameable types enable them to be returned concretely and abstracted cleanly.</li>
+</ul>
+<p>Neither of these ideas are new, they have been discussed and considered before. However, I think we now have the experience necessary to fix our past mistakes and a growing need for these more general tools.</p>
+<p>In the <a href="https://davidkoloski.me/blog/abstract-types-in-rust-3/">third post</a>, I'll discuss existing proposals and prior art and compare my proposal against them.</p>
+
+</div>
+<div class="section navigation">
+    
+        Previous article: <a href="https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;abstract-types-in-rust-1&#x2F;">Abstract Types in Rust 1</a>
+    
+    
+        Next article: <a href="https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;abstract-types-in-rust-3&#x2F;">Abstract Types in Rust 3</a>
+    
+</div>
+
+    <div class="section footer">
+        &copy; 2022 David Koloski
+        <a href="/atom.xml"><img width="16" height="16" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 455 455'%3E%3Cpath d='M0 0v455h455V0H0zm141.435 372.387c-7.656 7.59-18.047 12.219-29.614 12.219-11.555 0-21.945-4.646-29.549-12.219C74.681 364.801 70 354.462 70 342.961s4.681-21.875 12.272-29.483c7.621-7.569 17.994-12.237 29.549-12.237 11.567 0 21.958 4.668 29.579 12.254 7.621 7.621 12.272 17.964 12.307 29.466-.035 11.501-4.686 21.822-12.272 29.426zM217.468 385s0-.101-.017-.101c-.066-39.41-15.431-76.597-43.221-104.352-27.786-27.838-64.925-43.256-104.195-43.291v-60.139c57.299.035 109.169 23.327 146.833 61.014 37.651 37.682 60.944 89.565 60.996 146.869h-60.396zm107.24 0c-.105-140.495-114.196-254.774-254.572-254.879V70c86.817.035 165.432 35.359 222.495 92.422C349.659 219.485 384.965 298.165 385 385h-60.292z' fill-rule='evenodd' fill='%23fff'/%3E%3C/svg%3E"></a>
+    </div>
+</body>
+</html>
