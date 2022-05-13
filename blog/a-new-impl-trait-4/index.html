@@ -62,7 +62,7 @@
         The end of <code>impl Trait</code>?
     </div>
     <div class="subtitle">
-        May 13, 2022 &ndash; 8 min read
+        May 13, 2022 &ndash; 9 min read
     </div>
 </div>
 <div class="section taxonomies">
@@ -88,17 +88,25 @@
 <h2 id="stepping-stones">Stepping stones</h2>
 <p>We've been breezing through many different examples and suggestions without really consolidating our knowledge. Let's take some time to build up some higher-level facts that we can use to inform our final analysis.</p>
 <h3 id="the-lesser-of-two-evils">The lesser of two evils</h3>
-<p>In this case, the two evils are <strong>type inference</strong> and <strong>named unnameable types</strong>. In order for <code>as impl Trait</code> to function, we must choose one of these. Note that we have already chosen one of these (type inference) with <code>impl Trait</code>. Having worked through some of the consequences, I do not pretend to know which would be cleaner, clearer, and most in line with Rust design goals. Let's consult a motivating example:</p>
+<p>In this case, the two evils are <strong>type inference</strong> and <strong>named unnameable types</strong>. In order for <code>as impl Trait</code> to function, we must choose one of these. Note that we have already chosen one of these (type inference) with <code>impl Trait</code>. I personally think that return type inference is simpler but less in line with Rust's goals<a href="#footnote-1" id="citation-1" class="citation">1</a>. Let's consult a motivating example:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">foo</span><span>&lt;T&gt;(value: T) -&gt; </span><span style="font-weight:bold;color:#a71d5d;">?? </span><span>{</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">move ||</span><span> value</span><span>
+</span><span>}</span><span>
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">bar</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">?? </span><span>{</span><span>
+</span><span>    </span><span style="color:#62a35c;">foo</span><span>(</span><span style="color:#0086b3;">42</span><span>)</span><span>
+</span><span>}</span><span>
+</span></code></pre>
 <p>I would like to have some function <code>foo</code> return a closure that yields some given value. Then, I would like to have some function <code>bar</code> call <code>foo</code> with a predefined value and return the same type. <code>foo</code>'s return type must either be <em>inferred</em> or <em>named</em>.</p>
 <h4 id="inferred">Inferred</h4>
 <p>If <code>foo</code>'s return type is inferred, then <code>bar</code> must either:</p>
 <ul>
-<li>Refer to <code>foo</code> to name its return type (i.e. <code>fn bar() -&gt; &lt;foo as Fn&lt;(T,)&gt;&gt;::Output</code>)</li>
-<li>Infer it from its body (i.e. <code>fn bar() -&gt; _ { foo() }</code>)</li>
+<li>Infer it from its body (i.e. <code>fn bar() -&gt; _ { foo(42) }</code>, this is basically what <code>impl Trait</code> does right now)</li>
+<li>Or, refer to <code>foo</code> to name its return type (i.e. <code>fn bar() -&gt; &lt;foo as Fn&lt;(T,)&gt;&gt;::Output</code>)</li>
 </ul>
 <p>A type alias doesn't change the situation here, as it would also either state <code>type Output = &lt;foo as Fn(T)&gt;::Output</code> or <code>type Output = _</code>.</p>
-<p>In the case of inference, we end up long-range type inference and spooky action at a distance. This has the additional downside that it opens the door for inference to be used in places where it's not strictly necessary. This could lead to further confusion and, in my opinion, would render the feature more harm than good.</p>
-<p>In the case of function outputs, we end up with <code>foo</code> only performing local inference which is considerably better. However, we suffer from the explicit function output signature, especially when we want to change the definition of <code>foo</code>. Modifying its arguments would require modifying the type signature of <code>bar</code> (or equivalently, the signature of the type alias) even when the return type has not changed. It makes maintenance more difficult at the same time as making discoverability more difficult.</p>
+<p>If we infer the return type of <code>bar</code> from its body, we end up long-range type inference and spooky action at a distance. This has the additional downside that it opens the door for inference to be used in places where it's not strictly necessary. This could lead to further confusion and, in my opinion, would render the feature more harm than good.</p>
+<p>If we refer to <code>foo</code> to name <code>bar</code>'s return type, we end up with <code>foo</code> only performing local inference which is arguably better. However, we suffer from the explicit function output signature, especially when we want to change the definition of <code>foo</code>. Modifying its arguments would require modifying the type signature of <code>bar</code> (or equivalently, the signature of the type alias) even when the return type has not changed. It makes maintenance more difficult at the same time as making discoverability more difficult.</p>
 <h4 id="named">Named</h4>
 <p>If we can name <code>foo</code>'s return type, then <code>bar</code> can reuse that:</p>
 <pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">a</span><span>&lt;T&gt;(value: T) -&gt; type </span><span style="font-weight:bold;color:#a71d5d;">&#39;Closure</span><span>&lt;T&gt; {</span><span>
@@ -172,7 +180,7 @@
 <h2 id="in-practice">In practice</h2>
 <p>Now that we have the groundwork laid, we can make some engineering decisions:</p>
 <h3 id="the-ultimate-goal">The ultimate goal</h3>
-<p>I believe that return position <code>impl Trait</code> should be deprecated in favor of <code>as impl Trait</code>. Additionally, we must either stabilize naming the return value of a function (e.g. <code>&lt;foo as Fn()&gt;::Output</code>) or ban <code>as impl Trait</code> in return position. It would still be legal in type alises, which would effectively relegate it to syntax sugar for creating abstracted types. That's not necessarily a bad thing; remember that the <code>?</code> operator was a huge quality of life improvement and yet is relatively simple syntax sugar.</p>
+<p>I believe that return position <code>impl Trait</code> should be deprecated in favor of <code>as impl Trait</code>. Additionally, we must either stabilize naming the return value of a function (e.g. <code>&lt;foo as Fn()&gt;::Output</code>) or ban <code>as impl Trait</code> in return position. In the latter case, it would still be legal in type alises and that would effectively relegate it to syntax sugar for creating abstracted types. That's not necessarily a bad thing; remember that the <code>?</code> operator was a huge quality of life improvement and yet is relatively simple syntax sugar.</p>
 <p>The major fork in the road is that we must choose between type inference and explicit naming for unnameable types. They both have their pros and cons, and inference could be restricted to a local context if used with named function return values. I believe that any longer-range type inference (e.g. TAIT) is likely to cause more problems than it solves. Explicitly naming unnameable types requires some exotic syntax and may also cause more problems than it solves.</p>
 <p>I think it would be acceptable to keep <code>impl Trait</code> in argument position since its sugar is sufficiently simple and its purpose is orthogonal to other features. However, I would be in support of removing it entirely to keep the language consistent and clean if others preferred that.</p>
 <h3 id="the-way-there">The way there</h3>
@@ -209,7 +217,10 @@
 <p>Whew, that was a lot of work. Hopefully I've inspired some new ideas and thoughts about <code>impl Trait</code>. Let's have some lively debate about it and see if we can make Rust a better language for everyone.</p>
 <h3 id="thanks">Thanks</h3>
 <p>Thanks to <a href="https://github.com/computerdruid">@computerdruid</a> and <a href="https://github.com/tmandry">@tmandry</a> in particular for reviewing this series of posts and helping me hone my understanding of <code>impl Trait</code>.</p>
-
+<p id="footnote-1" class="footnote"><a href="#citation-1">1</a> Don't get me wrong, I actually like type inference and use it all the time. However, I think of Rust's typing philosophy as a kind of <a href="https://en.wikipedia.org/wiki/Mechanically_stabilized_earth">&quot;stabilized inference&quot;</a> model.</p>
+<p>In geotechnical engineering, it's common practice to use regular soil for building retaining walls, seawalls, and dikes. However, soil alone is not very strong and can easily flow when exposed to movement or water. A seawall made of plain soil would very quickly collapse from the soil shifting and flowing, but we can fix that by adding &quot;<em>reinforcement</em>&quot; to it. These are layers within the soil that provide stiffness and friction to prevent the soil from moving. It's kind of like a dirt sandwich with many layers, and it's <a href="https://www.youtube.com/watch?v=0olpSN6_TCc">surprisingly effective</a>.</p>
+<p>I think of Rust's type inference like the soil: it's on-site, abundant, and a natural choice for construction. But it has a tendency to shift and flow because it's only loosely held together. In large quantities it can quickly shift and flow when exposed to change. Likewise, I think of function signatures as the reinforcement. It's not a lot of material, but it's stiff and prevents the type inference inside of function bodies from moving too much. Just this little bit of added stiffness prevents changes from propagating across function boundaries, keeping the system as a whole stable.</p>
+<p>This is why I like type inference in statements, but I'm not a fan of type inference in function signatures.</p>
 </div>
 <div class="section navigation">
     
