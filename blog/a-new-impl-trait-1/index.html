@@ -90,7 +90,7 @@
 </ul>
 <p>I believe that the current implementation of <code>impl Trait</code> is confusing and non-orthogonal. I propose an alternative formulation of <code>impl Trait</code> that is more intuitive, restores orthogonality to the feature, and enables more precise and flexible use of abstraction.</p>
 <h2 id="what-is-impl-trait">What is <code>impl Trait</code>?</h2>
-<p><code>impl Trait</code> is syntax sugar can be used in argument position or in return position. Let's look at how it can be used and how it desugars to more fundamental Rust syntax.</p>
+<p><code>impl Trait</code> is syntax sugar that can be used in argument position or in return position. Let's look at how it can be used and how it desugars to more fundamental Rust syntax.</p>
 <h3 id="argument-position">Argument position</h3>
 <p>When used in argument position, <code>impl Trait</code> is shorthand for a type that implements the requested traits. It takes a function like:</p>
 <pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">log</span><span>(x: impl Debug) {
