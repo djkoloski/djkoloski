@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Software Engineer, Game Designer, Web Developer">
+    <meta name="author" content="David Koloski">
+
+    <!-- favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- fonts and styles -->
+    <link href="https://fonts.googleapis.com/css?family=Rubik:400,700" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Inconsolata:500,800" rel="stylesheet">
+    <link href="https://davidkoloski.me/style.css" rel="stylesheet">
+
+    <!-- scripts -->
+    <script src="/elasticlunr.min.js" async></script>
+    <script src="/search_index.en.js" async></script>
+    <script src="/search.js" async></script>
+
+    <title>
+        
+            A new impl Trait 1&#x2F;4
+        
+    </title>
+</head>
+<body>
+    <div class="section header">
+        <div class="logo">
+            <a href="/" class="logo-image" width="100"></a>
+        </div>
+        <div class="links">
+            
+            
+                <a href="https://davidkoloski.me/about/">About</a>
+            
+                <a href="https://davidkoloski.me/resume/">Resume</a>
+            
+            
+                
+                <a href="https://davidkoloski.me/blog/">Blog</a>
+            
+        </div>
+        <div class="search">
+            <input id="search-checkbox" type="checkbox" autocomplete="off">
+            <input id="search-input" type="text" placeholder="Search">
+            <label id="search-show" for="search-checkbox"></label>
+        </div>
+    </div>
+    
+<div class="section title">
+    A new impl Trait 1/4
+    <div class="subtitle">
+        What is <code>impl Trait</code>?
+    </div>
+    <div class="subtitle">
+        May 10, 2022 &ndash; 13 min read
+    </div>
+</div>
+<div class="section taxonomies">
+    
+    <div class="categories">
+        
+            <a href="https://davidkoloski.me/categories/rust/">Rust</a>
+        
+    </div>
+    
+    <div class="tags">
+        
+            <a href="https://davidkoloski.me/tags/rust/">Rust</a>
+        
+    </div>
+    
+</div>
+<div class="section content">
+    <h2 id="foreword">Foreword</h2>
+<p>This series is both an explanation and criticism of <code>impl Trait</code>. A large portion of this text is dedicated to explaining and understanding the properties of <code>impl Trait</code>, but it is not <em>solely</em> an explainer.</p>
+<ul>
+<li>If you're already familiar with the properties and mechanics of <code>impl Trait</code>, you can skip to <a href="https://davidkoloski.me/blog/a-new-impl-trait-2/">the next post</a>.</li>
+<li>If you want to read the past work done on <code>impl Trait</code>, you can skip to <a href="https://davidkoloski.me/blog/a-new-impl-trait-3/">the third post</a>.</li>
+<li>If you're ready for the final proposal, you can skip to <a href="https://davidkoloski.me/blog/a-new-impl-trait-4/">the fourth post</a>.</li>
+</ul>
+<p>I believe that the current implementation of <code>impl Trait</code> is confusing and non-orthogonal. I propose an alternative formulation of <code>impl Trait</code> that is more intuitive, restores orthogonality to the feature, and enables more precise and flexible use of abstraction.</p>
+<h2 id="what-is-impl-trait">What is <code>impl Trait</code>?</h2>
+<p><code>impl Trait</code> is syntax sugar can be used in argument position or in return position. Let's look at how it can be used and how it desugars to more fundamental Rust syntax.</p>
+<h3 id="argument-position">Argument position</h3>
+<p>When used in argument position, <code>impl Trait</code> is shorthand for a type that implements the requested traits. It takes a function like:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">log</span><span>(x: impl Debug) {
+</span><span>    dbg!(x);
+</span><span>}
+</span></code></pre>
+<p>And desugars it to:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">log</span><span>&lt;X: Debug&gt;(x: X) {
+</span><span>    dbg!(x);
+</span><span>}
+</span></code></pre>
+<p>In argument position, each <code>impl Trait</code> is assumed to be a different, unique type. If we wanted to take <em>two</em> arguments of the same type, we couldn't use <code>impl Trait</code> any more and would have to be more explicit. This doesn't compile:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">pick</span><span>(which: </span><span style="font-weight:bold;color:#a71d5d;">bool</span><span>, x: impl Debug, y: impl Debug) -&gt; impl Debug {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">if !</span><span>which {
+</span><span>        x
+</span><span>    } </span><span style="font-weight:bold;color:#a71d5d;">else </span><span>{
+</span><span>        y
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>With this error:</p>
+<pre style="background-color:#ffffff;color:#323232;"><code><span>error[E0308]: `if` and `else` have incompatible types
+</span><span>= note:        expected type `impl Debug`
+</span><span>        found type parameter `impl Debug`
+</span><span>= note: a type parameter was expected, but a different one was found
+</span></code></pre>
+<p>This is because <code>x</code>'s <code>impl Debug</code> could be a different concrete type from <code>y</code>'s <code>impl Debug</code>. <code>impl Trait</code> makes them appear to be the same type when they really aren't. Instead, we write:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">pick</span><span>&lt;T: Debug&gt;(which: </span><span style="font-weight:bold;color:#a71d5d;">bool</span><span>, x: T, y: T) -&gt; T {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">...
+</span><span>}
+</span></code></pre>
+<p>Which tells the compiler that we expect two of the same type and will return that type. That's easy enough, we just have to desugar it ourselves and give the compiler a little more information. Let's move on.</p>
+<h3 id="return-position">Return position</h3>
+<p>When used in return position, <code>impl Traits</code> is <em>also</em> shorthand for a type that implements the requested traits. However, there's a catch. It takes a function like this:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">target</span><span>() -&gt; impl Debug {
+</span><span>    </span><span style="color:#183691;">&quot;hello world&quot;
+</span><span>}
+</span></code></pre>
+<p>And desugars it to something like this:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">struct </span><span>Target&lt;T: Debug </span><span style="font-weight:bold;color:#a71d5d;">+ </span><span style="background-color:#f5f5f5;font-weight:bold;color:#b52a1d;">?</span><span>Sized&gt;(T);
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl</span><span>&lt;T: Debug </span><span style="font-weight:bold;color:#a71d5d;">+ </span><span style="background-color:#f5f5f5;font-weight:bold;color:#b52a1d;">?</span><span>Sized&gt; Debug for Target&lt;T&gt; {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">fmt</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self, f: </span><span style="font-weight:bold;color:#a71d5d;">&amp;mut </span><span>Formatter&lt;&#39;</span><span style="font-weight:bold;color:#a71d5d;">_</span><span>&gt;) -&gt; </span><span style="color:#0086b3;">Result</span><span>&lt;(), Error&gt; {
+</span><span>        self.</span><span style="color:#0086b3;">0.</span><span style="color:#62a35c;">fmt</span><span>(f)
+</span><span>    }
+</span><span>}
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">target</span><span>() -&gt; Target&lt;</span><span style="font-weight:bold;color:#a71d5d;">&amp;&#39;static str</span><span>&gt; {
+</span><span>    Target(</span><span style="color:#183691;">&quot;hello world&quot;</span><span>)
+</span><span>}
+</span></code></pre>
+<p>This desugaring has a special property: the return type <code>&amp;'static str</code> gets <em>abstracted</em> behind an opaque <code>Target&lt;T&gt;</code> wrapper. That lets <code>target</code> limit what properties of its return type a caller is allowed to rely on. In this case, the <code>Target</code> type proxies the <code>Debug</code> impl but <em>only</em> the <code>Debug</code> impl. Any other traits implemented by the wrapped <code>T</code> are <em>not</em> implemented by <code>Target&lt;T&gt;</code><a href="#footnote-1" id="citation-1" class="citation">1</a>. Let's look at a more complex example to see how this affects composability:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">combine</span><span>&lt;T: Add&gt;(lhs: T, rhs: T) -&gt; </span><span style="font-weight:bold;color:#a71d5d;">T::</span><span>Output {
+</span><span>    lhs.</span><span style="color:#62a35c;">add</span><span>(rhs)
+</span><span>}
+</span><span>
+</span><span>println!(</span><span style="color:#183691;">&quot;</span><span style="color:#0086b3;">{}</span><span style="color:#183691;">&quot;</span><span>, </span><span style="color:#62a35c;">combine</span><span>(</span><span style="color:#0086b3;">1</span><span>, </span><span style="color:#0086b3;">2</span><span>));
+</span><span>println!(</span><span style="color:#183691;">&quot;</span><span style="color:#0086b3;">{:?}</span><span style="color:#183691;">&quot;</span><span>, </span><span style="color:#62a35c;">combine</span><span>(</span><span style="color:#0086b3;">1</span><span>, </span><span style="color:#0086b3;">2</span><span>));
+</span></code></pre>
+<p>Without <code>impl Trait</code>, the return type of <code>combine</code> is just a <code>T::Output</code>. That means that <code>combine(1, 2)</code> returns a plain <code>i32</code>, so we can take advantage of <code>i32</code>'s <code>Display</code> and <code>Debug</code> implementations. Let's compare that to what happens when we use <code>impl Trait</code>:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">combine_abstract</span><span>&lt;T: Add&gt;(lhs: T, rhs: T) -&gt; impl Display
+</span><span style="font-weight:bold;color:#a71d5d;">where
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">T::</span><span>Output: Display,
+</span><span>{
+</span><span>    lhs.</span><span style="color:#62a35c;">add</span><span>(rhs)
+</span><span>}
+</span><span>
+</span><span>println!(</span><span style="color:#183691;">&quot;</span><span style="color:#0086b3;">{}</span><span style="color:#183691;">&quot;</span><span>, </span><span style="color:#62a35c;">combine_abstract</span><span>(</span><span style="color:#0086b3;">1</span><span>, </span><span style="color:#0086b3;">2</span><span>));
+</span><span style="font-style:italic;color:#969896;">// ERROR: `impl Display` does not implement `Debug`
+</span><span>println!(</span><span style="color:#183691;">&quot;</span><span style="color:#0086b3;">{:?}</span><span style="color:#183691;">&quot;</span><span>, </span><span style="color:#62a35c;">combine_abstract</span><span>(</span><span style="color:#0086b3;">1</span><span>, </span><span style="color:#0086b3;">2</span><span>));
+</span></code></pre>
+<p>Now we have <em>abstracted</em> our return type using <code>impl Trait</code>, and that opaque return type does not implement <code>Debug</code>. Note that we also had to bound <code>T::Output: Display</code> since our <code>impl Debug</code> requires that the value inside of it implements <code>Debug</code>. While we can still <code>Display</code> the return value of <code>combine_abstract</code>, we can no longer <code>Debug</code> it. That's the very literal difference when using <code>impl Trait</code>, but what does that actually mean for our code?</p>
+<h2 id="should-you-abstract-your-types">Should you abstract your types?</h2>
+<p>An abstract type restricts what someone else can know about a concrete type. In the <code>fn target() -&gt; &amp;'static str</code> example, whoever calls <code>target</code> gets an unabstracted <code>&amp;'static str</code>. This can be both a blessing and a curse:</p>
+<h3 id="the-good">The good</h3>
+<p>On one hand, a concrete type lets you reason about its other properties. In this example, we wrap our input in a type and return it concretely:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span>#[derive(Debug, PartialEq)]
+</span><span style="font-weight:bold;color:#a71d5d;">pub struct </span><span>Container&lt;T&gt;(T);
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">pub fn </span><span style="font-weight:bold;color:#795da3;">contain</span><span>&lt;T&gt;(value: T) -&gt; Container&lt;T&gt; {
+</span><span>    Container(value)
+</span><span>}
+</span><span>
+</span><span>println!(</span><span style="color:#183691;">&quot;</span><span style="color:#0086b3;">{:?}</span><span style="color:#183691;">&quot;</span><span>, </span><span style="color:#62a35c;">contain</span><span>(</span><span style="color:#183691;">&quot;hello world&quot;</span><span>));
+</span></code></pre>
+<p>Because <code>contain</code> returns <code>Container</code> concretely, we can determine whether the return value implements a trait. <code>T</code> implements <code>Debug</code>, and <code>Container</code> implements it if <code>T</code> does, so we can debug print the return value from <code>contain</code>. This lets us write <code>contain</code> to be as helpful as possible to whoever calls it.</p>
+<h3 id="the-bad">The bad</h3>
+<p>But what if, some time in the future, we want to change <code>Container</code> so that it no longer implements <code>PartialEq</code>:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span>#[derive(Debug)]
+</span><span style="font-weight:bold;color:#a71d5d;">pub struct </span><span>Container&lt;T&gt;(T);
+</span></code></pre>
+<p>Perhaps that was just for debugging and nobody was supposed to rely on <code>PartialEq</code> being implemented. But <code>Container</code> is public since it's the return type of <code>contain</code>, so we've broken everyone who was relying on <code>PartialEq</code> being implemented! This situation gets worse for <a href="https://doc.rust-lang.org/reference/special-types-and-traits.html#auto-traits">auto traits</a> like <code>Send</code> and <code>Sync</code> since we might change whether our type implements an auto trait just by changing its definition. That's spooky action at a distance!</p>
+<p>This is a situation where <code>impl Trait</code> can help us. By returning an <code>impl Debug</code>, we can prevent <a href="https://www.hyrumslaw.com/">Hyrum's Law</a> from breaking everything downstream from our library when we remove the <code>Debug</code> implementation:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">pub fn </span><span style="font-weight:bold;color:#795da3;">contain</span><span>&lt;T: Debug&gt;(value: T) -&gt; impl Debug {
+</span><span>    Container(value)
+</span><span>}
+</span><span>
+</span><span>println!(</span><span style="color:#183691;">&quot;</span><span style="color:#0086b3;">{:?}</span><span style="color:#183691;">&quot;</span><span>, </span><span style="color:#62a35c;">contain</span><span>(</span><span style="color:#183691;">&quot;hello world&quot;</span><span>));
+</span></code></pre>
+<p>Now our downstream users can't rely on any additional traits being implemented, and we can add and remove more trait implementations from <code>Container</code> without causing a semver breakage.</p>
+<p>These examples have all been for free functions and inherent methods; what's the situation for traits?</p>
+<h2 id="impl-trait-in-traits"><code>impl Trait</code> in traits</h2>
+<h3 id="argument-position-traits">Argument position (traits)</h3>
+<p>Not much is different for argument position <code>impl Trait</code> in trait methods. Something like this:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">trait </span><span>Logger {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">log</span><span>(x: impl Debug);
+</span><span>}
+</span></code></pre>
+<p>desugars to:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">trait </span><span>Logger {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">log</span><span>&lt;X: Debug&gt;(x: X);
+</span><span>}
+</span></code></pre>
+<p>This is pretty much the same as the previous argument position desugaring. But what about...</p>
+<h3 id="return-position-traits">Return position (traits)</h3>
+<p>You can't use <code>impl Trait</code> in return position right now, but why is that? Let's consider a desugaring of <code>impl Trait</code> as a return type in a trait:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">trait </span><span>Miner {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>() -&gt; impl Ore;
+</span><span>}
+</span></code></pre>
+<p>A straightforward desugaring of this would be:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">trait </span><span>Miner {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Mine: Ore;
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">Self::</span><span>Mine;
+</span><span>}
+</span></code></pre>
+<p>But that doesn't abstract the return type like we want. Instead, we should make a wrapper to hide the details of the concrete type:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">struct </span><span>MinerOre&lt;T: Ore&gt;(T);
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl</span><span>&lt;T: Ore&gt; Ore </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>MinerOre&lt;T&gt; { </span><span style="font-weight:bold;color:#a71d5d;">... </span><span>}
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">trait </span><span>Miner {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Mine: Ore;
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>() -&gt; MinerOre&lt;</span><span style="font-weight:bold;color:#a71d5d;">Self::</span><span>Mine&gt;;
+</span><span>}
+</span></code></pre>
+<p>This seems sensible, now let's implement a <code>Miner</code> with our chosen desugaring:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">struct </span><span>Quarry;
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl </span><span>Miner </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Quarry {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>() -&gt; impl Ore {
+</span><span>        Bauxite
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>This desugars to:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">struct </span><span>Quarry;
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl </span><span>Miner </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Quarry {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Mine </span><span style="font-weight:bold;color:#a71d5d;">=</span><span> Bauxite;
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>() -&gt; MinerOre&lt;</span><span style="font-weight:bold;color:#a71d5d;">Self::</span><span>Mine&gt; {
+</span><span>        MinerOre(Bauxite)
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>That makes sense, but I'm left a little dissatisfied. The trait is dictating whether the return type of the function is abstract, but we could let the impl choose whether to abstract its return type. The impl is the one exposing that associated <code>Mine</code> type, so we could just set <code>type Mine = MinerOre&lt;Bauxite&gt;</code> instead. Let's consider an alternative desugaring:</p>
+<h3 id="return-position-traits-version-2">Return position (traits, version 2)</h3>
+<p>Let's change our original desugaring for our trait:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">trait </span><span>Miner {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>() -&gt; impl Ore;
+</span><span>}
+</span></code></pre>
+<p>So that it now desugars to:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">trait </span><span>Miner {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Mine: Ore;
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">Self::</span><span>Mine;
+</span><span>}
+</span></code></pre>
+<p>Note that this is more consistent with how the argument position <code>impl Trait</code> desugars, let's keep that in mind. Anyway, now our <code>Miner</code> impl is:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">struct </span><span>Quarry;
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl </span><span>Miner </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Quarry {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>() -&gt; impl Ore {
+</span><span>        Bauxite
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>Which desugars to:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">struct </span><span>Quarry;
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">struct </span><span>QuarryOre&lt;T: Ore&gt;(T);
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl</span><span>&lt;T: Ore&gt; Ore </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>QuarryOre&lt;T&gt; { </span><span style="font-weight:bold;color:#a71d5d;">... </span><span>}
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl </span><span>Miner </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Quarry {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Mine </span><span style="font-weight:bold;color:#a71d5d;">= </span><span>QuarryOre&lt;Bauxite&gt;;
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">Self::</span><span>Mine {
+</span><span>        QuarryOre(Bauxite)
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>And now it's the <em>impl</em> that decides whether to abstract the return type. Nice, but the syntax seems a little weird. If we chose not to abstract our return type, the trait and impl look like this instead:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">trait </span><span>Miner {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>() -&gt; impl Ore;
+</span><span>}
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">struct </span><span>Quarry;
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl </span><span>Miner </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Quarry {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Mine </span><span style="font-weight:bold;color:#a71d5d;">=</span><span> Bauxite;
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">Self::</span><span>Mine {
+</span><span>        Bauxite
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>There's no associated type in the trait definition, but we still need it to write our unabstracted trait implementation. So we end up conjuring the associated <code>Mine</code> type out of thin air. This is because the <code>impl Ore</code> in our <code>Miner</code> trait actually desugars to a concrete associated <code>Mine</code> type. This is good because we want the implementor to choose whether to abstract their return type. However, <code>impl Trait</code> now means different things in different contexts.</p>
+<ul>
+<li>In a trait definition, <code>impl Trait</code> is just sugar for an associated type bounded by some trait. This is similar to how <code>impl Trait</code> in argument position is just sugar for generics. This desugaring <em>does not</em> abstract the return type.</li>
+<li>In a trait implementation, <code>impl Trait</code> <em>does</em> abstract the return type like we would expect.</li>
+</ul>
+<p>This desugaring does everything we want at the cost of having some very unintuitive behavior around the secret associated type. In our first desugaring, the one that didn't let the implementor choose whether to abstract the return type, <code>impl Trait</code> had syntactic consistency at the cost of flexibility. This new desugaring makes the opposite tradeoff.</p>
+<h3 id="flipping-it-around">Flipping it around</h3>
+<p>We can also have the reverse problem if a trait returns an associated type but an implementation wants to abstract its return value:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">trait </span><span>Miner {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Mine: Ore;
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">Self::</span><span>Mine;
+</span><span>}
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">struct </span><span>Quarry;
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl </span><span>Miner </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Quarry {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Mine </span><span style="font-weight:bold;color:#a71d5d;">= ???</span><span>;
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>() -&gt; impl Ore {
+</span><span>        Bauxite
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>Since we can no longer tell <code>Mine</code> what type it is. We could move the <code>impl Ore</code> into the type definition:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">impl </span><span>Miner </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Quarry {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Mine </span><span style="font-weight:bold;color:#a71d5d;">= impl </span><span>Ore;
+</span><span>    fn mine() -&gt; Self::Mine { </span><span style="font-weight:bold;color:#a71d5d;">... </span><span>}
+</span><span>}
+</span></code></pre>
+<p>And in fact, this is what the Type Alias Impl Trait (TAIT) proposal suggests. But now the type of <code>Mine</code> is being inferred from the body of <code>mine</code>. This can lead to confusion:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">impl </span><span>Miner </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Quarry {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Mine </span><span style="font-weight:bold;color:#a71d5d;">= impl </span><span>Ore;
+</span><span>    fn mine() -&gt; Self::Mine {
+</span><span>        Bauxite; </span><span style="font-style:italic;color:#969896;">// &lt;-- Oops! A stray semicolon!
+</span><span>    }
+</span><span>}
+</span></code></pre>
+<p>If <code>Ore</code> is implemented for the unit type <code>()</code>, then our code will compile fine but do the wrong thing. We won't know about it until runtime, if we even catch it. Additionally, it's important to note that we would have avoided this if we specified <code>type Mine = Bauxite</code> instead of using <code>impl Trait</code>.</p>
+<p>This is a specific case, but with more complex expressions we can cause much sneakier issues<a href="#footnote-2" id="citation-2" class="citation">2</a>. This issue can occur anywhere that infer the return types of functions, and is really a problem with return position <code>impl Trait</code> as a whole. What we're doing here is allowing these issues to creep into new places in the language as well, increasing the odds that we'll accidentally stumble across it.</p>
+<h3 id="meta-who-cares">Meta: who cares?</h3>
+<p>Is this really so bad though? For many people this will be a mild annoyance, but one that they can live with. Maybe the compiler errors will be a little vague, maybe a few screwball types will get mixed up but caught in unit tests. It's very tempting to never publish these posts, never start any debate, never pitch dumb issues like these back and forth on Github. Who am I really to stand in the way of progress? I don't want to go back to a language where nothing improves or changes or ever gets done.</p>
+<p>I see this as a papercut. It's an unsettling reminder of the weird behavior I'd see in C++, where these kinds of issues kept getting added and expanded over multiple language revisions. Eventually, it got so bad that you were not just able but likely to die by a thousand papercuts. You could only write so much code before one of them would get you.</p>
+<p>I don't think we have to choose between having footguns and being able to use <code>impl Trait</code>. Unfortunately, we're also steaming ahead in implementing and stabilizing all of these features. I don't think that's a bad thing, I admire that as a project we're able to make real progress on new features and improvements. I just think this is a moment for us to take pause and consider some alternatives.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>Alright, so we've got some problems. In <a href="https://davidkoloski.me/blog/a-new-impl-trait-2/">part 2</a>, I'll describe one possible solution to this problem that allows us to have both consistency and flexibility.</p>
+<p id="footnote-1" class="footnote"><a href="#citation-1">1</a> <code>impl Trait</code> actually <em>does</em> leak some traits, specifically <a href="https://doc.rust-lang.org/beta/unstable-book/language-features/auto-traits.html">auto traits</a>. Auto traits are automatically implemented for types based on their compositions, so the <code>Target</code> struct in our example will implement them if <code>T</code> does. This has led to a <a href="https://twitter.com/Gankra_/status/1141409682017308672">now-famous tweet</a>. I'd like to add that <code>impl Trait</code> also leaks <code>Unpin</code> because it is an auto trait like <code>Send</code> and <code>Sync</code>.</p><p id="footnote-2" class="footnote"><a href="#citation-2">2</a> Consider this code that uses TAIT and GATs:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span>#![feature(type_alias_impl_trait)]
+</span><span>#![feature(generic_associated_types)]
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">trait </span><span>Miner {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Mine</span><span style="font-weight:bold;color:#a71d5d;">&lt;&#39;a&gt; where Self</span><span>: </span><span style="font-weight:bold;color:#a71d5d;">&#39;a</span><span>;
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self) -&gt; </span><span style="font-weight:bold;color:#a71d5d;">Self::</span><span>Mine&lt;&#39;</span><span style="font-weight:bold;color:#a71d5d;">_</span><span>&gt;;
+</span><span>}
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">trait </span><span>Ore: Clone {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">print</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self);
+</span><span>}
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl</span><span>&lt;T: Ore&gt; Ore </span><span style="font-weight:bold;color:#a71d5d;">for &amp;</span><span>T {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">print</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self) { println!(</span><span style="color:#183691;">&quot;Ore&quot;</span><span>); }
+</span><span>}
+</span><span>
+</span><span>#[derive(Clone, Copy)]
+</span><span style="font-weight:bold;color:#a71d5d;">struct </span><span>Bauxite;
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl </span><span>Ore </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Bauxite {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">print</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self) { println!(</span><span style="color:#183691;">&quot;Bauxite&quot;</span><span>); }
+</span><span>}
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">struct </span><span>Quarry&lt;T&gt; {
+</span><span>    ore: T,
+</span><span>}
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl</span><span>&lt;T&gt; Quarry&lt;T&gt; {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">ore</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self) -&gt; </span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>T {
+</span><span>        </span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self.ore
+</span><span>    }
+</span><span>}
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl</span><span>&lt;T: </span><span style="font-weight:bold;color:#a71d5d;">&#39;static +</span><span> Ore&gt; Miner </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Quarry&lt;T&gt; {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">type </span><span>Mine</span><span style="font-weight:bold;color:#a71d5d;">&lt;&#39;a&gt; = impl </span><span>Ore;
+</span><span>    fn mine(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self) -&gt; Self::Mine&lt;&#39;</span><span style="font-weight:bold;color:#a71d5d;">_</span><span>&gt; {
+</span><span>        self.</span><span style="color:#62a35c;">ore</span><span>().</span><span style="color:#62a35c;">clone</span><span>()
+</span><span>    }
+</span><span>}
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">main</span><span>() {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">let</span><span> quarry </span><span style="font-weight:bold;color:#a71d5d;">=</span><span> Quarry { ore: Bauxite };
+</span><span>    quarry.</span><span style="color:#62a35c;">mine</span><span>().</span><span style="color:#62a35c;">print</span><span>();
+</span><span>}
+</span></code></pre>
+<p>If you've written any async code using GATs and TAIT then you may find this kind of code eerily familiar. This prints <code>Bauxite</code> like we expect, but if we remove the <code>: Clone</code> supertrait from <code>Ore</code> (maybe during some refactoring) then it prints <code>Ore</code> instead. This issue isn't totally unique to TAIT though, it can also happen in stable Rust:</p>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">trait </span><span>Ore: Clone {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">print</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self);
+</span><span>}
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl</span><span>&lt;T: Ore&gt; Ore </span><span style="font-weight:bold;color:#a71d5d;">for &amp;</span><span>T {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">print</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self) { println!(</span><span style="color:#183691;">&quot;Ore&quot;</span><span>); }
+</span><span>}
+</span><span>
+</span><span>#[derive(Clone, Copy)]
+</span><span style="font-weight:bold;color:#a71d5d;">struct </span><span>Bauxite;
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl </span><span>Ore </span><span style="font-weight:bold;color:#a71d5d;">for </span><span>Bauxite {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">print</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self) { println!(</span><span style="color:#183691;">&quot;Bauxite&quot;</span><span>); }
+</span><span>}
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">struct </span><span>Quarry&lt;T&gt; {
+</span><span>    ore: T,
+</span><span>}
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">impl</span><span>&lt;T: Ore&gt; Quarry&lt;T&gt; {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">ore</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self) -&gt; </span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>T {
+</span><span>        </span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self.ore
+</span><span>    }
+</span><span>
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">mine</span><span>(</span><span style="font-weight:bold;color:#a71d5d;">&amp;</span><span>self) -&gt; impl Ore </span><span style="font-weight:bold;color:#a71d5d;">+ &#39;_ </span><span>{
+</span><span>        self.</span><span style="color:#62a35c;">ore</span><span>().</span><span style="color:#62a35c;">clone</span><span>()
+</span><span>    }
+</span><span>}
+</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">main</span><span>() {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">let</span><span> quarry </span><span style="font-weight:bold;color:#a71d5d;">=</span><span> Quarry { ore: Bauxite };
+</span><span>    quarry.</span><span style="color:#62a35c;">mine</span><span>().</span><span style="color:#62a35c;">print</span><span>();
+</span><span>}
+</span></code></pre>
+<p>In this case it's only for free functions, and you'd probably find the presence of <code>impl Ore + '_</code> a bit more suspicious. What TAIT does is allow this problem cross the trait boundary. Traits are no longer safe from this mistake because this is really a problem with return position <code>impl Trait</code> and TAIT enables return position <code>impl Trait</code> in traits.</p>
+</div>
+<div class="section navigation">
+    
+        Previous article: <a href="https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;anima-playground&#x2F;">Anima Playground</a>
+    
+    
+        Next article: <a href="https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;a-new-impl-trait-2&#x2F;">A new impl Trait 2/4</a>
+    
+</div>
+
+    <div class="section footer">
+        &copy; 2022 David Koloski
+        <a href="/atom.xml"><img width="16" height="16" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 455 455'%3E%3Cpath d='M0 0v455h455V0H0zm141.435 372.387c-7.656 7.59-18.047 12.219-29.614 12.219-11.555 0-21.945-4.646-29.549-12.219C74.681 364.801 70 354.462 70 342.961s4.681-21.875 12.272-29.483c7.621-7.569 17.994-12.237 29.549-12.237 11.567 0 21.958 4.668 29.579 12.254 7.621 7.621 12.272 17.964 12.307 29.466-.035 11.501-4.686 21.822-12.272 29.426zM217.468 385s0-.101-.017-.101c-.066-39.41-15.431-76.597-43.221-104.352-27.786-27.838-64.925-43.256-104.195-43.291v-60.139c57.299.035 109.169 23.327 146.833 61.014 37.651 37.682 60.944 89.565 60.996 146.869h-60.396zm107.24 0c-.105-140.495-114.196-254.774-254.572-254.879V70c86.817.035 165.432 35.359 222.495 92.422C349.659 219.485 384.965 298.165 385 385h-60.292z' fill-rule='evenodd' fill='%23fff'/%3E%3C/svg%3E"></a>
+    </div>
+</body>
+</html>

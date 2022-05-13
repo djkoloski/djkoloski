@@ -28,7 +28,7 @@
 
     <title>
         
-            Abstract Types in Rust 4
+            A new impl Trait 4&#x2F;4
         
     </title>
 </head>
@@ -57,21 +57,15 @@
     </div>
     
 <div class="section title">
-    Abstract Types in Rust 4
+    A new impl Trait 4/4
     <div class="subtitle">
-        Cutting the gordian <code>impl Trait</code>
+        The end of <code>impl Trait</code>?
     </div>
     <div class="subtitle">
-        Mar  2, 2022 &ndash; 9 min read
+        May 13, 2022 &ndash; 8 min read
     </div>
 </div>
 <div class="section taxonomies">
-    
-    <div class="categories">
-        
-            <a href="https://davidkoloski.me/categories/rust/">Rust</a>
-        
-    </div>
     
     <div class="tags">
         
@@ -79,30 +73,34 @@
         
     </div>
     
+    <div class="categories">
+        
+            <a href="https://davidkoloski.me/categories/rust/">Rust</a>
+        
+    </div>
+    
 </div>
 <div class="section content">
-    <h2>This post is not ready to share yet</h2>
-<p>This post is still undergoing review and critique. If you're here by chance or follow the <a href="/atom.xml">RSS feed</a>, please do not share this post yet. It will be ready soon!</p>
-<h2 id="the-right-frame-of-mind">The right frame of mind</h2>
-<p>This post is the culmination of the previous three posts, which discussed the <a href="https://davidkoloski.me/blog/abstract-types-in-rust-1/">nature of <code>impl Trait</code></a>, <a href="https://davidkoloski.me/blog/abstract-types-in-rust-2/">how to improve it</a>, and <a href="https://davidkoloski.me/blog/abstract-types-in-rust-3/">prior work on <code>impl Trait</code></a>. Finally, I will give my formal recommendation on a path forward for <code>impl Trait</code>.</p>
+    <h2 id="the-end">The end</h2>
+<p>This post is the culmination of the previous three posts, which discussed the <a href="https://davidkoloski.me/blog/a-new-impl-trait-1/">nature of <code>impl Trait</code></a>, <a href="https://davidkoloski.me/blog/a-new-impl-trait-2/">how to improve it</a>, and <a href="https://davidkoloski.me/blog/a-new-impl-trait-3/">prior work on <code>impl Trait</code></a>. This is my final recommendation on a path forward for <code>impl Trait</code>.</p>
 <h3 id="recap">Recap</h3>
-<p>As a quick recap, I suggest introducing a new <code>as impl Trait</code> language feature that abstracts types in general. Augmented with named unnameable types, this change would enable all existing functionality while making code clearer and more orthogonal.</p>
+<p>As a quick recap, I suggest introducing a new <code>as impl Trait</code> language feature that abstracts types in general. Augmented with either named unnameable types or expanded type inference, this change would enable all existing functionality while making code clearer and more orthogonal.</p>
 <h2 id="stepping-stones">Stepping stones</h2>
 <p>We've been breezing through many different examples and suggestions without really consolidating our knowledge. Let's take some time to build up some higher-level facts that we can use to inform our final analysis.</p>
 <h3 id="the-lesser-of-two-evils">The lesser of two evils</h3>
-<p>In this case, the two evils are <strong>type inference</strong> and <strong>named unnameable types</strong>. In order for <code>impl Trait</code> to function, we must choose one of these. Note that since we already have <code>impl Trait</code>, we have already chosen one of these (type inference). Having worked through some of the consequences, I do not pretend to know which would be cleaner, clearer, and most in line with Rust design goals. Let's consult a motivating example:</p>
-<p>I would like to have some function <code>a</code> return a closure that yields some given value. Then, I would like to have some function <code>b</code> call <code>a</code> with a predefined value and return the same type. <code>a</code>'s return type must either be <em>inferred</em> or <em>named</em>.</p>
+<p>In this case, the two evils are <strong>type inference</strong> and <strong>named unnameable types</strong>. In order for <code>as impl Trait</code> to function, we must choose one of these. Note that we have already chosen one of these (type inference) with <code>impl Trait</code>. Having worked through some of the consequences, I do not pretend to know which would be cleaner, clearer, and most in line with Rust design goals. Let's consult a motivating example:</p>
+<p>I would like to have some function <code>foo</code> return a closure that yields some given value. Then, I would like to have some function <code>bar</code> call <code>foo</code> with a predefined value and return the same type. <code>foo</code>'s return type must either be <em>inferred</em> or <em>named</em>.</p>
 <h4 id="inferred">Inferred</h4>
-<p>If <code>a</code>'s return type is inferred, then <code>b</code> must either:</p>
+<p>If <code>foo</code>'s return type is inferred, then <code>bar</code> must either:</p>
 <ul>
-<li>Refer to <code>a</code> to name its return type (i.e. <code>fn b() -&gt; &lt;a as Fn&lt;(T,)&gt;&gt;::Output</code>)</li>
-<li>Infer it from its body (i.e. <code>fn b() -&gt; _</code>)</li>
+<li>Refer to <code>foo</code> to name its return type (i.e. <code>fn bar() -&gt; &lt;foo as Fn&lt;(T,)&gt;&gt;::Output</code>)</li>
+<li>Infer it from its body (i.e. <code>fn bar() -&gt; _ { foo() }</code>)</li>
 </ul>
-<p>A type alias doesn't change the situation here, as it would also either state <code>type Output = &lt;a as Fn(T)&gt;::Output</code> or <code>type Output = _</code>.</p>
-<p>In the case of inference, we end up long-range type inference and spooky action at a distance. This proposal has the additional downside that it opens the door for inference to be used in places where it's not strictly necessary. This could lead to further confusion and would render the feature more harm than good.</p>
-<p>In the case of function outputs, we end up with <code>a</code> only performing local inference which is arguably better. However, we suffer from the explicit function output signature, especially when we want to change the definition of <code>a</code>. Modifying its arguments would require modifying the type signature of <code>b</code> (or equivalently, the signature of the type alias) even when the return type has not changed. It makes maintenance more difficult at the same time as making discoverability more difficult.</p>
+<p>A type alias doesn't change the situation here, as it would also either state <code>type Output = &lt;foo as Fn(T)&gt;::Output</code> or <code>type Output = _</code>.</p>
+<p>In the case of inference, we end up long-range type inference and spooky action at a distance. This has the additional downside that it opens the door for inference to be used in places where it's not strictly necessary. This could lead to further confusion and, in my opinion, would render the feature more harm than good.</p>
+<p>In the case of function outputs, we end up with <code>foo</code> only performing local inference which is considerably better. However, we suffer from the explicit function output signature, especially when we want to change the definition of <code>foo</code>. Modifying its arguments would require modifying the type signature of <code>bar</code> (or equivalently, the signature of the type alias) even when the return type has not changed. It makes maintenance more difficult at the same time as making discoverability more difficult.</p>
 <h4 id="named">Named</h4>
-<p>If we can name <code>a</code>'s return type, then <code>b</code> can just refer to that:</p>
+<p>If we can name <code>foo</code>'s return type, then <code>bar</code> can reuse that:</p>
 <pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">a</span><span>&lt;T&gt;(value: T) -&gt; type </span><span style="font-weight:bold;color:#a71d5d;">&#39;Closure</span><span>&lt;T&gt; {</span><span>
 </span><span>    </span><span style="font-weight:bold;color:#a71d5d;">&#39;Closure&lt;</span><span>T</span><span style="font-weight:bold;color:#a71d5d;">&gt;</span><span>: </span><span style="font-weight:bold;color:#a71d5d;">move ||</span><span> value</span><span>
 </span><span>}</span><span>
@@ -111,10 +109,10 @@
 </span><span>    </span><span style="color:#62a35c;">a</span><span>(</span><span style="color:#0086b3;">42</span><span>)</span><span>
 </span><span>}</span><span>
 </span></code></pre>
-<p>This opens up new possibilities with closures, and extends nicely to async blocks which are the other main unnameable type. This also alleviates a major problem with naming these types, which was previously done by creating a type alias and using inference to achieve the same result.</p>
-<p>The obvious downside is that this breaks encapsulation. This is not to be taken lightly, and I don't intend to take it so. There are also some very thorny questions regarding generics for closures that depend on type arguments. As a result, making such a change must not be required for <code>as impl Trait</code> and should be kept as a separable clause.</p>
-<h3 id="how-opaque-are-abstract-types">How opaque are abstract types?</h3>
-<p>With a new syntax <code>as impl Trait</code> to perform type abstraction, we need to figure out some fundamental questions:</p>
+<p>This opens up new possibilities with closures, and extends nicely to async blocks which are the other main unnameable type. It also alleviates a major problem with naming these types, which was previously done by creating a type alias and using inference to achieve the same result.</p>
+<p>The obvious downside is that this breaks encapsulation. There are also some very thorny questions regarding generics for closures that depend on type arguments. As a result, I recommend making this change a separate issue for <code>as impl Trait</code>. In the meantime, we could allow the old-style <code>impl Trait</code> wherever we would write <code>_ as impl Trait</code> or <code>type 'Closure as impl Trait</code>.</p>
+<h3 id="finer-details">Finer details</h3>
+<p>With a new syntax <code>as impl Trait</code> to perform type abstraction, we must decide:</p>
 <h4 id="are-all-i32-as-impl-debug-the-same-type">Are all <code>i32 as impl Debug</code> the same type?</h4>
 <p>As an example:</p>
 <pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">a</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">i32</span><span> as impl Debug {</span><span>
@@ -125,7 +123,7 @@
 </span><span>    </span><span style="color:#0086b3;">10</span><span>
 </span><span>}</span><span>
 </span></code></pre>
-<p>Could we compare <code>a() == b()</code>? Or after stating <code>let mut x = a()</code> set <code>x = b()</code>? These run contrary to the idea that <code>as impl Trait</code> creates a new type that only exposes a minimum of traits and information, so the answer here must be <em>no</em>. This leads naturally to the idea of <code>as impl Debug</code> as the desugaring site for abstraction itself:</p>
+<p>Could we do <code>let mut x = a()</code> and then <code>x = b()</code>? These run contrary to the idea that <code>as impl Trait</code> creates a new type that only exposes a minimum of traits and information, so the answer here must be <em>no</em>. This leads naturally to the idea of <code>as impl Debug</code> as the desugaring site for abstraction itself:</p>
 <pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">struct </span><span>A&lt;T: Debug&gt;(T);</span><span>
 </span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">a</span><span>() -&gt; A&lt;</span><span style="font-weight:bold;color:#a71d5d;">i32</span><span>&gt; {</span><span>
 </span><span>    A(</span><span style="color:#0086b3;">42</span><span>)</span><span>
@@ -170,18 +168,15 @@
 <p>Because <code>b</code> must return the same type as <code>a</code>, it needs some way to return to <code>a</code>'s return type. The most commonly suggested way to do this is to use <code>Fn</code> traits:</p>
 <pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">b</span><span>() -&gt; &lt;a </span><span style="font-weight:bold;color:#a71d5d;">as </span><span style="color:#0086b3;">Fn</span><span>&lt;()&gt;&gt;::Output { </span><span style="color:#62a35c;">a</span><span>() }</span><span>
 </span></code></pre>
-<p>Which works, but suffers from the verbosity of the syntax. This is a problem already discussed as a feature of a type-inferent solution to <code>impl Trait</code>, so this example may motivate that as a more complete approach.</p>
-<h2 id="final-proposal">Final proposal</h2>
-<p>Alright, with all that out of the way I can finally get around to my final recommendations. First, I'll talk about the theoretical ideal and where I think we could be at the end of the road. Second, I'll discuss how that will never happen and where we should set our expectations and exert our effort instead.</p>
-<h3 id="the-zealot-s-guide-to-impl-trait">The zealot's guide to <code>impl Trait</code></h3>
-<p>This is a maximally-offensive revision of <code>impl Trait</code>. This is where the evidence leads but implementing it would be insanely destructive. I recommend that we look to this for guidance but do not actually do this.</p>
-<p>I believe that return position <code>impl Trait</code> should be deprecated entirely in favor of <code>as impl Trait</code>. Additionally, some way of naming the return value of a function should be settled on or <code>as impl Trait</code> should be banned in return position. This would effectively relegate it to syntax sugar for creating abstracted types, which is sufficiently simple. Remember that the <code>?</code> operator was a huge quality of life improvement and yet is relatively simple syntax sugar.</p>
-<p>We must choose between inferring and explicit solutions to naming types, and they both have their pros and cons. Local inference could be used, but it will still require naming function return values. Any longer-range inference will just propagate type inference problems further. Explicitly naming unnameable types requires exotic syntax and may cause more problems than it solves by raising questions about syntax.</p>
-<p><code>impl Trait</code> in argument position would be acceptable to keep, as its sugar is sufficiently simple and its purpose is orthogonal to other language features. I would be in support of removing it entirely to keep the language clean if others preferred that.</p>
-<h3 id="the-engineer-s-guide-to-impl-trait">The engineer's guide to <code>impl Trait</code></h3>
-<p>Now that that's out of our system, we can get down to business. We have some fundamentally conflicting and overlapping systems that we need to reconcile.</p>
-<p>Because <code>as impl Trait</code> provides the functionality of type abstraction, we can now desugar <code>impl Trait</code> in return position to <code>_ as impl Trait</code> and allow the compiler to infer the concrete return type. This requires local inference, but we already had this and we're continuing to abstract the concrete type so this should all be above-board.</p>
-<p>We may either allow <code>impl Trait</code> to desugar to <code>_ as impl Trait</code> and allow for nonlocal inference when used in type aliases (TAIT), or we may ban type inference for nameable types. I think that either outcome is acceptable and perhaps a lint for nameable inferred abstracted types would be the best path:</p>
+<p>Which works, but suffers from the verbosity of the syntax. This is a problem already discussed with type inference.</p>
+<h2 id="in-practice">In practice</h2>
+<p>Now that we have the groundwork laid, we can make some engineering decisions:</p>
+<h3 id="the-ultimate-goal">The ultimate goal</h3>
+<p>I believe that return position <code>impl Trait</code> should be deprecated in favor of <code>as impl Trait</code>. Additionally, we must either stabilize naming the return value of a function (e.g. <code>&lt;foo as Fn()&gt;::Output</code>) or ban <code>as impl Trait</code> in return position. It would still be legal in type alises, which would effectively relegate it to syntax sugar for creating abstracted types. That's not necessarily a bad thing; remember that the <code>?</code> operator was a huge quality of life improvement and yet is relatively simple syntax sugar.</p>
+<p>The major fork in the road is that we must choose between type inference and explicit naming for unnameable types. They both have their pros and cons, and inference could be restricted to a local context if used with named function return values. I believe that any longer-range type inference (e.g. TAIT) is likely to cause more problems than it solves. Explicitly naming unnameable types requires some exotic syntax and may also cause more problems than it solves.</p>
+<p>I think it would be acceptable to keep <code>impl Trait</code> in argument position since its sugar is sufficiently simple and its purpose is orthogonal to other features. However, I would be in support of removing it entirely to keep the language consistent and clean if others preferred that.</p>
+<h3 id="the-way-there">The way there</h3>
+<p>On our way there, we can lint and suggest replacing <code>impl Trait</code> with a concrete <code>T as impl Trait</code>:</p>
 <pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">type </span><span>Output </span><span style="font-weight:bold;color:#a71d5d;">= impl </span><span>Debug;</span><span>
 </span><span style="font-style:italic;color:#969896;">//            ^^^^^^^^^^</span><span>
 </span><span style="font-style:italic;color:#969896;">// WARNING: Output is nameable type `i32` and should be declared as:</span><span>
@@ -208,24 +203,17 @@
 </span><span>    </span><span style="font-weight:bold;color:#a71d5d;">|| </span><span style="color:#0086b3;">42</span><span>
 </span><span>}</span><span>
 </span></code></pre>
-<p>And finally, we must wait for consensus to be built for one of the naming candidates before we can have unabstracted unnameable types. It's sad, but it's reality and we have to acknowledge it.</p>
-<p>A primary benefit of this proposal is that if we do come to a consensus on how to name unnameable types, we can very easily deprecate <code>impl Trait</code> completely. That would allow us to complete the transition and resolve many longstanding issues related to <code>impl Trait</code>.</p>
-<h4 id="naming-options">Naming options</h4>
-<p>The options I suggest for naming unnameable types are, in order from least to most radical:</p>
-<ol>
-<li><strong>Local return type inference plus <code>Fn</code> traits</strong>: I think the syntax is not great but tolerable.</li>
-<li><strong>Named unnameable types</strong>: Potentially complex but much cleaner than LRTI + <code>Fn</code> traits.</li>
-<li><strong>Nonlocal type inference</strong>: I think this brings so much baggage along with it that it will immediately stall out and fail. Death by a thousand RFC comments.</li>
-</ol>
-<p>I hope for #2 but realistically predict #1 if any of these succeed.</p>
+<p>I see this as very similar to the change from <code>Trait</code> to <code>dyn Trait</code>, so many of the same strategies are likely to work here as well.</p>
+<p>The largest obstacle for <code>as impl Trait</code> will be building consensus for either type inference or named unnameables. Because this space is still up in the air, I think a discussion of <code>as impl Trait</code> would be good to keep separate. When we do come to a consensus on how to resolve this issue, we can deprecate <code>impl Trait</code> completely. That would allow us to complete the transition and resolve many longstanding issues related to <code>impl Trait</code>.</p>
 <h2 id="conclusion">Conclusion</h2>
-<p>Whew, that was a lot of work. Hopefully I've gotten some gears turning and thoughts running. Let's have some lively debate about <code>impl Trait</code> and see if we can make Rust a better language for everyone.</p>
-<p>Thanks to <a href="https://github.com/computerdruid">@computerdruid</a> and <a href="https://github.com/tmandry">@tmandry</a> in particular for reviewing this series of posts and helping me sharpen and deepen my understanding of <code>impl Trait</code>. I couldn't have done it without the help!</p>
+<p>Whew, that was a lot of work. Hopefully I've inspired some new ideas and thoughts about <code>impl Trait</code>. Let's have some lively debate about it and see if we can make Rust a better language for everyone.</p>
+<h3 id="thanks">Thanks</h3>
+<p>Thanks to <a href="https://github.com/computerdruid">@computerdruid</a> and <a href="https://github.com/tmandry">@tmandry</a> in particular for reviewing this series of posts and helping me hone my understanding of <code>impl Trait</code>.</p>
 
 </div>
 <div class="section navigation">
     
-        Previous article: <a href="https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;abstract-types-in-rust-3&#x2F;">Abstract Types in Rust 3</a>
+        Previous article: <a href="https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;a-new-impl-trait-3&#x2F;">A new impl Trait 3/4</a>
     
     
 </div>
