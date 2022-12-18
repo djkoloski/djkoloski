@@ -2,19 +2,19 @@
 <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
 	<title>David Koloski</title>
 	<subtitle>Software Engineer, Game Designer, Web Developer</subtitle>
-	<link href="https://davidkoloski.me/atom.xml" rel="self" type="application/atom+xml"/>
-  <link href="https://davidkoloski.me"/>
+	<link href="https://david.kolo.ski/atom.xml" rel="self" type="application/atom+xml"/>
+  <link href="https://david.kolo.ski"/>
 	<generator uri="https://www.getzola.org/">Zola</generator>
 	<updated>2022-05-13T00:00:00+00:00</updated>
-	<id>https://davidkoloski.me/atom.xml</id>
+	<id>https://david.kolo.ski/atom.xml</id>
 	<entry xml:lang="en">
 		<title>A new impl Trait 4&#x2F;4</title>
 		<published>2022-05-13T00:00:00+00:00</published>
 		<updated>2022-05-13T00:00:00+00:00</updated>
-		<link href="https://davidkoloski.me/blog/a-new-impl-trait-4/" type="text/html"/>
-		<id>https://davidkoloski.me/blog/a-new-impl-trait-4/</id>
+		<link href="https://david.kolo.ski/blog/a-new-impl-trait-4/" type="text/html"/>
+		<id>https://david.kolo.ski/blog/a-new-impl-trait-4/</id>
 		<content type="html">&lt;h2 id=&quot;the-end&quot;&gt;The end&lt;&#x2F;h2&gt;
-&lt;p&gt;This post is the culmination of the previous three posts, which discussed the &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;a-new-impl-trait-1&#x2F;&quot;&gt;nature of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;&lt;&#x2F;a&gt;, &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;a-new-impl-trait-2&#x2F;&quot;&gt;how to improve it&lt;&#x2F;a&gt;, and &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;a-new-impl-trait-3&#x2F;&quot;&gt;prior work on &lt;code&gt;impl Trait&lt;&#x2F;code&gt;&lt;&#x2F;a&gt;. This is my final recommendation on a path forward for &lt;code&gt;impl Trait&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
+&lt;p&gt;This post is the culmination of the previous three posts, which discussed the &lt;a href=&quot;https:&#x2F;&#x2F;david.kolo.ski&#x2F;blog&#x2F;a-new-impl-trait-1&#x2F;&quot;&gt;nature of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;&lt;&#x2F;a&gt;, &lt;a href=&quot;https:&#x2F;&#x2F;david.kolo.ski&#x2F;blog&#x2F;a-new-impl-trait-2&#x2F;&quot;&gt;how to improve it&lt;&#x2F;a&gt;, and &lt;a href=&quot;https:&#x2F;&#x2F;david.kolo.ski&#x2F;blog&#x2F;a-new-impl-trait-3&#x2F;&quot;&gt;prior work on &lt;code&gt;impl Trait&lt;&#x2F;code&gt;&lt;&#x2F;a&gt;. This is my final recommendation on a path forward for &lt;code&gt;impl Trait&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
 &lt;h3 id=&quot;recap&quot;&gt;Recap&lt;&#x2F;h3&gt;
 &lt;p&gt;As a quick recap, I suggest introducing a new &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; language feature that abstracts types in general. Augmented with either named unnameable types or expanded type inference, this change would enable all existing functionality while making code clearer and more orthogonal.&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;stepping-stones&quot;&gt;Stepping stones&lt;&#x2F;h2&gt;
@@ -37,7 +37,7 @@
 &lt;li&gt;Or, refer to &lt;code&gt;foo&lt;&#x2F;code&gt; to name its return type (i.e. &lt;code&gt;fn bar() -&amp;gt; &amp;lt;foo as Fn&amp;lt;(T,)&amp;gt;&amp;gt;::Output&lt;&#x2F;code&gt;)&lt;&#x2F;li&gt;
 &lt;&#x2F;ul&gt;
 &lt;p&gt;A type alias doesn&#x27;t change the situation here, as it would also either state &lt;code&gt;type Output = &amp;lt;foo as Fn(T)&amp;gt;::Output&lt;&#x2F;code&gt; or &lt;code&gt;type Output = _&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
-&lt;p&gt;If we infer the return type of &lt;code&gt;bar&lt;&#x2F;code&gt; from its body, we end up long-range type inference and spooky action at a distance. This has the additional downside that it opens the door for inference to be used in places where it&#x27;s not strictly necessary. This could lead to further confusion and, in my opinion, would render the feature more harm than good.&lt;&#x2F;p&gt;
+&lt;p&gt;If we infer the return type of &lt;code&gt;bar&lt;&#x2F;code&gt; from its body, we end up long-range type inference and spooky action at a distance. This has the additional downside that it opens the door for inference to be used in places where it&#x27;s not strictly necessary. This could lead to further confusion and, in my opinion, would render the feature more harmful than helpful.&lt;&#x2F;p&gt;
 &lt;p&gt;If we refer to &lt;code&gt;foo&lt;&#x2F;code&gt; to name &lt;code&gt;bar&lt;&#x2F;code&gt;&#x27;s return type, we end up with &lt;code&gt;foo&lt;&#x2F;code&gt; only performing local inference which is arguably better. However, we suffer from the explicit function output signature, especially when we want to change the definition of &lt;code&gt;foo&lt;&#x2F;code&gt;. Modifying its arguments would require modifying the type signature of &lt;code&gt;bar&lt;&#x2F;code&gt; (or equivalently, the signature of the type alias) even when the return type has not changed. It makes maintenance more difficult at the same time as making discoverability more difficult.&lt;&#x2F;p&gt;
 &lt;h4 id=&quot;named&quot;&gt;Named&lt;&#x2F;h4&gt;
 &lt;p&gt;If we can name &lt;code&gt;foo&lt;&#x2F;code&gt;&#x27;s return type, then &lt;code&gt;bar&lt;&#x2F;code&gt; can reuse that:&lt;&#x2F;p&gt;
@@ -158,9 +158,9 @@
 		<title>A new impl Trait 3&#x2F;4</title>
 		<published>2022-05-12T00:00:00+00:00</published>
 		<updated>2022-05-12T00:00:00+00:00</updated>
-		<link href="https://davidkoloski.me/blog/a-new-impl-trait-3/" type="text/html"/>
-		<id>https://davidkoloski.me/blog/a-new-impl-trait-3/</id>
-		<content type="html">&lt;p&gt;If you&#x27;re not interested in reading about the prior work done on &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, feel free to skip ahead to &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;a-new-impl-trait-4&#x2F;&quot;&gt;the fourth and final post&lt;&#x2F;a&gt;.&lt;&#x2F;p&gt;
+		<link href="https://david.kolo.ski/blog/a-new-impl-trait-3/" type="text/html"/>
+		<id>https://david.kolo.ski/blog/a-new-impl-trait-3/</id>
+		<content type="html">&lt;p&gt;If you&#x27;re not interested in reading about the prior work done on &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, feel free to skip ahead to &lt;a href=&quot;https:&#x2F;&#x2F;david.kolo.ski&#x2F;blog&#x2F;a-new-impl-trait-4&#x2F;&quot;&gt;the fourth and final post&lt;&#x2F;a&gt;.&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;prior-work&quot;&gt;Prior work&lt;&#x2F;h2&gt;
 &lt;p&gt;The concepts behind &lt;code&gt;impl Trait&lt;&#x2F;code&gt; have been around for a surprisingly long time. I&#x27;ve done my best to collect relevant RFCs, successful and failed, review them and compare them to my proposal. There are five RFCs that are directly relevant to &lt;code&gt;impl Trait&lt;&#x2F;code&gt; and type abstraction. Let&#x27;s go in chronological order.&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;the-original-impl-trait&quot;&gt;The original &lt;code&gt;impl Trait&lt;&#x2F;code&gt;&lt;&#x2F;h2&gt;
@@ -233,17 +233,17 @@
 &lt;p&gt;Finally, &lt;a href=&quot;https:&#x2F;&#x2F;rust-lang.github.io&#x2F;rfcs&#x2F;2515-type_alias_impl_trait.html&quot;&gt;this RFC&lt;&#x2F;a&gt; is nice and light. It simply builds on the existential types RFC by explicitly setting the syntax to use &lt;code&gt;impl Trait&lt;&#x2F;code&gt;. There is a lot of language lawyering and nailing down the very specific semantics, and it does a good job of explaining why additional syntax hinders learnability and results in confusion. We&#x27;ve already discussed the pros and cons of this RFC extensively, and I think we can do better.&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;conclusion-1&quot;&gt;Conclusion&lt;&#x2F;h2&gt;
 &lt;p&gt;&lt;code&gt;impl Trait&lt;&#x2F;code&gt; has taken a long journey to reach where it is now. Along the way there has been great ambition, as well as great confusion. I understand that there are very strong convictions on both sides, and I hope that we can use this as an opportunity to finally resolve them.&lt;&#x2F;p&gt;
-&lt;p&gt;In my &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;a-new-impl-trait-4&#x2F;&quot;&gt;final post&lt;&#x2F;a&gt;, I hope to bring the past three posts together into a coherent framework and provide a final recommendation on what should be done with &lt;code&gt;impl Trait&lt;&#x2F;code&gt;. If you&#x27;ve made it this far, I appreciate it a lot and hope you can hang on for just a little while longer.&lt;&#x2F;p&gt;
+&lt;p&gt;In my &lt;a href=&quot;https:&#x2F;&#x2F;david.kolo.ski&#x2F;blog&#x2F;a-new-impl-trait-4&#x2F;&quot;&gt;final post&lt;&#x2F;a&gt;, I hope to bring the past three posts together into a coherent framework and provide a final recommendation on what should be done with &lt;code&gt;impl Trait&lt;&#x2F;code&gt;. If you&#x27;ve made it this far, I appreciate it a lot and hope you can hang on for just a little while longer.&lt;&#x2F;p&gt;
 </content>
 	</entry>
 	<entry xml:lang="en">
 		<title>A new impl Trait 2&#x2F;4</title>
 		<published>2022-05-11T00:00:00+00:00</published>
 		<updated>2022-05-11T00:00:00+00:00</updated>
-		<link href="https://davidkoloski.me/blog/a-new-impl-trait-2/" type="text/html"/>
-		<id>https://davidkoloski.me/blog/a-new-impl-trait-2/</id>
+		<link href="https://david.kolo.ski/blog/a-new-impl-trait-2/" type="text/html"/>
+		<id>https://david.kolo.ski/blog/a-new-impl-trait-2/</id>
 		<content type="html">&lt;h2 id=&quot;where-we-left-off&quot;&gt;Where we left off&lt;&#x2F;h2&gt;
-&lt;p&gt;In part 1, we explored some possibilities for desugaring &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position. In this post, I will explore these possibilities more fully and try to discover the logical implications of them. If you&#x27;re feeling goal-oriented, you can skip to &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;a-new-impl-trait-3&#x2F;&quot;&gt;the next post&lt;&#x2F;a&gt; where I discuss prior art and compare my proposal against it.&lt;&#x2F;p&gt;
+&lt;p&gt;In part 1, we explored some possibilities for desugaring &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position. In this post, I will explore these possibilities more fully and try to discover the logical implications of them. If you&#x27;re feeling goal-oriented, you can skip to &lt;a href=&quot;https:&#x2F;&#x2F;david.kolo.ski&#x2F;blog&#x2F;a-new-impl-trait-3&#x2F;&quot;&gt;the next post&lt;&#x2F;a&gt; where I discuss prior art and compare my proposal against it.&lt;&#x2F;p&gt;
 &lt;p&gt;Let&#x27;s start far away from desugarings; we&#x27;ll wander back there soon enough. For the time being, we&#x27;ll also use standard desugarings for &lt;code&gt;impl Trait&lt;&#x2F;code&gt;. To start, let&#x27;s talk about...&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;abstract-return-types&quot;&gt;Abstract return types&lt;&#x2F;h2&gt;
 &lt;p&gt;I&#x27;ve got some odd code. Let&#x27;s take a look:&lt;&#x2F;p&gt;
@@ -309,8 +309,8 @@
 &lt;p&gt;Some of these cases could be mitigated by linting. Places where type inference is used in return position, but the return type can be named. That would keep &lt;code&gt;impl Trait&lt;&#x2F;code&gt; just for cases where we want to abstract the return type and type inference just for cases where we can&#x27;t name the type.&lt;&#x2F;p&gt;
 &lt;p&gt;Before we put these ideas together into a coherent proposal, I&#x27;d like to address some solutions we already have:&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;rpitit-and-tait&quot;&gt;RPITIT and TAIT&lt;&#x2F;h2&gt;
-&lt;p&gt;In the &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;a-new-impl-trait-1&#x2F;&quot;&gt;last post&lt;&#x2F;a&gt;, we looked at &amp;quot;Return position &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in traits&amp;quot; (RPITIT) and &amp;quot;Type alias &lt;code&gt;impl Trait&lt;&#x2F;code&gt;&amp;quot; (TAIT). To be clear, I don&#x27;t think either of these proposals are bad. I just think they miss the mark, and it&#x27;s not their fault. Here&#x27;s why:&lt;&#x2F;p&gt;
-&lt;p&gt;When we desugar return position &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, it gets hidden in a wrapper type and that &lt;em&gt;type&lt;&#x2F;em&gt; is abstract. In fact, that type is &lt;em&gt;an abstraction&lt;&#x2F;em&gt; over the concrete type. I argue that we&#x27;re missing that extra informaiton, and that is leading us down the path of type inference. Instead of declaring our type aliases and leveraging those for inference, we instead have to declare our alias and then be painfully specific everywhere that we use it:&lt;&#x2F;p&gt;
+&lt;p&gt;In the &lt;a href=&quot;https:&#x2F;&#x2F;david.kolo.ski&#x2F;blog&#x2F;a-new-impl-trait-1&#x2F;&quot;&gt;last post&lt;&#x2F;a&gt;, we looked at &amp;quot;Return position &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in traits&amp;quot; (RPITIT) and &amp;quot;Type alias &lt;code&gt;impl Trait&lt;&#x2F;code&gt;&amp;quot; (TAIT). To be clear, I don&#x27;t think either of these proposals are bad. I just think they miss the mark, and it&#x27;s not their fault. Here&#x27;s why:&lt;&#x2F;p&gt;
+&lt;p&gt;When we desugar return position &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, it gets hidden in a wrapper type and that &lt;em&gt;type&lt;&#x2F;em&gt; is abstract. In fact, that type is &lt;em&gt;an abstraction&lt;&#x2F;em&gt; over the concrete type. I argue that we&#x27;re missing that extra information, and that is leading us down the path of type inference. Instead of declaring our type aliases and leveraging those for inference, we instead have to declare our alias and then be painfully specific everywhere that we use it:&lt;&#x2F;p&gt;
 &lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span&gt;#![feature(type_alias_impl_trait)]&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;use &lt;&#x2F;span&gt;&lt;span&gt;::core::{fmt::Debug, ptr::null};&lt;&#x2F;span&gt;&lt;span&gt;
@@ -325,14 +325,14 @@
 &lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;null&lt;&#x2F;span&gt;&lt;span&gt;()&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;p&gt;If you thought that this would compile, I don&#x27;t blame you! We should have all the information we need to deduce that &lt;code&gt;Integer&lt;&#x2F;code&gt; is an abstract pointer to an &lt;code&gt;i32&lt;&#x2F;code&gt;. However, that&#x27;s not what we get:&lt;&#x2F;p&gt;
+&lt;p&gt;If you thought that this would compile, I don&#x27;t blame you! We should have all the information we need to deduce that &lt;code&gt;Handle&lt;&#x2F;code&gt; is an abstract pointer to an &lt;code&gt;i32&lt;&#x2F;code&gt;. However, that&#x27;s not what we get:&lt;&#x2F;p&gt;
 &lt;pre style=&quot;background-color:#ffffff;color:#323232;&quot;&gt;&lt;code&gt;&lt;span&gt;error[E0282]: type annotations needed&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;  --&amp;gt; src&#x2F;lib.rs:12:5&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;   |&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;12 |     null()&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;   |     ^^^^ cannot infer type for type parameter `T` declared on the function `null`&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;p&gt;This is because we&#x27;re inferring the type of &lt;code&gt;Integer&lt;&#x2F;code&gt;, and we don&#x27;t want to accidentally infer the wrong type in a situation where we&#x27;re &lt;em&gt;actually&lt;&#x2F;em&gt; confused. Compare this to a concrete type alias:&lt;&#x2F;p&gt;
+&lt;p&gt;This is because we&#x27;re inferring the type of &lt;code&gt;Handle&lt;&#x2F;code&gt;, and we don&#x27;t want to accidentally infer the wrong type in a situation where we&#x27;re &lt;em&gt;actually&lt;&#x2F;em&gt; confused. Compare this to a concrete type alias:&lt;&#x2F;p&gt;
 &lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span&gt;#![feature(type_alias_impl_trait)]&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;use &lt;&#x2F;span&gt;&lt;span&gt;::core::ptr::null;&lt;&#x2F;span&gt;&lt;span&gt;
@@ -444,229 +444,229 @@
 &lt;li&gt;&lt;code&gt;type &#x27;A&lt;&#x2F;code&gt; labels for unnameable types enable them to be returned concretely and abstracted cleanly. This is an alternative to type inference, but either will complement &lt;code&gt;as impl Trait&lt;&#x2F;code&gt; and get the job done.&lt;&#x2F;li&gt;
 &lt;&#x2F;ul&gt;
 &lt;p&gt;Neither of these ideas are new, they have been discussed and considered before. However, I think we now have the experience necessary to fix our past mistakes and a growing need for these more general tools.&lt;&#x2F;p&gt;
-&lt;p&gt;In the &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;a-new-impl-trait-3&#x2F;&quot;&gt;third post&lt;&#x2F;a&gt;, I&#x27;ll discuss existing proposals and prior art and compare my proposal against them.&lt;&#x2F;p&gt;
+&lt;p&gt;In the &lt;a href=&quot;https:&#x2F;&#x2F;david.kolo.ski&#x2F;blog&#x2F;a-new-impl-trait-3&#x2F;&quot;&gt;third post&lt;&#x2F;a&gt;, I&#x27;ll discuss existing proposals and prior art and compare my proposal against them.&lt;&#x2F;p&gt;
 </content>
 	</entry>
 	<entry xml:lang="en">
 		<title>A new impl Trait 1&#x2F;4</title>
 		<published>2022-05-10T00:00:00+00:00</published>
 		<updated>2022-05-10T00:00:00+00:00</updated>
-		<link href="https://davidkoloski.me/blog/a-new-impl-trait-1/" type="text/html"/>
-		<id>https://davidkoloski.me/blog/a-new-impl-trait-1/</id>
+		<link href="https://david.kolo.ski/blog/a-new-impl-trait-1/" type="text/html"/>
+		<id>https://david.kolo.ski/blog/a-new-impl-trait-1/</id>
 		<content type="html">&lt;h2 id=&quot;foreword&quot;&gt;Foreword&lt;&#x2F;h2&gt;
 &lt;p&gt;This series is both an explanation and criticism of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;. A large portion of this text is dedicated to explaining and understanding the properties of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, but it is not &lt;em&gt;solely&lt;&#x2F;em&gt; an explainer.&lt;&#x2F;p&gt;
 &lt;ul&gt;
-&lt;li&gt;If you&#x27;re already familiar with the properties and mechanics of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, you can skip to &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;a-new-impl-trait-2&#x2F;&quot;&gt;the next post&lt;&#x2F;a&gt;.&lt;&#x2F;li&gt;
-&lt;li&gt;If you want to read the past work done on &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, you can skip to &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;a-new-impl-trait-3&#x2F;&quot;&gt;the third post&lt;&#x2F;a&gt;.&lt;&#x2F;li&gt;
-&lt;li&gt;If you&#x27;re ready for the final proposal, you can skip to &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;a-new-impl-trait-4&#x2F;&quot;&gt;the fourth post&lt;&#x2F;a&gt;.&lt;&#x2F;li&gt;
+&lt;li&gt;If you&#x27;re already familiar with the properties and mechanics of &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, you can skip to &lt;a href=&quot;https:&#x2F;&#x2F;david.kolo.ski&#x2F;blog&#x2F;a-new-impl-trait-2&#x2F;&quot;&gt;the next post&lt;&#x2F;a&gt;.&lt;&#x2F;li&gt;
+&lt;li&gt;If you want to read the past work done on &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, you can skip to &lt;a href=&quot;https:&#x2F;&#x2F;david.kolo.ski&#x2F;blog&#x2F;a-new-impl-trait-3&#x2F;&quot;&gt;the third post&lt;&#x2F;a&gt;.&lt;&#x2F;li&gt;
+&lt;li&gt;If you&#x27;re ready for the final proposal, you can skip to &lt;a href=&quot;https:&#x2F;&#x2F;david.kolo.ski&#x2F;blog&#x2F;a-new-impl-trait-4&#x2F;&quot;&gt;the fourth post&lt;&#x2F;a&gt;.&lt;&#x2F;li&gt;
 &lt;&#x2F;ul&gt;
 &lt;p&gt;I believe that the current implementation of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; is confusing and non-orthogonal. I propose an alternative formulation of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; that is more intuitive, restores orthogonality to the feature, and enables more precise and flexible use of abstraction.&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;what-is-impl-trait&quot;&gt;What is &lt;code&gt;impl Trait&lt;&#x2F;code&gt;?&lt;&#x2F;h2&gt;
 &lt;p&gt;&lt;code&gt;impl Trait&lt;&#x2F;code&gt; is syntax sugar can be used in argument position or in return position. Let&#x27;s look at how it can be used and how it desugars to more fundamental Rust syntax.&lt;&#x2F;p&gt;
 &lt;h3 id=&quot;argument-position&quot;&gt;Argument position&lt;&#x2F;h3&gt;
 &lt;p&gt;When used in argument position, &lt;code&gt;impl Trait&lt;&#x2F;code&gt; is shorthand for a type that implements the requested traits. It takes a function like:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;log&lt;&#x2F;span&gt;&lt;span&gt;(x: impl Debug) {
-&lt;&#x2F;span&gt;&lt;span&gt;    dbg!(x);
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;log&lt;&#x2F;span&gt;&lt;span&gt;(x: impl Debug) {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    dbg!(x);&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;And desugars it to:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;log&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;X: Debug&amp;gt;(x: X) {
-&lt;&#x2F;span&gt;&lt;span&gt;    dbg!(x);
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;log&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;X: Debug&amp;gt;(x: X) {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    dbg!(x);&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;In argument position, each &lt;code&gt;impl Trait&lt;&#x2F;code&gt; is assumed to be a different, unique type. If we wanted to take &lt;em&gt;two&lt;&#x2F;em&gt; arguments of the same type, we couldn&#x27;t use &lt;code&gt;impl Trait&lt;&#x2F;code&gt; any more and would have to be more explicit. This doesn&#x27;t compile:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;pick&lt;&#x2F;span&gt;&lt;span&gt;(which: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;bool&lt;&#x2F;span&gt;&lt;span&gt;, x: impl Debug, y: impl Debug) -&amp;gt; impl Debug {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;if !&lt;&#x2F;span&gt;&lt;span&gt;which {
-&lt;&#x2F;span&gt;&lt;span&gt;        x
-&lt;&#x2F;span&gt;&lt;span&gt;    } &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;else &lt;&#x2F;span&gt;&lt;span&gt;{
-&lt;&#x2F;span&gt;&lt;span&gt;        y
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;pick&lt;&#x2F;span&gt;&lt;span&gt;(which: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;bool&lt;&#x2F;span&gt;&lt;span&gt;, x: impl Debug, y: impl Debug) -&amp;gt; impl Debug {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;if !&lt;&#x2F;span&gt;&lt;span&gt;which {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        x&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    } &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;else &lt;&#x2F;span&gt;&lt;span&gt;{&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        y&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;With this error:&lt;&#x2F;p&gt;
-&lt;pre style=&quot;background-color:#ffffff;color:#323232;&quot;&gt;&lt;code&gt;&lt;span&gt;error[E0308]: `if` and `else` have incompatible types
-&lt;&#x2F;span&gt;&lt;span&gt;= note:        expected type `impl Debug`
-&lt;&#x2F;span&gt;&lt;span&gt;        found type parameter `impl Debug`
-&lt;&#x2F;span&gt;&lt;span&gt;= note: a type parameter was expected, but a different one was found
+&lt;pre style=&quot;background-color:#ffffff;color:#323232;&quot;&gt;&lt;code&gt;&lt;span&gt;error[E0308]: `if` and `else` have incompatible types&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;= note:        expected type `impl Debug`&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        found type parameter `impl Debug`&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;= note: a type parameter was expected, but a different one was found&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;This is because &lt;code&gt;x&lt;&#x2F;code&gt;&#x27;s &lt;code&gt;impl Debug&lt;&#x2F;code&gt; could be a different concrete type from &lt;code&gt;y&lt;&#x2F;code&gt;&#x27;s &lt;code&gt;impl Debug&lt;&#x2F;code&gt;. &lt;code&gt;impl Trait&lt;&#x2F;code&gt; makes them appear to be the same type when they really aren&#x27;t. Instead, we write:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;pick&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Debug&amp;gt;(which: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;bool&lt;&#x2F;span&gt;&lt;span&gt;, x: T, y: T) -&amp;gt; T {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;...
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;pick&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Debug&amp;gt;(which: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;bool&lt;&#x2F;span&gt;&lt;span&gt;, x: T, y: T) -&amp;gt; T {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;...&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;Which tells the compiler that we expect two of the same type and will return that type. That&#x27;s easy enough, we just have to desugar it ourselves and give the compiler a little more information. Let&#x27;s move on.&lt;&#x2F;p&gt;
 &lt;h3 id=&quot;return-position&quot;&gt;Return position&lt;&#x2F;h3&gt;
 &lt;p&gt;When used in return position, &lt;code&gt;impl Traits&lt;&#x2F;code&gt; is &lt;em&gt;also&lt;&#x2F;em&gt; shorthand for a type that implements the requested traits. However, there&#x27;s a catch. It takes a function like this:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Debug {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Debug {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;And desugars it to something like this:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Target&amp;lt;T: Debug &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;+ &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#f5f5f5;font-weight:bold;color:#b52a1d;&quot;&gt;?&lt;&#x2F;span&gt;&lt;span&gt;Sized&amp;gt;(T);
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Target&amp;lt;T: Debug &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;+ &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#f5f5f5;font-weight:bold;color:#b52a1d;&quot;&gt;?&lt;&#x2F;span&gt;&lt;span&gt;Sized&amp;gt;(T);&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Debug &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;+ &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#f5f5f5;font-weight:bold;color:#b52a1d;&quot;&gt;?&lt;&#x2F;span&gt;&lt;span&gt;Sized&amp;gt; Debug for Target&amp;lt;T&amp;gt; {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;fmt&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self, f: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;mut &lt;&#x2F;span&gt;&lt;span&gt;Formatter&amp;lt;&amp;#39;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;_&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt;) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;Result&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;(), Error&amp;gt; {
-&lt;&#x2F;span&gt;&lt;span&gt;        self.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;0.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;fmt&lt;&#x2F;span&gt;&lt;span&gt;(f)
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Debug &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;+ &lt;&#x2F;span&gt;&lt;span style=&quot;background-color:#f5f5f5;font-weight:bold;color:#b52a1d;&quot;&gt;?&lt;&#x2F;span&gt;&lt;span&gt;Sized&amp;gt; Debug for Target&amp;lt;T&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;fmt&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self, f: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;mut &lt;&#x2F;span&gt;&lt;span&gt;Formatter&amp;lt;&amp;#39;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;_&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt;) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;Result&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;(), Error&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        self.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;0.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;fmt&lt;&#x2F;span&gt;&lt;span&gt;(f)&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; Target&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&amp;#39;static str&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt; {
-&lt;&#x2F;span&gt;&lt;span&gt;    Target(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;)
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;target&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; Target&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&amp;#39;static str&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    Target(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;)&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;This desugaring has a special property: the return type &lt;code&gt;&amp;amp;&#x27;static str&lt;&#x2F;code&gt; gets &lt;em&gt;abstracted&lt;&#x2F;em&gt; behind an opaque &lt;code&gt;Target&amp;lt;T&amp;gt;&lt;&#x2F;code&gt; wrapper. That lets &lt;code&gt;target&lt;&#x2F;code&gt; limit what properties of its return type a caller is allowed to rely on. In this case, the &lt;code&gt;Target&lt;&#x2F;code&gt; type proxies the &lt;code&gt;Debug&lt;&#x2F;code&gt; impl but &lt;em&gt;only&lt;&#x2F;em&gt; the &lt;code&gt;Debug&lt;&#x2F;code&gt; impl. Any other traits implemented by the wrapped &lt;code&gt;T&lt;&#x2F;code&gt; are &lt;em&gt;not&lt;&#x2F;em&gt; implemented by &lt;code&gt;Target&amp;lt;T&amp;gt;&lt;&#x2F;code&gt;&lt;a href=&quot;#footnote-1&quot; id=&quot;citation-1&quot; class=&quot;citation&quot;&gt;1&lt;&#x2F;a&gt;. Let&#x27;s look at a more complex example to see how this affects composability:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;combine&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Add&amp;gt;(lhs: T, rhs: T) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;T::&lt;&#x2F;span&gt;&lt;span&gt;Output {
-&lt;&#x2F;span&gt;&lt;span&gt;    lhs.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;add&lt;&#x2F;span&gt;&lt;span&gt;(rhs)
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;combine&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Add&amp;gt;(lhs: T, rhs: T) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;T::&lt;&#x2F;span&gt;&lt;span&gt;Output {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    lhs.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;add&lt;&#x2F;span&gt;&lt;span&gt;(rhs)&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span&gt;println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;{}&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;combine&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;1&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;2&lt;&#x2F;span&gt;&lt;span&gt;));
-&lt;&#x2F;span&gt;&lt;span&gt;println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;{:?}&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;combine&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;1&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;2&lt;&#x2F;span&gt;&lt;span&gt;));
+&lt;&#x2F;span&gt;&lt;span&gt;println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;{}&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;combine&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;1&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;2&lt;&#x2F;span&gt;&lt;span&gt;));&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;{:?}&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;combine&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;1&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;2&lt;&#x2F;span&gt;&lt;span&gt;));&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;Without &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, the return type of &lt;code&gt;combine&lt;&#x2F;code&gt; is just a &lt;code&gt;T::Output&lt;&#x2F;code&gt;. That means that &lt;code&gt;combine(1, 2)&lt;&#x2F;code&gt; returns a plain &lt;code&gt;i32&lt;&#x2F;code&gt;, so we can take advantage of &lt;code&gt;i32&lt;&#x2F;code&gt;&#x27;s &lt;code&gt;Display&lt;&#x2F;code&gt; and &lt;code&gt;Debug&lt;&#x2F;code&gt; implementations. Let&#x27;s compare that to what happens when we use &lt;code&gt;impl Trait&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;combine_abstract&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Add&amp;gt;(lhs: T, rhs: T) -&amp;gt; impl Display
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;where
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;T::&lt;&#x2F;span&gt;&lt;span&gt;Output: Display,
-&lt;&#x2F;span&gt;&lt;span&gt;{
-&lt;&#x2F;span&gt;&lt;span&gt;    lhs.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;add&lt;&#x2F;span&gt;&lt;span&gt;(rhs)
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;combine_abstract&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Add&amp;gt;(lhs: T, rhs: T) -&amp;gt; impl Display&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;where&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;T::&lt;&#x2F;span&gt;&lt;span&gt;Output: Display,&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;{&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    lhs.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;add&lt;&#x2F;span&gt;&lt;span&gt;(rhs)&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span&gt;println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;{}&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;combine_abstract&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;1&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;2&lt;&#x2F;span&gt;&lt;span&gt;));
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F; ERROR: `impl Display` does not implement `Debug`
-&lt;&#x2F;span&gt;&lt;span&gt;println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;{:?}&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;combine_abstract&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;1&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;2&lt;&#x2F;span&gt;&lt;span&gt;));
+&lt;&#x2F;span&gt;&lt;span&gt;println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;{}&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;combine_abstract&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;1&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;2&lt;&#x2F;span&gt;&lt;span&gt;));&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F; ERROR: `impl Display` does not implement `Debug`&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;{:?}&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;combine_abstract&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;1&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;2&lt;&#x2F;span&gt;&lt;span&gt;));&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;p&gt;Now we have &lt;em&gt;abstracted&lt;&#x2F;em&gt; our return type using &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, and that opaque return type does not implement &lt;code&gt;Debug&lt;&#x2F;code&gt;. Note that we also had to bound &lt;code&gt;T::Output: Display&lt;&#x2F;code&gt; since our &lt;code&gt;impl Debug&lt;&#x2F;code&gt; requires that the value inside of it implements &lt;code&gt;Debug&lt;&#x2F;code&gt;. While we can still &lt;code&gt;Display&lt;&#x2F;code&gt; the return value of &lt;code&gt;combine_abstract&lt;&#x2F;code&gt;, we can no longer &lt;code&gt;Debug&lt;&#x2F;code&gt; it. That&#x27;s the very literal difference when using &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, but what does that actually mean for our code?&lt;&#x2F;p&gt;
+&lt;p&gt;Now we have &lt;em&gt;abstracted&lt;&#x2F;em&gt; our return type using &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, and that opaque return type does not implement &lt;code&gt;Debug&lt;&#x2F;code&gt;. Note that we also had to bound &lt;code&gt;T::Output: Display&lt;&#x2F;code&gt; since our &lt;code&gt;impl Display&lt;&#x2F;code&gt; requires that the value inside of it implements &lt;code&gt;Display&lt;&#x2F;code&gt;. While we can still &lt;code&gt;Display&lt;&#x2F;code&gt; the return value of &lt;code&gt;combine_abstract&lt;&#x2F;code&gt;, we can no longer &lt;code&gt;Debug&lt;&#x2F;code&gt; it. That&#x27;s the very literal difference when using &lt;code&gt;impl Trait&lt;&#x2F;code&gt;, but what does that actually mean for our code?&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;should-you-abstract-your-types&quot;&gt;Should you abstract your types?&lt;&#x2F;h2&gt;
 &lt;p&gt;An abstract type restricts what someone else can know about a concrete type. In the &lt;code&gt;fn target() -&amp;gt; &amp;amp;&#x27;static str&lt;&#x2F;code&gt; example, whoever calls &lt;code&gt;target&lt;&#x2F;code&gt; gets an unabstracted &lt;code&gt;&amp;amp;&#x27;static str&lt;&#x2F;code&gt;. This can be both a blessing and a curse:&lt;&#x2F;p&gt;
 &lt;h3 id=&quot;the-good&quot;&gt;The good&lt;&#x2F;h3&gt;
 &lt;p&gt;On one hand, a concrete type lets you reason about its other properties. In this example, we wrap our input in a type and return it concretely:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span&gt;#[derive(Debug, PartialEq)]
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub struct &lt;&#x2F;span&gt;&lt;span&gt;Container&amp;lt;T&amp;gt;(T);
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span&gt;#[derive(Debug, PartialEq)]&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub struct &lt;&#x2F;span&gt;&lt;span&gt;Container&amp;lt;T&amp;gt;(T);&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;contain&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T&amp;gt;(value: T) -&amp;gt; Container&amp;lt;T&amp;gt; {
-&lt;&#x2F;span&gt;&lt;span&gt;    Container(value)
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;contain&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T&amp;gt;(value: T) -&amp;gt; Container&amp;lt;T&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    Container(value)&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span&gt;println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;{:?}&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;contain&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;));
+&lt;&#x2F;span&gt;&lt;span&gt;println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;{:?}&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;contain&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;));&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;Because &lt;code&gt;contain&lt;&#x2F;code&gt; returns &lt;code&gt;Container&lt;&#x2F;code&gt; concretely, we can determine whether the return value implements a trait. &lt;code&gt;T&lt;&#x2F;code&gt; implements &lt;code&gt;Debug&lt;&#x2F;code&gt;, and &lt;code&gt;Container&lt;&#x2F;code&gt; implements it if &lt;code&gt;T&lt;&#x2F;code&gt; does, so we can debug print the return value from &lt;code&gt;contain&lt;&#x2F;code&gt;. This lets us write &lt;code&gt;contain&lt;&#x2F;code&gt; to be as helpful as possible to whoever calls it.&lt;&#x2F;p&gt;
 &lt;h3 id=&quot;the-bad&quot;&gt;The bad&lt;&#x2F;h3&gt;
 &lt;p&gt;But what if, some time in the future, we want to change &lt;code&gt;Container&lt;&#x2F;code&gt; so that it no longer implements &lt;code&gt;PartialEq&lt;&#x2F;code&gt;:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span&gt;#[derive(Debug)]
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub struct &lt;&#x2F;span&gt;&lt;span&gt;Container&amp;lt;T&amp;gt;(T);
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span&gt;#[derive(Debug)]&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub struct &lt;&#x2F;span&gt;&lt;span&gt;Container&amp;lt;T&amp;gt;(T);&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;Perhaps that was just for debugging and nobody was supposed to rely on &lt;code&gt;PartialEq&lt;&#x2F;code&gt; being implemented. But &lt;code&gt;Container&lt;&#x2F;code&gt; is public since it&#x27;s the return type of &lt;code&gt;contain&lt;&#x2F;code&gt;, so we&#x27;ve broken everyone who was relying on &lt;code&gt;PartialEq&lt;&#x2F;code&gt; being implemented! This situation gets worse for &lt;a href=&quot;https:&#x2F;&#x2F;doc.rust-lang.org&#x2F;reference&#x2F;special-types-and-traits.html#auto-traits&quot;&gt;auto traits&lt;&#x2F;a&gt; like &lt;code&gt;Send&lt;&#x2F;code&gt; and &lt;code&gt;Sync&lt;&#x2F;code&gt; since we might change whether our type implements an auto trait just by changing its definition. That&#x27;s spooky action at a distance!&lt;&#x2F;p&gt;
 &lt;p&gt;This is a situation where &lt;code&gt;impl Trait&lt;&#x2F;code&gt; can help us. By returning an &lt;code&gt;impl Debug&lt;&#x2F;code&gt;, we can prevent &lt;a href=&quot;https:&#x2F;&#x2F;www.hyrumslaw.com&#x2F;&quot;&gt;Hyrum&#x27;s Law&lt;&#x2F;a&gt; from breaking everything downstream from our library when we remove the &lt;code&gt;Debug&lt;&#x2F;code&gt; implementation:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;contain&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Debug&amp;gt;(value: T) -&amp;gt; impl Debug {
-&lt;&#x2F;span&gt;&lt;span&gt;    Container(value)
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;pub fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;contain&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Debug&amp;gt;(value: T) -&amp;gt; impl Debug {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    Container(value)&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span&gt;println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;{:?}&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;contain&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;));
+&lt;&#x2F;span&gt;&lt;span&gt;println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span style=&quot;color:#0086b3;&quot;&gt;{:?}&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;, &lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;contain&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;hello world&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;));&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;Now our downstream users can&#x27;t rely on any additional traits being implemented, and we can add and remove more trait implementations from &lt;code&gt;Container&lt;&#x2F;code&gt; without causing a semver breakage.&lt;&#x2F;p&gt;
 &lt;p&gt;These examples have all been for free functions and inherent methods; what&#x27;s the situation for traits?&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;impl-trait-in-traits&quot;&gt;&lt;code&gt;impl Trait&lt;&#x2F;code&gt; in traits&lt;&#x2F;h2&gt;
 &lt;h3 id=&quot;argument-position-traits&quot;&gt;Argument position (traits)&lt;&#x2F;h3&gt;
 &lt;p&gt;Not much is different for argument position &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in trait methods. Something like this:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Logger {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;log&lt;&#x2F;span&gt;&lt;span&gt;(x: impl Debug);
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Logger {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;log&lt;&#x2F;span&gt;&lt;span&gt;(x: impl Debug);&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;desugars to:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Logger {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;log&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;X: Debug&amp;gt;(x: X);
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Logger {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;log&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;X: Debug&amp;gt;(x: X);&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;This is pretty much the same as the previous argument position desugaring. But what about...&lt;&#x2F;p&gt;
 &lt;h3 id=&quot;return-position-traits&quot;&gt;Return position (traits)&lt;&#x2F;h3&gt;
 &lt;p&gt;You can&#x27;t use &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in return position right now, but why is that? Let&#x27;s consider a desugaring of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; as a return type in a trait:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore;
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;A straightforward desugaring of this would be:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine: Ore;
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine;
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine: Ore;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;But that doesn&#x27;t abstract the return type like we want. Instead, we should make a wrapper to hide the details of the concrete type:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;MinerOre&amp;lt;T: Ore&amp;gt;(T);
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;MinerOre&amp;lt;T: Ore&amp;gt;(T);&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Ore&amp;gt; Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;MinerOre&amp;lt;T&amp;gt; { &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;... &lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Ore&amp;gt; Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;MinerOre&amp;lt;T&amp;gt; { &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;... &lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine: Ore;
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; MinerOre&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine&amp;gt;;
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine: Ore;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; MinerOre&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine&amp;gt;;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;This seems sensible, now let&#x27;s implement a &lt;code&gt;Miner&lt;&#x2F;code&gt; with our chosen desugaring:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore {
-&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;This desugars to:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; Bauxite;
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; MinerOre&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine&amp;gt; {
-&lt;&#x2F;span&gt;&lt;span&gt;        MinerOre(Bauxite)
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; Bauxite;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; MinerOre&amp;lt;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        MinerOre(Bauxite)&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;That makes sense, but I&#x27;m left a little dissatisfied. The trait is dictating whether the return type of the function is abstract, but we could let the impl choose whether to abstract its return type. The impl is the one exposing that associated &lt;code&gt;Mine&lt;&#x2F;code&gt; type, so we could just set &lt;code&gt;type Mine = MinerOre&amp;lt;Bauxite&amp;gt;&lt;&#x2F;code&gt; instead. Let&#x27;s consider an alternative desugaring:&lt;&#x2F;p&gt;
 &lt;h3 id=&quot;return-position-traits-version-2&quot;&gt;Return position (traits, version 2)&lt;&#x2F;h3&gt;
 &lt;p&gt;Let&#x27;s change our original desugaring for our trait:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore;
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;So that it now desugars to:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine: Ore;
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine;
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine: Ore;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;Note that this is more consistent with how the argument position &lt;code&gt;impl Trait&lt;&#x2F;code&gt; desugars, let&#x27;s keep that in mind. Anyway, now our &lt;code&gt;Miner&lt;&#x2F;code&gt; impl is:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore {
-&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;Which desugars to:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;QuarryOre&amp;lt;T: Ore&amp;gt;(T);
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;QuarryOre&amp;lt;T: Ore&amp;gt;(T);&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Ore&amp;gt; Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;QuarryOre&amp;lt;T&amp;gt; { &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;... &lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Ore&amp;gt; Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;QuarryOre&amp;lt;T&amp;gt; { &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;... &lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span&gt;QuarryOre&amp;lt;Bauxite&amp;gt;;
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine {
-&lt;&#x2F;span&gt;&lt;span&gt;        QuarryOre(Bauxite)
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= &lt;&#x2F;span&gt;&lt;span&gt;QuarryOre&amp;lt;Bauxite&amp;gt;;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        QuarryOre(Bauxite)&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;And now it&#x27;s the &lt;em&gt;impl&lt;&#x2F;em&gt; that decides whether to abstract the return type. Nice, but the syntax seems a little weird. If we chose not to abstract our return type, the trait and impl look like this instead:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore;
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; Bauxite;
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine {
-&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; Bauxite;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;There&#x27;s no associated type in the trait definition, but we still need it to write our unabstracted trait implementation. So we end up conjuring the associated &lt;code&gt;Mine&lt;&#x2F;code&gt; type out of thin air. This is because the &lt;code&gt;impl Ore&lt;&#x2F;code&gt; in our &lt;code&gt;Miner&lt;&#x2F;code&gt; trait actually desugars to a concrete associated &lt;code&gt;Mine&lt;&#x2F;code&gt; type. This is good because we want the implementor to choose whether to abstract their return type. However, &lt;code&gt;impl Trait&lt;&#x2F;code&gt; now means different things in different contexts.&lt;&#x2F;p&gt;
 &lt;ul&gt;
@@ -676,33 +676,33 @@
 &lt;p&gt;This desugaring does everything we want at the cost of having some very unintuitive behavior around the secret associated type. In our first desugaring, the one that didn&#x27;t let the implementor choose whether to abstract the return type, &lt;code&gt;impl Trait&lt;&#x2F;code&gt; had syntactic consistency at the cost of flexibility. This new desugaring makes the opposite tradeoff.&lt;&#x2F;p&gt;
 &lt;h3 id=&quot;flipping-it-around&quot;&gt;Flipping it around&lt;&#x2F;h3&gt;
 &lt;p&gt;We can also have the reverse problem if a trait returns an associated type but an implementation wants to abstract its return value:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine: Ore;
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine;
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine: Ore;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry;&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= ???&lt;&#x2F;span&gt;&lt;span&gt;;
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore {
-&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= ???&lt;&#x2F;span&gt;&lt;span&gt;;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;() -&amp;gt; impl Ore {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;Since we can no longer tell &lt;code&gt;Mine&lt;&#x2F;code&gt; what type it is. We could move the &lt;code&gt;impl Ore&lt;&#x2F;code&gt; into the type definition:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= impl &lt;&#x2F;span&gt;&lt;span&gt;Ore;
-&lt;&#x2F;span&gt;&lt;span&gt;    fn mine() -&amp;gt; Self::Mine { &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;... &lt;&#x2F;span&gt;&lt;span&gt;}
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= impl &lt;&#x2F;span&gt;&lt;span&gt;Ore;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    fn mine() -&amp;gt; Self::Mine { &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;... &lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;And in fact, this is what the Type Alias Impl Trait (TAIT) proposal suggests. But now the type of &lt;code&gt;Mine&lt;&#x2F;code&gt; is being inferred from the body of &lt;code&gt;mine&lt;&#x2F;code&gt;. This can lead to confusion:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= impl &lt;&#x2F;span&gt;&lt;span&gt;Ore;
-&lt;&#x2F;span&gt;&lt;span&gt;    fn mine() -&amp;gt; Self::Mine {
-&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite; &lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F; &amp;lt;-- Oops! A stray semicolon!
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;= impl &lt;&#x2F;span&gt;&lt;span&gt;Ore;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    fn mine() -&amp;gt; Self::Mine {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        Bauxite; &lt;&#x2F;span&gt;&lt;span style=&quot;font-style:italic;color:#969896;&quot;&gt;&#x2F;&#x2F; &amp;lt;-- Oops! A stray semicolon!&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;If &lt;code&gt;Ore&lt;&#x2F;code&gt; is implemented for the unit type &lt;code&gt;()&lt;&#x2F;code&gt;, then our code will compile fine but do the wrong thing. We won&#x27;t know about it until runtime, if we even catch it. Additionally, it&#x27;s important to note that we would have avoided this if we specified &lt;code&gt;type Mine = Bauxite&lt;&#x2F;code&gt; instead of using &lt;code&gt;impl Trait&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;
 &lt;p&gt;This is a specific case, but with more complex expressions we can cause much sneakier issues&lt;a href=&quot;#footnote-2&quot; id=&quot;citation-2&quot; class=&quot;citation&quot;&gt;2&lt;&#x2F;a&gt;. This issue can occur anywhere that infer the return types of functions, and is really a problem with return position &lt;code&gt;impl Trait&lt;&#x2F;code&gt; as a whole. What we&#x27;re doing here is allowing these issues to creep into new places in the language as well, increasing the odds that we&#x27;ll accidentally stumble across it.&lt;&#x2F;p&gt;
@@ -711,87 +711,87 @@
 &lt;p&gt;I see this as a papercut. It&#x27;s an unsettling reminder of the weird behavior I&#x27;d see in C++, where these kinds of issues kept getting added and expanded over multiple language revisions. Eventually, it got so bad that you were not just able but likely to die by a thousand papercuts. You could only write so much code before one of them would get you.&lt;&#x2F;p&gt;
 &lt;p&gt;I don&#x27;t think we have to choose between having footguns and being able to use &lt;code&gt;impl Trait&lt;&#x2F;code&gt;. Unfortunately, we&#x27;re also steaming ahead in implementing and stabilizing all of these features. I don&#x27;t think that&#x27;s a bad thing, I admire that as a project we&#x27;re able to make real progress on new features and improvements. I just think this is a moment for us to take pause and consider some alternatives.&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;conclusion&quot;&gt;Conclusion&lt;&#x2F;h2&gt;
-&lt;p&gt;Alright, so we&#x27;ve got some problems. In &lt;a href=&quot;https:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;a-new-impl-trait-2&#x2F;&quot;&gt;part 2&lt;&#x2F;a&gt;, I&#x27;ll describe one possible solution to this problem that allows us to have both consistency and flexibility.&lt;&#x2F;p&gt;
+&lt;p&gt;Alright, so we&#x27;ve got some problems. In &lt;a href=&quot;https:&#x2F;&#x2F;david.kolo.ski&#x2F;blog&#x2F;a-new-impl-trait-2&#x2F;&quot;&gt;part 2&lt;&#x2F;a&gt;, I&#x27;ll describe one possible solution to this problem that allows us to have both consistency and flexibility.&lt;&#x2F;p&gt;
 &lt;p id=&quot;footnote-1&quot; class=&quot;footnote&quot;&gt;&lt;a href=&quot;#citation-1&quot;&gt;1&lt;&#x2F;a&gt; &lt;code&gt;impl Trait&lt;&#x2F;code&gt; actually &lt;em&gt;does&lt;&#x2F;em&gt; leak some traits, specifically &lt;a href=&quot;https:&#x2F;&#x2F;doc.rust-lang.org&#x2F;beta&#x2F;unstable-book&#x2F;language-features&#x2F;auto-traits.html&quot;&gt;auto traits&lt;&#x2F;a&gt;. Auto traits are automatically implemented for types based on their compositions, so the &lt;code&gt;Target&lt;&#x2F;code&gt; struct in our example will implement them if &lt;code&gt;T&lt;&#x2F;code&gt; does. This has led to a &lt;a href=&quot;https:&#x2F;&#x2F;twitter.com&#x2F;Gankra_&#x2F;status&#x2F;1141409682017308672&quot;&gt;now-famous tweet&lt;&#x2F;a&gt;. I&#x27;d like to add that &lt;code&gt;impl Trait&lt;&#x2F;code&gt; also leaks &lt;code&gt;Unpin&lt;&#x2F;code&gt; because it is an auto trait like &lt;code&gt;Send&lt;&#x2F;code&gt; and &lt;code&gt;Sync&lt;&#x2F;code&gt;.&lt;&#x2F;p&gt;&lt;p id=&quot;footnote-2&quot; class=&quot;footnote&quot;&gt;&lt;a href=&quot;#citation-2&quot;&gt;2&lt;&#x2F;a&gt; Consider this code that uses TAIT and GATs:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span&gt;#![feature(type_alias_impl_trait)]
-&lt;&#x2F;span&gt;&lt;span&gt;#![feature(generic_associated_types)]
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span&gt;#![feature(type_alias_impl_trait)]&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;#![feature(generic_associated_types)]&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;lt;&amp;#39;a&amp;gt; where Self&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;#39;a&lt;&#x2F;span&gt;&lt;span&gt;;
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine&amp;lt;&amp;#39;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;_&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt;;
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Miner {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;lt;&amp;#39;a&amp;gt; where Self&lt;&#x2F;span&gt;&lt;span&gt;: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;#39;a&lt;&#x2F;span&gt;&lt;span&gt;;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;Self::&lt;&#x2F;span&gt;&lt;span&gt;Mine&amp;lt;&amp;#39;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;_&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt;;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Ore: Clone {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;print&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self);
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Ore: Clone {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;print&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self);&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Ore&amp;gt; Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;T {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;print&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) { println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;Ore&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;); }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Ore&amp;gt; Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;T {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;print&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) { println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;Ore&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;); }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span&gt;#[derive(Clone, Copy)]
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Bauxite;
+&lt;&#x2F;span&gt;&lt;span&gt;#[derive(Clone, Copy)]&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Bauxite;&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Bauxite {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;print&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) { println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;Bauxite&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;); }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Bauxite {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;print&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) { println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;Bauxite&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;); }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry&amp;lt;T&amp;gt; {
-&lt;&#x2F;span&gt;&lt;span&gt;    ore: T,
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry&amp;lt;T&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    ore: T,&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T&amp;gt; Quarry&amp;lt;T&amp;gt; {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;ore&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;T {
-&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self.ore
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T&amp;gt; Quarry&amp;lt;T&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;ore&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;T {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self.ore&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;#39;static +&lt;&#x2F;span&gt;&lt;span&gt; Ore&amp;gt; Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry&amp;lt;T&amp;gt; {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;lt;&amp;#39;a&amp;gt; = impl &lt;&#x2F;span&gt;&lt;span&gt;Ore;
-&lt;&#x2F;span&gt;&lt;span&gt;    fn mine(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) -&amp;gt; Self::Mine&amp;lt;&amp;#39;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;_&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt; {
-&lt;&#x2F;span&gt;&lt;span&gt;        self.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;ore&lt;&#x2F;span&gt;&lt;span&gt;().&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;clone&lt;&#x2F;span&gt;&lt;span&gt;()
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;#39;static +&lt;&#x2F;span&gt;&lt;span&gt; Ore&amp;gt; Miner &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Quarry&amp;lt;T&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;type &lt;&#x2F;span&gt;&lt;span&gt;Mine&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;lt;&amp;#39;a&amp;gt; = impl &lt;&#x2F;span&gt;&lt;span&gt;Ore;&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    fn mine(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) -&amp;gt; Self::Mine&amp;lt;&amp;#39;&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;_&lt;&#x2F;span&gt;&lt;span&gt;&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        self.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;ore&lt;&#x2F;span&gt;&lt;span&gt;().&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;clone&lt;&#x2F;span&gt;&lt;span&gt;()&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;main&lt;&#x2F;span&gt;&lt;span&gt;() {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; quarry &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; Quarry { ore: Bauxite };
-&lt;&#x2F;span&gt;&lt;span&gt;    quarry.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;().&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;print&lt;&#x2F;span&gt;&lt;span&gt;();
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;main&lt;&#x2F;span&gt;&lt;span&gt;() {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; quarry &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; Quarry { ore: Bauxite };&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    quarry.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;().&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;print&lt;&#x2F;span&gt;&lt;span&gt;();&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;If you&#x27;ve written any async code using GATs and TAIT then you may find this kind of code eerily familiar. This prints &lt;code&gt;Bauxite&lt;&#x2F;code&gt; like we expect, but if we remove the &lt;code&gt;: Clone&lt;&#x2F;code&gt; supertrait from &lt;code&gt;Ore&lt;&#x2F;code&gt; (maybe during some refactoring) then it prints &lt;code&gt;Ore&lt;&#x2F;code&gt; instead. This issue isn&#x27;t totally unique to TAIT though, it can also happen in stable Rust:&lt;&#x2F;p&gt;
-&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Ore: Clone {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;print&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self);
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;trait &lt;&#x2F;span&gt;&lt;span&gt;Ore: Clone {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;print&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self);&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Ore&amp;gt; Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;T {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;print&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) { println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;Ore&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;); }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Ore&amp;gt; Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;T {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;print&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) { println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;Ore&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;); }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span&gt;#[derive(Clone, Copy)]
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Bauxite;
+&lt;&#x2F;span&gt;&lt;span&gt;#[derive(Clone, Copy)]&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Bauxite;&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Bauxite {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;print&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) { println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;Bauxite&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;); }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl &lt;&#x2F;span&gt;&lt;span&gt;Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;for &lt;&#x2F;span&gt;&lt;span&gt;Bauxite {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;print&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) { println!(&lt;&#x2F;span&gt;&lt;span style=&quot;color:#183691;&quot;&gt;&amp;quot;Bauxite&amp;quot;&lt;&#x2F;span&gt;&lt;span&gt;); }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry&amp;lt;T&amp;gt; {
-&lt;&#x2F;span&gt;&lt;span&gt;    ore: T,
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;struct &lt;&#x2F;span&gt;&lt;span&gt;Quarry&amp;lt;T&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    ore: T,&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Ore&amp;gt; Quarry&amp;lt;T&amp;gt; {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;ore&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;T {
-&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self.ore
-&lt;&#x2F;span&gt;&lt;span&gt;    }
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;impl&lt;&#x2F;span&gt;&lt;span&gt;&amp;lt;T: Ore&amp;gt; Quarry&amp;lt;T&amp;gt; {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;ore&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) -&amp;gt; &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;T {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self.ore&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) -&amp;gt; impl Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;+ &amp;#39;_ &lt;&#x2F;span&gt;&lt;span&gt;{
-&lt;&#x2F;span&gt;&lt;span&gt;        self.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;ore&lt;&#x2F;span&gt;&lt;span&gt;().&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;clone&lt;&#x2F;span&gt;&lt;span&gt;()
-&lt;&#x2F;span&gt;&lt;span&gt;    }
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;(&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;&amp;amp;&lt;&#x2F;span&gt;&lt;span&gt;self) -&amp;gt; impl Ore &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;+ &amp;#39;_ &lt;&#x2F;span&gt;&lt;span&gt;{&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;        self.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;ore&lt;&#x2F;span&gt;&lt;span&gt;().&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;clone&lt;&#x2F;span&gt;&lt;span&gt;()&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    }&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;
-&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;main&lt;&#x2F;span&gt;&lt;span&gt;() {
-&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; quarry &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; Quarry { ore: Bauxite };
-&lt;&#x2F;span&gt;&lt;span&gt;    quarry.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;().&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;print&lt;&#x2F;span&gt;&lt;span&gt;();
-&lt;&#x2F;span&gt;&lt;span&gt;}
+&lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;main&lt;&#x2F;span&gt;&lt;span&gt;() {&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;let&lt;&#x2F;span&gt;&lt;span&gt; quarry &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;=&lt;&#x2F;span&gt;&lt;span&gt; Quarry { ore: Bauxite };&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;    quarry.&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;mine&lt;&#x2F;span&gt;&lt;span&gt;().&lt;&#x2F;span&gt;&lt;span style=&quot;color:#62a35c;&quot;&gt;print&lt;&#x2F;span&gt;&lt;span&gt;();&lt;&#x2F;span&gt;&lt;span&gt;
+&lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
 &lt;p&gt;In this case it&#x27;s only for free functions, and you&#x27;d probably find the presence of &lt;code&gt;impl Ore + &#x27;_&lt;&#x2F;code&gt; a bit more suspicious. What TAIT does is allow this problem cross the trait boundary. Traits are no longer safe from this mistake because this is really a problem with return position &lt;code&gt;impl Trait&lt;&#x2F;code&gt; and TAIT enables return position &lt;code&gt;impl Trait&lt;&#x2F;code&gt; in traits.&lt;&#x2F;p&gt;</content>
 	</entry>
@@ -799,8 +799,8 @@
 		<title>Anima Playground</title>
 		<published>2021-10-10T00:00:00+00:00</published>
 		<updated>2021-10-10T00:00:00+00:00</updated>
-		<link href="https://davidkoloski.me/blog/anima-playground/" type="text/html"/>
-		<id>https://davidkoloski.me/blog/anima-playground/</id>
+		<link href="https://david.kolo.ski/blog/anima-playground/" type="text/html"/>
+		<id>https://david.kolo.ski/blog/anima-playground/</id>
 		<content type="html">
 
 &lt;script&gt;
@@ -971,7 +971,7 @@
 &lt;&#x2F;script&gt;
 
 &lt;script&gt;
-    const PLAYGROUND_URL = &#x27;http:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;anima-playground&#x27;
+    const PLAYGROUND_URL = &#x27;http:&#x2F;&#x2F;david.kolo.ski&#x2F;blog&#x2F;anima-playground&#x27;
 
 window.addEventListener(&#x27;load&#x27;, async (event) =&gt; {
   await wasm_bindgen(&#x27;&#x2F;wasm&#x2F;anima_solver_bg.wasm&#x27;)
@@ -1950,8 +1950,8 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
 		<title>Anima Puzzles</title>
 		<published>2021-10-10T00:00:00+00:00</published>
 		<updated>2021-10-10T00:00:00+00:00</updated>
-		<link href="https://davidkoloski.me/blog/anima-puzzles/" type="text/html"/>
-		<id>https://davidkoloski.me/blog/anima-puzzles/</id>
+		<link href="https://david.kolo.ski/blog/anima-puzzles/" type="text/html"/>
+		<id>https://david.kolo.ski/blog/anima-puzzles/</id>
 		<content type="html">&lt;div class=&quot;center&quot;&gt;&lt;div&gt;&lt;h3 id=&quot;controls&quot;&gt;Controls&lt;&#x2F;h3&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;Move&lt;&#x2F;strong&gt;: WASD&#x2F;Arrow keys (desktop), swipe (mobile)&lt;&#x2F;li&gt;
@@ -2129,7 +2129,7 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
 &lt;&#x2F;script&gt;
 
 &lt;script&gt;
-    const PLAYGROUND_URL = &#x27;http:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;anima-playground&#x27;
+    const PLAYGROUND_URL = &#x27;http:&#x2F;&#x2F;david.kolo.ski&#x2F;blog&#x2F;anima-playground&#x27;
 
 window.addEventListener(&#x27;load&#x27;, async (event) =&gt; {
   await wasm_bindgen(&#x27;&#x2F;wasm&#x2F;anima_solver_bg.wasm&#x27;)
@@ -4206,8 +4206,8 @@ window.customElements.define(&#x27;anima-puzzle&#x27;, Puzzle)
 		<title>Intelligent brute forcing</title>
 		<published>2021-10-10T00:00:00+00:00</published>
 		<updated>2021-10-10T00:00:00+00:00</updated>
-		<link href="https://davidkoloski.me/blog/intelligent-brute-forcing/" type="text/html"/>
-		<id>https://davidkoloski.me/blog/intelligent-brute-forcing/</id>
+		<link href="https://david.kolo.ski/blog/intelligent-brute-forcing/" type="text/html"/>
+		<id>https://david.kolo.ski/blog/intelligent-brute-forcing/</id>
 		<content type="html">&lt;h2 id=&quot;a-little-background&quot;&gt;A little background&lt;&#x2F;h2&gt;
 &lt;p&gt;Back in college, I played a lot of &lt;em&gt;puzzle games&lt;&#x2F;em&gt;. When I talk about these kinds of games, I&#x27;m going
 to be referring to a very specific subset of puzzle game. Some examples include:&lt;&#x2F;p&gt;
@@ -4422,7 +4422,7 @@ together. Let&#x27;s do a few to get a feel for it:&lt;&#x2F;p&gt;
 &lt;&#x2F;script&gt;
 
 &lt;script&gt;
-    const PLAYGROUND_URL = &#x27;http:&#x2F;&#x2F;davidkoloski.me&#x2F;blog&#x2F;anima-playground&#x27;
+    const PLAYGROUND_URL = &#x27;http:&#x2F;&#x2F;david.kolo.ski&#x2F;blog&#x2F;anima-playground&#x27;
 
 window.addEventListener(&#x27;load&#x27;, async (event) =&gt; {
   await wasm_bindgen(&#x27;&#x2F;wasm&#x2F;anima_solver_bg.wasm&#x27;)
@@ -6073,7 +6073,7 @@ our puzzles. Let&#x27;s pick eight for some headroom:&lt;&#x2F;p&gt;
 plenty to be gained here though, and we can find it by doing some profiling. Running our benchmarks
 in Visual Studio gets us some interesting insights:&lt;&#x2F;p&gt;
 
-&lt;img src=&quot;https:&amp;#x2F;&amp;#x2F;davidkoloski.me&amp;#x2F;processed_images&amp;#x2F;44e6965e7b49e13a00.png&quot; &#x2F;&gt;
+&lt;img src=&quot;https:&amp;#x2F;&amp;#x2F;david.kolo.ski&amp;#x2F;processed_images&amp;#x2F;44e6965e7b49e13a00.png&quot; &#x2F;&gt;
 &lt;p&gt;Here they are typed out:&lt;&#x2F;p&gt;
 &lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Function&lt;&#x2F;th&gt;&lt;th align=&quot;right&quot;&gt;Total CPU %&lt;&#x2F;th&gt;&lt;&#x2F;tr&gt;&lt;&#x2F;thead&gt;&lt;tbody&gt;
 &lt;tr&gt;&lt;td&gt;&lt;code&gt;anima_solver::puzzle::State::transitions&lt;&#x2F;code&gt;&lt;&#x2F;td&gt;&lt;td align=&quot;right&quot;&gt;24.40%&lt;&#x2F;td&gt;&lt;&#x2F;tr&gt;
@@ -6249,8 +6249,8 @@ it out! You can also write, import, and share your own puzzles.&lt;&#x2F;p&gt;
 		<title>rkyv is faster than {bincode, capnp, cbor, flatbuffers, postcard, prost, serde_json}</title>
 		<published>2021-03-11T00:00:00+00:00</published>
 		<updated>2021-03-11T00:00:00+00:00</updated>
-		<link href="https://davidkoloski.me/blog/rkyv-is-faster-than/" type="text/html"/>
-		<id>https://davidkoloski.me/blog/rkyv-is-faster-than/</id>
+		<link href="https://david.kolo.ski/blog/rkyv-is-faster-than/" type="text/html"/>
+		<id>https://david.kolo.ski/blog/rkyv-is-faster-than/</id>
 		<content type="html">&lt;p&gt;I&#x27;ve been working on &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;djkoloski&#x2F;rkyv&quot;&gt;rkyv&lt;&#x2F;a&gt;, a zero-copy deserialization library, since November of 2020. rkyv is similar to &lt;a href=&quot;https:&#x2F;&#x2F;capnproto.org&#x2F;&quot;&gt;Cap&#x27;n Proto&lt;&#x2F;a&gt; and &lt;a href=&quot;https:&#x2F;&#x2F;google.github.io&#x2F;flatbuffers&quot;&gt;FlatBuffers&lt;&#x2F;a&gt;, but has a handful of different design choices that make it stand out:&lt;&#x2F;p&gt;
 &lt;ul&gt;
 &lt;li&gt;No type restrictions: you can serialize anything with rkyv&lt;&#x2F;li&gt;
@@ -6417,8 +6417,8 @@ vertices and a normal vector.&lt;&#x2F;p&gt;
 		<title>rkyv architecture and internals</title>
 		<published>2020-11-18T00:00:00+00:00</published>
 		<updated>2020-11-18T00:00:00+00:00</updated>
-		<link href="https://davidkoloski.me/blog/rkyv-architecture/" type="text/html"/>
-		<id>https://davidkoloski.me/blog/rkyv-architecture/</id>
+		<link href="https://david.kolo.ski/blog/rkyv-architecture/" type="text/html"/>
+		<id>https://david.kolo.ski/blog/rkyv-architecture/</id>
 		<content type="html">&lt;h2 id=&quot;what-is-rkyv&quot;&gt;What is rkyv?&lt;&#x2F;h2&gt;
 &lt;p&gt;&lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;djkoloski&#x2F;rkyv&quot;&gt;rkyv&lt;&#x2F;a&gt; is a zero-copy deserialization framework written in rust. It&#x27;s deeply integrated into the language and has a lot of neat features with the new v0.2.0 release.&lt;&#x2F;p&gt;
 &lt;p&gt;I originally released and &lt;a href=&quot;https:&#x2F;&#x2F;www.reddit.com&#x2F;r&#x2F;rust&#x2F;comments&#x2F;jss6h4&#x2F;rkyv_a_zerocopy_deserialization_framework_for_rust&#x2F;&quot;&gt;posted about rkyv&lt;&#x2F;a&gt; in the rust subreddit and got a lot of great feedback. Along with a couple highly desired features, many people asked for a blog post about the design and internals of rkyv. This blog post should serve as a jumping-off point to understand rkyv and zero-copy deserialization in general.&lt;&#x2F;p&gt;
@@ -6564,8 +6564,8 @@ vertices and a normal vector.&lt;&#x2F;p&gt;
 		<title>Static Site Generation with Zola</title>
 		<published>2018-12-02T00:00:00+00:00</published>
 		<updated>2018-12-02T00:00:00+00:00</updated>
-		<link href="https://davidkoloski.me/blog/ssg-with-zola/" type="text/html"/>
-		<id>https://davidkoloski.me/blog/ssg-with-zola/</id>
+		<link href="https://david.kolo.ski/blog/ssg-with-zola/" type="text/html"/>
+		<id>https://david.kolo.ski/blog/ssg-with-zola/</id>
 		<content type="html">&lt;h2 id=&quot;i-m-a-big-fan-of-rust&quot;&gt;I&#x27;m a big fan of Rust&lt;&#x2F;h2&gt;
 &lt;p&gt;And so are a lot of other people. There&#x27;s a lot to love about the language, build system, and packages available. But what really brings it home is the community around the language and how they approach programming. In general, the Rust community seems to strike a good balance between purity and pragmatism. Maybe it&#x27;s because of what the language was built to do, or maybe it&#x27;s a copy and paste of Mozilla internal culture, but either way it means that Rust makes really good tools. You might have heard of &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;BurntSushi&#x2F;ripgrep&quot;&gt;ripgrep&lt;&#x2F;a&gt;, but you probably haven&#x27;t heard of &lt;a href=&quot;https:&#x2F;&#x2F;www.getzola.org&#x2F;&quot;&gt;Zola&lt;&#x2F;a&gt;.&lt;&#x2F;p&gt;
 &lt;p&gt;&lt;a href=&quot;https:&#x2F;&#x2F;www.getzola.org&#x2F;&quot;&gt;Zola&lt;&#x2F;a&gt; is a small static site generator that was originally called Gutenberg and is written in Rust. Its key features are:&lt;&#x2F;p&gt;

@@ -1,85 +1,85 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-        <loc>https://davidkoloski.me/</loc>
+        <loc>https://david.kolo.ski/</loc>
     </url>
     <url>
-        <loc>https://davidkoloski.me/about/</loc>
+        <loc>https://david.kolo.ski/about/</loc>
     </url>
     <url>
-        <loc>https://davidkoloski.me/blog/</loc>
+        <loc>https://david.kolo.ski/blog/</loc>
     </url>
     <url>
-        <loc>https://davidkoloski.me/blog/a-new-impl-trait-1/</loc>
+        <loc>https://david.kolo.ski/blog/a-new-impl-trait-1/</loc>
         <lastmod>2022-05-10</lastmod>
     </url>
     <url>
-        <loc>https://davidkoloski.me/blog/a-new-impl-trait-2/</loc>
+        <loc>https://david.kolo.ski/blog/a-new-impl-trait-2/</loc>
         <lastmod>2022-05-11</lastmod>
     </url>
     <url>
-        <loc>https://davidkoloski.me/blog/a-new-impl-trait-3/</loc>
+        <loc>https://david.kolo.ski/blog/a-new-impl-trait-3/</loc>
         <lastmod>2022-05-12</lastmod>
     </url>
     <url>
-        <loc>https://davidkoloski.me/blog/a-new-impl-trait-4/</loc>
+        <loc>https://david.kolo.ski/blog/a-new-impl-trait-4/</loc>
         <lastmod>2022-05-13</lastmod>
     </url>
     <url>
-        <loc>https://davidkoloski.me/blog/anima-playground/</loc>
+        <loc>https://david.kolo.ski/blog/anima-playground/</loc>
         <lastmod>2021-10-10</lastmod>
     </url>
     <url>
-        <loc>https://davidkoloski.me/blog/anima-puzzles/</loc>
+        <loc>https://david.kolo.ski/blog/anima-puzzles/</loc>
         <lastmod>2021-10-10</lastmod>
     </url>
     <url>
-        <loc>https://davidkoloski.me/blog/intelligent-brute-forcing/</loc>
+        <loc>https://david.kolo.ski/blog/intelligent-brute-forcing/</loc>
         <lastmod>2021-10-10</lastmod>
     </url>
     <url>
-        <loc>https://davidkoloski.me/blog/rkyv-architecture/</loc>
+        <loc>https://david.kolo.ski/blog/rkyv-architecture/</loc>
         <lastmod>2020-11-18</lastmod>
     </url>
     <url>
-        <loc>https://davidkoloski.me/blog/rkyv-is-faster-than/</loc>
+        <loc>https://david.kolo.ski/blog/rkyv-is-faster-than/</loc>
         <lastmod>2021-03-11</lastmod>
     </url>
     <url>
-        <loc>https://davidkoloski.me/blog/ssg-with-zola/</loc>
+        <loc>https://david.kolo.ski/blog/ssg-with-zola/</loc>
         <lastmod>2018-12-02</lastmod>
     </url>
     <url>
-        <loc>https://davidkoloski.me/categories/</loc>
+        <loc>https://david.kolo.ski/categories/</loc>
     </url>
     <url>
-        <loc>https://davidkoloski.me/categories/rust/</loc>
+        <loc>https://david.kolo.ski/categories/rust/</loc>
     </url>
     <url>
-        <loc>https://davidkoloski.me/categories/web-development/</loc>
+        <loc>https://david.kolo.ski/categories/web-development/</loc>
     </url>
     <url>
-        <loc>https://davidkoloski.me/resume/</loc>
+        <loc>https://david.kolo.ski/resume/</loc>
     </url>
     <url>
-        <loc>https://davidkoloski.me/tags/</loc>
+        <loc>https://david.kolo.ski/tags/</loc>
     </url>
     <url>
-        <loc>https://davidkoloski.me/tags/puzzles/</loc>
+        <loc>https://david.kolo.ski/tags/puzzles/</loc>
     </url>
     <url>
-        <loc>https://davidkoloski.me/tags/rkyv/</loc>
+        <loc>https://david.kolo.ski/tags/rkyv/</loc>
     </url>
     <url>
-        <loc>https://davidkoloski.me/tags/rust/</loc>
+        <loc>https://david.kolo.ski/tags/rust/</loc>
     </url>
     <url>
-        <loc>https://davidkoloski.me/tags/serialization/</loc>
+        <loc>https://david.kolo.ski/tags/serialization/</loc>
     </url>
     <url>
-        <loc>https://davidkoloski.me/tags/static-site-generation/</loc>
+        <loc>https://david.kolo.ski/tags/static-site-generation/</loc>
     </url>
     <url>
-        <loc>https://davidkoloski.me/tags/zola/</loc>
+        <loc>https://david.kolo.ski/tags/zola/</loc>
     </url>
 </urlset>
