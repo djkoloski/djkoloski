@@ -63,18 +63,66 @@
     <h2 id="david-koloski">David Koloski</h2>
 <p>Software engineer, game designer, and web developer.</p>
 <h2 id="experience">Experience</h2>
+<h3 id="open-source-rust">Open-source Rust</h3>
+<ul>
+<li>November 2020 - Present</li>
+</ul>
+<p>I do a lot of open-source work on and in Rust. Some of the highlights:</p>
+<ul>
+<li><a href="https://github.com/rkyv/rkyv">rkyv</a> is a zero-copy deserialization framework for Rust. It was my first
+major project in Rust and continues to be widely used in the Rust community.</li>
+<li><a href="https://github.com/rkyv/bytecheck">bytecheck</a> is a runtime struct validation framework built for use with rkyv.
+It's general-purpose but is primarily used by rkyv to perform type validation
+on arbitrary byte buffers.</li>
+<li>I'm currently working on <a href="https://github.com/rkyv/rel">rel</a>, an object system for Rust based on relative
+pointers. It has a lot of promise but still has a lot of work yet to be done.</li>
+<li>I maintain a suite of <a href="https://github.com/djkoloski/rust_serialization_benchmark">Rust serialization benchmarks</a> aimed to provide
+high-quality unbiased data on the relative performance of various
+serialization frameworks.</li>
+<li>I'm also very happy with my Rust destructuring library <a href="https://github.com/djkoloski/munge">munge</a>.</li>
+<li>I also occasionally help improve and maintain <a href="https://github.com/google/zerocopy">zerocopy</a>.</li>
+</ul>
 <h3 id="rust-on-fuchsia">Rust on Fuchsia</h3>
 <ul>
 <li>October 2021 - Present</li>
 <li>Google, New York NY</li>
 </ul>
 <p>I'm currently working at Google on the Rust on Fuchsia team.</p>
+<ul>
+<li>I help maintain our Rust toolchain; diagnosing, reporting, and fixing issues
+we find while testing the latest nightlies on our codebase.</li>
+<li>A major project I worked on was building Rust's
+<a href="https://github.com/rust-lang/rust/blob/master/src/ci/docker/scripts/fuchsia-test-runner.py">compiler test suite runner for Fuchsia</a>. The runner is a python script that
+starts, configures, and runs test binaries on a Fuchsia emulator.</li>
+<li>Along with the test suite runner, I also worked on fixing and improving Rust's
+standard library support for Fuchsia, filling feature gaps, documenting
+platform differences, and <a href="https://doc.rust-lang.org/nightly/rustc/platform-support/fuchsia.html">writing documentation</a> on how to run Rust on
+Fuchsia emulators. All of this culminated in bringing Fuchsia up to Rust's
+standards for a Tier 2 platform (we were previously grandfathered in, and
+could have been demoted to Tier 3).</li>
+<li>I also improved and formalized our unsafe code review processes. We review a
+lot of unsafe code, and make a concerted effort to prevent undefined behavior
+from entering our build via third-party sources. I lead a group of unsafe code
+reviewers in prioritizing, reviewing, and submitting patches upstream for
+third-party crates that we use on Fuchsia.</li>
+<li>Alongside unsafe code review, I'm currently working to formalize our crate
+auditing results and make them available for other internal and external
+projects to use. These secure our supply chain while reducing the amount of
+work we have to do individually and improving our auditing quality.</li>
+<li>I'm also currently helping to write and open-source Google's
+<a href="https://github.com/google/learn_unsafe_rust">unsafe Rust onboarding materials</a>, which are aimed at bringing Rust
+programmers up to a consistent level of expertise for reviewing unsafe code.</li>
+</ul>
 <h3 id="unreleased-project-robot-entertainment">Unreleased Project (Robot Entertainment)</h3>
 <ul>
 <li>August 2020 - August 2021</li>
 <li>Robot Entertainment, Dallas TX</li>
 </ul>
-<p>I worked at Robot Entertainment on an unreleased project. More details when it's released.</p>
+<p>I worked at Robot Entertainment on a canceled project.
+I did most of my work on building a realtime, scalable dungeon generation
+system. The PGC algorithm was initially written in Rust, then C++. Both versions
+were integrated into UE4 so that artists and designers were able to interact
+with the system through the editor UI.</p>
 <h3 id="orcs-must-die-3">Orcs Must Die! 3</h3>
 <ul>
 <li>December 2019 - August 2020</li>
@@ -185,7 +233,7 @@ This was my first experience as part of the core team on an Unreal project, and 
 </div>
 
     <div class="section footer">
-        &copy; 2022 David Koloski
+        &copy; 2023 David Koloski
         <a href="/atom.xml"><img width="16" height="16" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 455 455'%3E%3Cpath d='M0 0v455h455V0H0zm141.435 372.387c-7.656 7.59-18.047 12.219-29.614 12.219-11.555 0-21.945-4.646-29.549-12.219C74.681 364.801 70 354.462 70 342.961s4.681-21.875 12.272-29.483c7.621-7.569 17.994-12.237 29.549-12.237 11.567 0 21.958 4.668 29.579 12.254 7.621 7.621 12.272 17.964 12.307 29.466-.035 11.501-4.686 21.822-12.272 29.426zM217.468 385s0-.101-.017-.101c-.066-39.41-15.431-76.597-43.221-104.352-27.786-27.838-64.925-43.256-104.195-43.291v-60.139c57.299.035 109.169 23.327 146.833 61.014 37.651 37.682 60.944 89.565 60.996 146.869h-60.396zm107.24 0c-.105-140.495-114.196-254.774-254.572-254.879V70c86.817.035 165.432 35.359 222.495 92.422C349.659 219.485 384.965 298.165 385 385h-60.292z' fill-rule='evenodd' fill='%23fff'/%3E%3C/svg%3E"></a>
     </div>
 </body>

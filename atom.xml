@@ -305,7 +305,7 @@
 &lt;&#x2F;span&gt;&lt;span&gt;    &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;move ||&lt;&#x2F;span&gt;&lt;span&gt; value&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;span&gt;}&lt;&#x2F;span&gt;&lt;span&gt;
 &lt;&#x2F;span&gt;&lt;&#x2F;code&gt;&lt;&#x2F;pre&gt;
-&lt;p&gt;We know that &lt;code&gt;MyClosure&lt;&#x2F;code&gt; is actually the type of &lt;code&gt;move || value&lt;&#x2F;code&gt;, but nobody else who glances at our source code will know that. It&#x27;s not in our function signature, it&#x27;s not at the alias declaration site, it&#x27;s all inferred from our surroundings. And yet, we&#x27;re now exposing the concrete properties of our closure to everyone. It&#x27;s a recipe for server violations.&lt;&#x2F;p&gt;
+&lt;p&gt;We know that &lt;code&gt;MyClosure&lt;&#x2F;code&gt; is actually the type of &lt;code&gt;move || value&lt;&#x2F;code&gt;, but nobody else who glances at our source code will know that. It&#x27;s not in our function signature, it&#x27;s not at the alias declaration site, it&#x27;s all inferred from our surroundings. And yet, we&#x27;re now exposing the concrete properties of our closure to everyone. It&#x27;s a recipe for semver violations.&lt;&#x2F;p&gt;
 &lt;p&gt;Some of these cases could be mitigated by linting. Places where type inference is used in return position, but the return type can be named. That would keep &lt;code&gt;impl Trait&lt;&#x2F;code&gt; just for cases where we want to abstract the return type and type inference just for cases where we can&#x27;t name the type.&lt;&#x2F;p&gt;
 &lt;p&gt;Before we put these ideas together into a coherent proposal, I&#x27;d like to address some solutions we already have:&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;rpitit-and-tait&quot;&gt;RPITIT and TAIT&lt;&#x2F;h2&gt;
@@ -462,7 +462,7 @@
 &lt;&#x2F;ul&gt;
 &lt;p&gt;I believe that the current implementation of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; is confusing and non-orthogonal. I propose an alternative formulation of &lt;code&gt;impl Trait&lt;&#x2F;code&gt; that is more intuitive, restores orthogonality to the feature, and enables more precise and flexible use of abstraction.&lt;&#x2F;p&gt;
 &lt;h2 id=&quot;what-is-impl-trait&quot;&gt;What is &lt;code&gt;impl Trait&lt;&#x2F;code&gt;?&lt;&#x2F;h2&gt;
-&lt;p&gt;&lt;code&gt;impl Trait&lt;&#x2F;code&gt; is syntax sugar can be used in argument position or in return position. Let&#x27;s look at how it can be used and how it desugars to more fundamental Rust syntax.&lt;&#x2F;p&gt;
+&lt;p&gt;&lt;code&gt;impl Trait&lt;&#x2F;code&gt; is syntax sugar that can be used in argument position or in return position. Let&#x27;s look at how it can be used and how it desugars to more fundamental Rust syntax.&lt;&#x2F;p&gt;
 &lt;h3 id=&quot;argument-position&quot;&gt;Argument position&lt;&#x2F;h3&gt;
 &lt;p&gt;When used in argument position, &lt;code&gt;impl Trait&lt;&#x2F;code&gt; is shorthand for a type that implements the requested traits. It takes a function like:&lt;&#x2F;p&gt;
 &lt;pre data-lang=&quot;rust&quot; style=&quot;background-color:#ffffff;color:#323232;&quot; class=&quot;language-rust &quot;&gt;&lt;code class=&quot;language-rust&quot; data-lang=&quot;rust&quot;&gt;&lt;span style=&quot;font-weight:bold;color:#a71d5d;&quot;&gt;fn &lt;&#x2F;span&gt;&lt;span style=&quot;font-weight:bold;color:#795da3;&quot;&gt;log&lt;&#x2F;span&gt;&lt;span&gt;(x: impl Debug) {&lt;&#x2F;span&gt;&lt;span&gt;
