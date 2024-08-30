@@ -62,20 +62,20 @@
         The end of <code>impl Trait</code>?
     </div>
     <div class="subtitle">
-        May 13, 2022 &ndash; 9 min read
+        May 13, 2022 &ndash; 8 min read
     </div>
 </div>
 <div class="section taxonomies">
     
-    <div class="categories">
-        
-            <a href="https://david.kolo.ski/categories/rust/">Rust</a>
-        
-    </div>
-    
     <div class="tags">
         
             <a href="https://david.kolo.ski/tags/rust/">Rust</a>
+        
+    </div>
+    
+    <div class="categories">
+        
+            <a href="https://david.kolo.ski/categories/rust/">Rust</a>
         
     </div>
     
@@ -89,13 +89,13 @@
 <p>We've been breezing through many different examples and suggestions without really consolidating our knowledge. Let's take some time to build up some higher-level facts that we can use to inform our final analysis.</p>
 <h3 id="the-lesser-of-two-evils">The lesser of two evils</h3>
 <p>In this case, the two evils are <strong>type inference</strong> and <strong>named unnameable types</strong>. In order for <code>as impl Trait</code> to function, we must choose one of these. Note that we have already chosen one of these (type inference) with <code>impl Trait</code>. I personally think that return type inference is simpler but less in line with Rust's goals<a href="#footnote-1" id="citation-1" class="citation">1</a>. Let's consult a motivating example:</p>
-<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">foo</span><span>&lt;T&gt;(value: T) -&gt; </span><span style="font-weight:bold;color:#a71d5d;">?? </span><span>{</span><span>
-</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">move ||</span><span> value</span><span>
-</span><span>}</span><span>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">foo</span><span>&lt;T&gt;(value: T) -&gt; </span><span style="font-weight:bold;color:#a71d5d;">?? </span><span>{
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">move ||</span><span> value
+</span><span>}
 </span><span>
-</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">bar</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">?? </span><span>{</span><span>
-</span><span>    </span><span style="color:#62a35c;">foo</span><span>(</span><span style="color:#0086b3;">42</span><span>)</span><span>
-</span><span>}</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">bar</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">?? </span><span>{
+</span><span>    </span><span style="color:#62a35c;">foo</span><span>(</span><span style="color:#0086b3;">42</span><span>)
+</span><span>}
 </span></code></pre>
 <p>I would like to have some function <code>foo</code> return a closure that yields some given value. Then, I would like to have some function <code>bar</code> call <code>foo</code> with a predefined value and return the same type. <code>foo</code>'s return type must either be <em>inferred</em> or <em>named</em>.</p>
 <h4 id="inferred">Inferred</h4>
@@ -109,13 +109,13 @@
 <p>If we refer to <code>foo</code> to name <code>bar</code>'s return type, we end up with <code>foo</code> only performing local inference which is arguably better. However, we suffer from the explicit function output signature, especially when we want to change the definition of <code>foo</code>. Modifying its arguments would require modifying the type signature of <code>bar</code> (or equivalently, the signature of the type alias) even when the return type has not changed. It makes maintenance more difficult at the same time as making discoverability more difficult.</p>
 <h4 id="named">Named</h4>
 <p>If we can name <code>foo</code>'s return type, then <code>bar</code> can reuse that:</p>
-<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">a</span><span>&lt;T&gt;(value: T) -&gt; type </span><span style="font-weight:bold;color:#a71d5d;">&#39;Closure</span><span>&lt;T&gt; {</span><span>
-</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">&#39;Closure&lt;</span><span>T</span><span style="font-weight:bold;color:#a71d5d;">&gt;</span><span>: </span><span style="font-weight:bold;color:#a71d5d;">move ||</span><span> value</span><span>
-</span><span>}</span><span>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">a</span><span>&lt;T&gt;(value: T) -&gt; type </span><span style="font-weight:bold;color:#a71d5d;">&#39;Closure</span><span>&lt;T&gt; {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">&#39;Closure&lt;</span><span>T</span><span style="font-weight:bold;color:#a71d5d;">&gt;</span><span>: </span><span style="font-weight:bold;color:#a71d5d;">move ||</span><span> value
+</span><span>}
 </span><span>
-</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">b</span><span>() -&gt; type </span><span style="font-weight:bold;color:#a71d5d;">&#39;Closure</span><span>&lt;</span><span style="font-weight:bold;color:#a71d5d;">i32</span><span>&gt; {</span><span>
-</span><span>    </span><span style="color:#62a35c;">a</span><span>(</span><span style="color:#0086b3;">42</span><span>)</span><span>
-</span><span>}</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">b</span><span>() -&gt; type </span><span style="font-weight:bold;color:#a71d5d;">&#39;Closure</span><span>&lt;</span><span style="font-weight:bold;color:#a71d5d;">i32</span><span>&gt; {
+</span><span>    </span><span style="color:#62a35c;">a</span><span>(</span><span style="color:#0086b3;">42</span><span>)
+</span><span>}
 </span></code></pre>
 <p>This opens up new possibilities with closures, and extends nicely to async blocks which are the other main unnameable type. It also alleviates a major problem with naming these types, which was previously done by creating a type alias and using inference to achieve the same result.</p>
 <p>The obvious downside is that this breaks encapsulation. There are also some very thorny questions regarding generics for closures that depend on type arguments. As a result, I recommend making this change a separate issue for <code>as impl Trait</code>. In the meantime, we could allow the old-style <code>impl Trait</code> wherever we would write <code>_ as impl Trait</code> or <code>type 'Closure as impl Trait</code>.</p>
@@ -123,58 +123,58 @@
 <p>With a new syntax <code>as impl Trait</code> to perform type abstraction, we must decide:</p>
 <h4 id="are-all-i32-as-impl-debug-the-same-type">Are all <code>i32 as impl Debug</code> the same type?</h4>
 <p>As an example:</p>
-<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">a</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">i32</span><span> as impl Debug {</span><span>
-</span><span>    </span><span style="color:#0086b3;">42</span><span>
-</span><span>}</span><span>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">a</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">i32</span><span> as impl Debug {
+</span><span>    </span><span style="color:#0086b3;">42
+</span><span>}
 </span><span>
-</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">b</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">i32</span><span> as impl Debug {</span><span>
-</span><span>    </span><span style="color:#0086b3;">10</span><span>
-</span><span>}</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">b</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">i32</span><span> as impl Debug {
+</span><span>    </span><span style="color:#0086b3;">10
+</span><span>}
 </span></code></pre>
 <p>Could we do <code>let mut x = a()</code> and then <code>x = b()</code>? These run contrary to the idea that <code>as impl Trait</code> creates a new type that only exposes a minimum of traits and information, so the answer here must be <em>no</em>. This leads naturally to the idea of <code>as impl Debug</code> as the desugaring site for abstraction itself:</p>
-<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">struct </span><span>A&lt;T: Debug&gt;(T);</span><span>
-</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">a</span><span>() -&gt; A&lt;</span><span style="font-weight:bold;color:#a71d5d;">i32</span><span>&gt; {</span><span>
-</span><span>    A(</span><span style="color:#0086b3;">42</span><span>)</span><span>
-</span><span>}</span><span>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">struct </span><span>A&lt;T: Debug&gt;(T);
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">a</span><span>() -&gt; A&lt;</span><span style="font-weight:bold;color:#a71d5d;">i32</span><span>&gt; {
+</span><span>    A(</span><span style="color:#0086b3;">42</span><span>)
+</span><span>}
 </span><span>
-</span><span style="font-weight:bold;color:#a71d5d;">struct </span><span>B&lt;T: Debug&gt;(T);</span><span>
-</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">b</span><span>() -&gt; B&lt;</span><span style="font-weight:bold;color:#a71d5d;">i32</span><span>&gt; {</span><span>
-</span><span>    B(</span><span style="color:#0086b3;">10</span><span>)</span><span>
-</span><span>}</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">struct </span><span>B&lt;T: Debug&gt;(T);
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">b</span><span>() -&gt; B&lt;</span><span style="font-weight:bold;color:#a71d5d;">i32</span><span>&gt; {
+</span><span>    B(</span><span style="color:#0086b3;">10</span><span>)
+</span><span>}
 </span></code></pre>
 <p>Now it is evident that <code>a</code> and <code>b</code> do not return types that can be meaningfully compared or exchanged. To unify them:</p>
-<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">type </span><span>Output </span><span style="font-weight:bold;color:#a71d5d;">= i32 as impl </span><span>Debug;</span><span>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">type </span><span>Output </span><span style="font-weight:bold;color:#a71d5d;">= i32 as impl </span><span>Debug;
 </span><span>
-</span><span>fn a() -&gt; Output {</span><span>
-</span><span>    </span><span style="color:#0086b3;">42</span><span>
-</span><span>}</span><span>
+</span><span>fn a() -&gt; Output {
+</span><span>    </span><span style="color:#0086b3;">42
+</span><span>}
 </span><span>
-</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">b</span><span>() -&gt; Output {</span><span>
-</span><span>    </span><span style="color:#0086b3;">10</span><span>
-</span><span>}</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">b</span><span>() -&gt; Output {
+</span><span>    </span><span style="color:#0086b3;">10
+</span><span>}
 </span></code></pre>
 <p>Would then desugar to:</p>
-<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">struct </span><span>Output&lt;T: Debug&gt;(T);</span><span>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">struct </span><span>Output&lt;T: Debug&gt;(T);
 </span><span>
-</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">a</span><span>() -&gt; Output&lt;</span><span style="font-weight:bold;color:#a71d5d;">i32</span><span>&gt; {</span><span>
-</span><span>    Output(</span><span style="color:#0086b3;">42</span><span>)</span><span>
-</span><span>}</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">a</span><span>() -&gt; Output&lt;</span><span style="font-weight:bold;color:#a71d5d;">i32</span><span>&gt; {
+</span><span>    Output(</span><span style="color:#0086b3;">42</span><span>)
+</span><span>}
 </span><span>
-</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">b</span><span>() -&gt; Output&lt;</span><span style="font-weight:bold;color:#a71d5d;">i32</span><span>&gt; {</span><span>
-</span><span>    Output(</span><span style="color:#0086b3;">10</span><span>)</span><span>
-</span><span>}</span><span>
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">b</span><span>() -&gt; Output&lt;</span><span style="font-weight:bold;color:#a71d5d;">i32</span><span>&gt; {
+</span><span>    Output(</span><span style="color:#0086b3;">10</span><span>)
+</span><span>}
 </span></code></pre>
 <p>In which case we can see that the return values of <code>a</code> and <code>b</code> can support those operations.</p>
 <h4 id="unnamed-in-return-position">Unnamed in return position</h4>
 <p>It's worth noting that this still suffers from the same composability restrictions that <code>impl Trait</code> does in return position:</p>
-<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-style:italic;color:#969896;">// crate `a`</span><span>
-</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">a</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">i32</span><span> as impl Debug { </span><span style="color:#0086b3;">42 </span><span>}</span><span>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-style:italic;color:#969896;">// crate `a`
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">a</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">i32</span><span> as impl Debug { </span><span style="color:#0086b3;">42 </span><span>}
 </span><span>
-</span><span style="font-style:italic;color:#969896;">// crate `b`</span><span>
-</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">b</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">?? </span><span>{ </span><span style="color:#62a35c;">a</span><span>() }</span><span>
+</span><span style="font-style:italic;color:#969896;">// crate `b`
+</span><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">b</span><span>() -&gt; </span><span style="font-weight:bold;color:#a71d5d;">?? </span><span>{ </span><span style="color:#62a35c;">a</span><span>() }
 </span></code></pre>
 <p>Because <code>b</code> must return the same type as <code>a</code>, it needs some way to return to <code>a</code>'s return type. The most commonly suggested way to do this is to use <code>Fn</code> traits:</p>
-<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">b</span><span>() -&gt; &lt;a </span><span style="font-weight:bold;color:#a71d5d;">as </span><span style="color:#0086b3;">Fn</span><span>&lt;()&gt;&gt;::Output { </span><span style="color:#62a35c;">a</span><span>() }</span><span>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">b</span><span>() -&gt; &lt;a </span><span style="font-weight:bold;color:#a71d5d;">as </span><span style="color:#0086b3;">Fn</span><span>&lt;()&gt;&gt;::Output { </span><span style="color:#62a35c;">a</span><span>() }
 </span></code></pre>
 <p>Which works, but suffers from the verbosity of the syntax. This is a problem already discussed with type inference.</p>
 <h2 id="in-practice">In practice</h2>
@@ -185,31 +185,31 @@
 <p>I think it would be acceptable to keep <code>impl Trait</code> in argument position since its sugar is sufficiently simple and its purpose is orthogonal to other features. However, I would be in support of removing it entirely to keep the language consistent and clean if others preferred that.</p>
 <h3 id="the-way-there">The way there</h3>
 <p>On our way there, we can lint and suggest replacing <code>impl Trait</code> with a concrete <code>T as impl Trait</code>:</p>
-<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">type </span><span>Output </span><span style="font-weight:bold;color:#a71d5d;">= impl </span><span>Debug;</span><span>
-</span><span style="font-style:italic;color:#969896;">//            ^^^^^^^^^^</span><span>
-</span><span style="font-style:italic;color:#969896;">// WARNING: Output is nameable type `i32` and should be declared as:</span><span>
-</span><span style="font-style:italic;color:#969896;">//   type Output = i32 as impl Debug;</span><span>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">type </span><span>Output </span><span style="font-weight:bold;color:#a71d5d;">= impl </span><span>Debug;
+</span><span style="font-style:italic;color:#969896;">//            ^^^^^^^^^^
+</span><span style="font-style:italic;color:#969896;">// WARNING: Output is nameable type `i32` and should be declared as:
+</span><span style="font-style:italic;color:#969896;">//   type Output = i32 as impl Debug;
 </span></code></pre>
 <p>This would help push users to use the more explicit <code>as impl Trait</code> syntax and help prevent errors down the line from confusing inference situations. Similarly, we should ban or lint on <code>impl Trait</code> used on nameable types in return position:</p>
-<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">target</span><span>() -&gt; impl Debug {</span><span>
-</span><span style="font-style:italic;color:#969896;">//             ^^^^^^^^^^</span><span>
-</span><span style="font-style:italic;color:#969896;">// WARNING: return type is nameable type `i32` and should be declared as:</span><span>
-</span><span style="font-style:italic;color:#969896;">//          fn target() -&gt; i32 as impl Debug</span><span>
-</span><span>    </span><span style="color:#0086b3;">42</span><span>
-</span><span>}</span><span>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">target</span><span>() -&gt; impl Debug {
+</span><span style="font-style:italic;color:#969896;">//             ^^^^^^^^^^
+</span><span style="font-style:italic;color:#969896;">// WARNING: return type is nameable type `i32` and should be declared as:
+</span><span style="font-style:italic;color:#969896;">//          fn target() -&gt; i32 as impl Debug
+</span><span>    </span><span style="color:#0086b3;">42
+</span><span>}
 </span></code></pre>
 <p>However we must acknowledge that there are still situations where we must allow closures and async blocks to take advantage of inference.</p>
-<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">target</span><span>() -&gt; impl Clone {</span><span>
-</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">|| </span><span style="color:#0086b3;">42</span><span>
-</span><span>}</span><span>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">target</span><span>() -&gt; impl Clone {
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">|| </span><span style="color:#0086b3;">42
+</span><span>}
 </span></code></pre>
 <p>And if we want to allow local inference, perhaps a lint would be best in this case as well:</p>
-<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">target</span><span>() -&gt; impl Clone {</span><span>
-</span><span style="font-style:italic;color:#969896;">//             ^^^^^^^^^^</span><span>
-</span><span style="font-style:italic;color:#969896;">// WARNING: impl Trait is deprecated</span><span>
-</span><span style="font-style:italic;color:#969896;">// NOTE:    use explicit inference instead: `_ as impl Clone`</span><span>
-</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">|| </span><span style="color:#0086b3;">42</span><span>
-</span><span>}</span><span>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">fn </span><span style="font-weight:bold;color:#795da3;">target</span><span>() -&gt; impl Clone {
+</span><span style="font-style:italic;color:#969896;">//             ^^^^^^^^^^
+</span><span style="font-style:italic;color:#969896;">// WARNING: impl Trait is deprecated
+</span><span style="font-style:italic;color:#969896;">// NOTE:    use explicit inference instead: `_ as impl Clone`
+</span><span>    </span><span style="font-weight:bold;color:#a71d5d;">|| </span><span style="color:#0086b3;">42
+</span><span>}
 </span></code></pre>
 <p>I see this as very similar to the change from <code>Trait</code> to <code>dyn Trait</code>, so many of the same strategies are likely to work here as well.</p>
 <p>The largest obstacle for <code>as impl Trait</code> will be building consensus for either type inference or named unnameables. Because this space is still up in the air, I think a discussion of <code>as impl Trait</code> would be good to keep separate. When we do come to a consensus on how to resolve this issue, we can deprecate <code>impl Trait</code> completely. That would allow us to complete the transition and resolve many longstanding issues related to <code>impl Trait</code>.</p>
@@ -217,20 +217,18 @@
 <p>Whew, that was a lot of work. Hopefully I've inspired some new ideas and thoughts about <code>impl Trait</code>. Let's have some lively debate about it and see if we can make Rust a better language for everyone.</p>
 <h3 id="thanks">Thanks</h3>
 <p>Thanks to <a href="https://github.com/computerdruid">@computerdruid</a> and <a href="https://github.com/tmandry">@tmandry</a> in particular for reviewing this series of posts and helping me hone my understanding of <code>impl Trait</code>.</p>
-<p id="footnote-1" class="footnote"><a href="#citation-1">1</a> Don't get me wrong, I actually like type inference and use it all the time. However, I think of Rust's typing philosophy as a kind of <a href="https://en.wikipedia.org/wiki/Mechanically_stabilized_earth">&quot;stabilized inference&quot;</a> model.</p>
-<p>In geotechnical engineering, it's common practice to use regular soil for building retaining walls, seawalls, and dikes. However, soil alone is not very strong and can easily flow when exposed to movement or water. A seawall made of plain soil would very quickly collapse from the soil shifting and flowing, but we can fix that by adding &quot;<em>reinforcement</em>&quot; to it. These are layers within the soil that provide stiffness and friction to prevent the soil from moving. It's kind of like a dirt sandwich with many layers, and it's <a href="https://www.youtube.com/watch?v=0olpSN6_TCc">surprisingly effective</a>.</p>
+<p id="footnote-1" class="footnote"><a href="#citation-1">1</a> Don't get me wrong, I actually like type inference and use it all the time. However, I think of Rust's typing philosophy as a kind of <a href="https://en.wikipedia.org/wiki/Mechanically_stabilized_earth">"stabilized inference"</a> model.</p>
+<p>In geotechnical engineering, it's common practice to use regular soil for building retaining walls, seawalls, and dikes. However, soil alone is not very strong and can easily flow when exposed to movement or water. A seawall made of plain soil would very quickly collapse from the soil shifting and flowing, but we can fix that by adding "<em>reinforcement</em>" to it. These are layers within the soil that provide stiffness and friction to prevent the soil from moving. It's kind of like a dirt sandwich with many layers, and it's <a href="https://www.youtube.com/watch?v=0olpSN6_TCc">surprisingly effective</a>.</p>
 <p>I think of Rust's type inference like the soil: it's on-site, abundant, and a natural choice for construction. But it has a tendency to shift and flow because it's only loosely held together. In large quantities it can quickly shift and flow when exposed to change. Likewise, I think of function signatures as the reinforcement. It's not a lot of material, but it's stiff and prevents the type inference inside of function bodies from moving too much. Just this little bit of added stiffness prevents changes from propagating across function boundaries, keeping the system as a whole stable.</p>
 <p>This is why I like type inference in statements, but I'm not a fan of type inference in function signatures.</p>
 </div>
 <div class="section navigation">
     
-        Previous article: <a href="https:&#x2F;&#x2F;david.kolo.ski&#x2F;blog&#x2F;a-new-impl-trait-3&#x2F;">A new impl Trait 3/4</a>
-    
     
 </div>
 
     <div class="section footer">
-        &copy; 2023 David Koloski
+        &copy; 2024 David Koloski
         <a href="/atom.xml"><img width="16" height="16" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 455 455'%3E%3Cpath d='M0 0v455h455V0H0zm141.435 372.387c-7.656 7.59-18.047 12.219-29.614 12.219-11.555 0-21.945-4.646-29.549-12.219C74.681 364.801 70 354.462 70 342.961s4.681-21.875 12.272-29.483c7.621-7.569 17.994-12.237 29.549-12.237 11.567 0 21.958 4.668 29.579 12.254 7.621 7.621 12.272 17.964 12.307 29.466-.035 11.501-4.686 21.822-12.272 29.426zM217.468 385s0-.101-.017-.101c-.066-39.41-15.431-76.597-43.221-104.352-27.786-27.838-64.925-43.256-104.195-43.291v-60.139c57.299.035 109.169 23.327 146.833 61.014 37.651 37.682 60.944 89.565 60.996 146.869h-60.396zm107.24 0c-.105-140.495-114.196-254.774-254.572-254.879V70c86.817.035 165.432 35.359 222.495 92.422C349.659 219.485 384.965 298.165 385 385h-60.292z' fill-rule='evenodd' fill='%23fff'/%3E%3C/svg%3E"></a>
     </div>
 </body>

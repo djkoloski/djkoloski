@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Software Engineer, Game Designer, Web Developer">
+    <meta name="author" content="David Koloski">
+
+    <!-- favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- fonts and styles -->
+    <link href="https://fonts.googleapis.com/css?family=Rubik:400,700" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Inconsolata:500,800" rel="stylesheet">
+    <link href="https://david.kolo.ski/style.css" rel="stylesheet">
+
+    <!-- scripts -->
+    <script src="/elasticlunr.min.js" async></script>
+    <script src="/search_index.en.js" async></script>
+    <script src="/search.js" async></script>
+
+    <title>
+        
+            How to sort your library in exactly 51,271 steps
+        
+    </title>
+</head>
+<body>
+    <div class="section header">
+        <div class="logo">
+            <a href="/" class="logo-image" width="100"></a>
+        </div>
+        <div class="links">
+            
+            
+                <a href="https://david.kolo.ski/about/">About</a>
+            
+                <a href="https://david.kolo.ski/resume/">Resume</a>
+            
+            
+                
+                <a href="https://david.kolo.ski/blog/">Blog</a>
+            
+        </div>
+        <div class="search">
+            <input id="search-checkbox" type="checkbox" autocomplete="off">
+            <input id="search-input" type="text" placeholder="Search">
+            <label id="search-show" for="search-checkbox"></label>
+        </div>
+    </div>
+    
+<div class="section title">
+    How to sort your library in exactly 51,271 steps
+    <div class="subtitle">
+        Using Petals of Insight to put your library in an exact order
+    </div>
+    <div class="subtitle">
+        Aug 30, 2024 &ndash; 7 min read
+    </div>
+</div>
+<div class="section taxonomies">
+    
+    <div class="categories">
+        
+            <a href="https://david.kolo.ski/categories/math/">Math</a>
+        
+    </div>
+    
+    <div class="tags">
+        
+            <a href="https://david.kolo.ski/tags/mtg/">Mtg</a>,
+        
+            <a href="https://david.kolo.ski/tags/puzzles/">Puzzles</a>
+        
+    </div>
+    
+</div>
+<div class="section content">
+    <p><a href="https://www.youtube.com/watch?v=uhZnHJBH4Ag">Today's daily ruling</a> on <a href="https://www.youtube.com/@JudgingFtW">Judging FtW</a> proposed an interesting question that lies at the intersection of mathematics, computer science, and tournament play policy. Take a look at these two cards:</p>
+<div class="center"><div>
+<img src="https:&#x2F;&#x2F;david.kolo.ski&#x2F;processed_images&#x2F;omniscience.ebbe8e4df2856533.jpg" />
+
+<img src="https:&#x2F;&#x2F;david.kolo.ski&#x2F;processed_images&#x2F;petals-of-insight.24686615e7a1dfbe.jpg" />
+</div></div>
+<p>Omniscience allows you to cast Petals of Insight without paying its mana cost, and you can choose to return Petals to your hand after it resolves.</p>
+<p>It seems intuitive that by casting and re-casting Petals of Insight, you can put your library in an arbitrary order <em>as long as</em> the number of cards in it is not divisible by three or is equal to three. This claim is true, but actually performing this combo runs into an issue.</p>
+<p>In Magic: the Gathering, players can "shortcut" repetitive game actions by demonstrating a loop and then declaring the number of times they'd like to execute that loop. This lets players easily take advantage of infinite combos without also requiring them to mechanically perform the actions of that combo; they just have to pick a number of how many times they'd like to do it. According to IPG 3.3:</p>
+<blockquote>
+<p>IPG 3.3 It is also slow play if a player continues to execute a loop without being able to provide an exact number of iterations and the expected resulting game state.</p>
+</blockquote>
+<p>So while we <em>can</em> shortcut casting Petals of Insight and sorting our cards, we have to provide an exact number of steps that our loop will execute in. For sorting cards, this is a somewhat complex calculation! But we want to combo off, so let's figure it out.</p>
+<h2 id="scrying-through-the-library">Scrying through the library</h2>
+<p>If we have a library of <code>N</code> cards, then after casting Petals <code>N</code> times without reordering cards, our library will return to the original state. To prove this:</p>
+<p>Number each card in your library <code>0</code> to <code>N-1</code> where the top card is <code>0</code> and the bottom card is <code>N-1</code>. We start with card <code>0</code> on top. Each time we cast Petals, the top three cards are put to the bottom in the same order. This advances the top card by three, looping back to previous cards after all <code>N</code> cards have been scried. After <code>k</code> casts of Petals, the top card will be <code>3k mod N</code>. Thus, by casting <code>k = N</code> times, we guarantee that the top card will be <code>3N mod N = 0</code>. Because we did not change the orders of any cards, our library will have returned to its original state.</p>
+<p>Instead of thinking about our library getting re-arranged after each cast, let's shift our frame of reference and instead think about looking at sets of three cards at a time. As an example, for <code>N=17</code> cards, we'll look at the following groups in order:</p>
+<pre style="background-color:#ffffff;color:#323232;"><code><span>*** ... ... ... ... ..
+</span><span>... *** ... ... ... ..
+</span><span>... ... *** ... ... ..
+</span><span>... ... ... *** ... ..
+</span><span>... ... ... ... *** ..
+</span><span>
+</span><span>wrap-around:
+</span><span>*.. ... ... ... ... **
+</span><span>
+</span><span>.** *.. ... ... ... ..
+</span><span>... .** *.. ... ... ..
+</span><span>... ... .** *.. ... ..
+</span><span>... ... ... .** *.. ..
+</span><span>... ... ... ... .** *.
+</span><span>
+</span><span>wrap-around:
+</span><span>**. ... ... ... ... .*
+</span><span>
+</span><span>..* **. ... ... ... ..
+</span><span>... ..* **. ... ... ..
+</span><span>... ... ..* **. ... ..
+</span><span>... ... ... ..* **. ..
+</span><span>... ... ... ... ..* **
+</span></code></pre>
+<p>Where <code>*</code> represents the current group of three cards being scried.</p>
+<h2 id="building-a-sorting-primitive">Building a sorting primitive</h2>
+<p>Now we'll need is a way to change the order of each card in our library in a controlled way.</p>
+<p>Let's call casting Petals <code>N</code> times a "cycle". In each cycle, there will be exactly one cast where the <code>k</code>-th card is the last in its group of three. For the first two cards, these casts "wrap around" the library so we'll choose to do nothing (i.e. wrap-around casts are a "no-op").</p>
+<p>To sort a card once, we'll do a cycle of casts. If we see the card we want to sort as the last in its group, we'll move it to the front. Additionally, if we see the card in the very first group of three then we'll move it to the front.</p>
+<p>In doing so, we've moved a card of our choice towards the top of our library by up to two places. We've got a sorting primitive!</p>
+<h2 id="sorting-a-single-card">Sorting a single card</h2>
+<p>Each cycle, we can move a single card up to two places closer to the top of our library. If we want to move a particular card to the top of our library, then we'll have to move it at most <code>N-1</code> places (if it's at the bottom of our library). This means that we'll have to do <code>floor(N/2)</code> cycles to move the bottom card to the top. As a visual demonstration:</p>
+<pre style="background-color:#ffffff;color:#323232;"><code><span>N = 4: ...*
+</span><span>    1: .*..
+</span><span>    2: *...
+</span><span>
+</span><span>N = 5: ....*
+</span><span>    1: ..*..
+</span><span>    2: *....
+</span><span>
+</span><span>N = 6: .....*
+</span><span>    1: ...*..
+</span><span>    2: .*....
+</span><span>    3: *.....
+</span></code></pre>
+<h2 id="sorting-all-of-the-cards">Sorting all of the cards</h2>
+<p>Now that we can sort a single card, let's define our procedure for sorting all of our cards:</p>
+<p>For <code>i</code> in <code>0..N-3</code>, sort the <code>i</code>-th card to position <code>i</code> in the library. Then sort the last three cards in a single cycle. The library is now sorted.</p>
+<p>This isn't the most efficient algorithm for sorting, but it's one that we could feasibly do and which satisfies the requirements for declaring and executing loops. So how many casts does that require?</p>
+<ul>
+<li>To sort the <code>i</code>-th card, we'll need to perform <code>floor(N/2)</code> cycles as demonstrated above.</li>
+<li>To sort the last three cards of our library, we only have to do a single cycle. One of the casts will look at the final three cards, and we can put them on the bottom in sorted order.</li>
+</ul>
+<h2 id="counting-the-casts">Counting the casts</h2>
+<p>So if we have <code>N</code> cards in our library, then the number of cycles to sort the library has the following recurrence relationship:</p>
+<p>Base case: Sorting the last three cards takes a single cycle.</p>
+<pre style="background-color:#ffffff;color:#323232;"><code><span>c_3 = 1
+</span></code></pre>
+<p>Recursive case: Sorting the last <code>N</code> cards takes <code>floor(N/2)</code> cycles plus the number of cycles to sort the last <code>N-1</code> cards.</p>
+<pre style="background-color:#ffffff;color:#323232;"><code><span>c_n = floor(N/2) + c_{n-1}
+</span></code></pre>
+<p>Expanding our recursive case gives:</p>
+<pre style="background-color:#ffffff;color:#323232;"><code><span>c_n = floor(N/2) + floor((N-1)/2) + floor((N-2)/2) + ... + floor(4/2) + 1
+</span></code></pre>
+<p>And the following exact values:</p>
+<pre style="background-color:#ffffff;color:#323232;"><code><span>c_3 = 1
+</span><span>c_4 = 3 = 2 + 1
+</span><span>c_5 = 5 = 2 + 3
+</span><span>c_6 = 8 = 3 + 5
+</span><span>c_7 = 11 = 3 + 8
+</span><span>c_8 = 15 = 4 + 11
+</span><span>c_9 = 19 = 4 + 15
+</span><span>...
+</span></code></pre>
+<p>As a quick simplification, let's just replace <code>1</code> with <code>floor(3/2)</code> since they're the same value:</p>
+<pre style="background-color:#ffffff;color:#323232;"><code><span>c_n = floor(N/2) + floor((N-1)/2) + floor((N-2)/2) + ... + floor(4/2) + floor(3/2)
+</span></code></pre>
+<p>Now let's move everything under a single <code>floor</code>. To do so, we'll need to add an error-correcting term to compensate for the amount that each floor is throwing away. This is relatively straightforward: <code>floor(x/2)</code> throws away <code>1/2</code> when <code>x</code> is odd, and <code>0</code> when <code>x</code> is even. Thus, it throws away <code>1/4</code> on average and so we can subtract <code>(N-2)/4</code> to compensate:</p>
+<pre style="background-color:#ffffff;color:#323232;"><code><span>c_n = floor(N/2 + (N-1)/2 + (N-2)/2 + ... + 4/2 + 3/2 - (N-2)/4)
+</span></code></pre>
+<p>Simplifying:</p>
+<pre style="background-color:#ffffff;color:#323232;"><code><span>c_n = floor((N + N-1 + N-2 + ... + 4 + 3)/2 - (N-2)/4)
+</span></code></pre>
+<p>We can add and subtract <code>2 + 1</code> from the <code>N</code> summation to get a complete sequence, and move the subtracted elements out of the group:</p>
+<pre style="background-color:#ffffff;color:#323232;"><code><span>c_n = floor((N + N-1 + N-2 + ... + 4 + 3 + 2 + 1 - 2 - 1)/2 - (N-2)/4)
+</span><span>    = floor((N + N-1 + N-2 + ... + 4 + 3 + 2 + 1)/2 - 3/2 - (N-2)/4)
+</span></code></pre>
+<p>Using the summation identity for <code>sum(i..N)</code> and simplifying:</p>
+<pre style="background-color:#ffffff;color:#323232;"><code><span>c_n = floor((N*(N+1)/2)/2 - 3/2 - (N-2)/4)
+</span><span>    = floor(N*(N+1)/4 - 6/4 - (N-2)/4)
+</span><span>    = floor((N*(N+1) - 6 - N + 2) / 4)
+</span><span>    = floor((N*(N+1) - N - 4) / 4)
+</span><span>    = floor((N*(N+1) - N) / 4) - 1
+</span><span>    = floor((N*N + N - N) / 4) - 1
+</span><span>    = floor(N*N / 4) - 1
+</span></code></pre>
+<p>And since each cycle requires <code>N</code> casts, that gives us our final answer of:</p>
+<pre style="background-color:#ffffff;color:#323232;"><code><span>C(N) = N * (floor(N*N / 4) - 1)
+</span><span>     = N*floor(N^2/4) - N
+</span></code></pre>
+<p>Where <code>C(N)</code> is the number of casts required to sort a library of <code>N&gt;3</code> cards.</p>
+<h2 id="numbers-to-know">Numbers to know</h2>
+<p>Here are the most important numbers to know:</p>
+<table><thead><tr><th style="text-align: right">Cards in library</th><th style="text-align: right">Casts of Petals of Insight</th></tr></thead><tbody>
+<tr><td style="text-align: right">50</td><td style="text-align: right">31200</td></tr>
+<tr><td style="text-align: right">52</td><td style="text-align: right">35100</td></tr>
+<tr><td style="text-align: right">53</td><td style="text-align: right">37153</td></tr>
+<tr><td style="text-align: right">55</td><td style="text-align: right">41525</td></tr>
+</tbody></table>
+<p>And here are the exact number of casts to declare when casting Petals of Insight with <code>N</code> cards left in your library:</p>
+<table><thead><tr><th style="text-align: right">Cards in library</th><th style="text-align: right">Casts of Petals of Insight</th></tr></thead><tbody>
+<tr><td style="text-align: right">0</td><td style="text-align: right">0</td></tr>
+<tr><td style="text-align: right">1</td><td style="text-align: right">1</td></tr>
+<tr><td style="text-align: right">2</td><td style="text-align: right">1</td></tr>
+<tr><td style="text-align: right">3</td><td style="text-align: right">1</td></tr>
+<tr><td style="text-align: right">4</td><td style="text-align: right">12</td></tr>
+<tr><td style="text-align: right">5</td><td style="text-align: right">25</td></tr>
+<tr><td style="text-align: right">7</td><td style="text-align: right">77</td></tr>
+<tr><td style="text-align: right">8</td><td style="text-align: right">120</td></tr>
+<tr><td style="text-align: right">10</td><td style="text-align: right">240</td></tr>
+<tr><td style="text-align: right">11</td><td style="text-align: right">319</td></tr>
+<tr><td style="text-align: right">13</td><td style="text-align: right">533</td></tr>
+<tr><td style="text-align: right">14</td><td style="text-align: right">672</td></tr>
+<tr><td style="text-align: right">16</td><td style="text-align: right">1008</td></tr>
+<tr><td style="text-align: right">17</td><td style="text-align: right">1207</td></tr>
+<tr><td style="text-align: right">19</td><td style="text-align: right">1691</td></tr>
+<tr><td style="text-align: right">20</td><td style="text-align: right">1980</td></tr>
+<tr><td style="text-align: right">22</td><td style="text-align: right">2640</td></tr>
+<tr><td style="text-align: right">23</td><td style="text-align: right">3013</td></tr>
+<tr><td style="text-align: right">25</td><td style="text-align: right">3875</td></tr>
+<tr><td style="text-align: right">26</td><td style="text-align: right">4368</td></tr>
+<tr><td style="text-align: right">28</td><td style="text-align: right">5460</td></tr>
+<tr><td style="text-align: right">29</td><td style="text-align: right">6061</td></tr>
+<tr><td style="text-align: right">31</td><td style="text-align: right">7409</td></tr>
+<tr><td style="text-align: right">32</td><td style="text-align: right">8160</td></tr>
+<tr><td style="text-align: right">34</td><td style="text-align: right">9792</td></tr>
+<tr><td style="text-align: right">35</td><td style="text-align: right">10675</td></tr>
+<tr><td style="text-align: right">37</td><td style="text-align: right">12617</td></tr>
+<tr><td style="text-align: right">38</td><td style="text-align: right">13680</td></tr>
+<tr><td style="text-align: right">40</td><td style="text-align: right">15960</td></tr>
+<tr><td style="text-align: right">41</td><td style="text-align: right">17179</td></tr>
+<tr><td style="text-align: right">43</td><td style="text-align: right">19823</td></tr>
+<tr><td style="text-align: right">44</td><td style="text-align: right">21252</td></tr>
+<tr><td style="text-align: right">46</td><td style="text-align: right">24288</td></tr>
+<tr><td style="text-align: right">47</td><td style="text-align: right">25897</td></tr>
+<tr><td style="text-align: right">49</td><td style="text-align: right">29351</td></tr>
+<tr><td style="text-align: right">50</td><td style="text-align: right">31200</td></tr>
+<tr><td style="text-align: right">52</td><td style="text-align: right">35100</td></tr>
+<tr><td style="text-align: right">53</td><td style="text-align: right">37153</td></tr>
+<tr><td style="text-align: right">55</td><td style="text-align: right">41525</td></tr>
+<tr><td style="text-align: right">56</td><td style="text-align: right">43848</td></tr>
+<tr><td style="text-align: right">58</td><td style="text-align: right">48720</td></tr>
+<tr><td style="text-align: right">59</td><td style="text-align: right">51271</td></tr>
+</tbody></table>
+
+</div>
+<div class="section navigation">
+    
+    
+</div>
+
+    <div class="section footer">
+        &copy; 2024 David Koloski
+        <a href="/atom.xml"><img width="16" height="16" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 455 455'%3E%3Cpath d='M0 0v455h455V0H0zm141.435 372.387c-7.656 7.59-18.047 12.219-29.614 12.219-11.555 0-21.945-4.646-29.549-12.219C74.681 364.801 70 354.462 70 342.961s4.681-21.875 12.272-29.483c7.621-7.569 17.994-12.237 29.549-12.237 11.567 0 21.958 4.668 29.579 12.254 7.621 7.621 12.272 17.964 12.307 29.466-.035 11.501-4.686 21.822-12.272 29.426zM217.468 385s0-.101-.017-.101c-.066-39.41-15.431-76.597-43.221-104.352-27.786-27.838-64.925-43.256-104.195-43.291v-60.139c57.299.035 109.169 23.327 146.833 61.014 37.651 37.682 60.944 89.565 60.996 146.869h-60.396zm107.24 0c-.105-140.495-114.196-254.774-254.572-254.879V70c86.817.035 165.432 35.359 222.495 92.422C349.659 219.485 384.965 298.165 385 385h-60.292z' fill-rule='evenodd' fill='%23fff'/%3E%3C/svg%3E"></a>
+    </div>
+</body>
+</html>

@@ -46,11 +46,18 @@
         <lastmod>2021-03-11</lastmod>
     </url>
     <url>
+        <loc>https://david.kolo.ski/blog/sort-library-steps-mtg/</loc>
+        <lastmod>2024-08-30</lastmod>
+    </url>
+    <url>
         <loc>https://david.kolo.ski/blog/ssg-with-zola/</loc>
         <lastmod>2018-12-02</lastmod>
     </url>
     <url>
         <loc>https://david.kolo.ski/categories/</loc>
+    </url>
+    <url>
+        <loc>https://david.kolo.ski/categories/math/</loc>
     </url>
     <url>
         <loc>https://david.kolo.ski/categories/rust/</loc>
@@ -63,6 +70,9 @@
     </url>
     <url>
         <loc>https://david.kolo.ski/tags/</loc>
+    </url>
+    <url>
+        <loc>https://david.kolo.ski/tags/mtg/</loc>
     </url>
     <url>
         <loc>https://david.kolo.ski/tags/puzzles/</loc>

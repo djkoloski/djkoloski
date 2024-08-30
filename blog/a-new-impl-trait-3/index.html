@@ -112,7 +112,7 @@
 <h2 id="conservative-impl-trait">Conservative <code>impl Trait</code></h2>
 <p><a href="https://rust-lang.github.io/rfcs/2071-impl-trait-existential-types.html">This RFC</a> is essentially just a limited version of the original proposal. It only allows <code>impl Trait</code> in argument and return position on free and inherent functions. Unfortunately, there's not much to comment on here since it's a subset of the previous RFC. Some notes:</p>
 <h3 id="abstract-vs-anonymous">Abstract vs anonymous</h3>
-<p>There are a few places here where the terminology around these types are questioned. I prefer &quot;abstract&quot; to draw a clearer separation between abstracted types and unnameable types, both of which could be confused as &quot;anonymous&quot; by non-experts (sorry @eddyb!).</p>
+<p>There are a few places here where the terminology around these types are questioned. I prefer "abstract" to draw a clearer separation between abstracted types and unnameable types, both of which could be confused as "anonymous" by non-experts (sorry @eddyb!).</p>
 <h3 id="named-output-types">Named output types</h3>
 <p><a href="https://github.com/eddyb">@eddyb</a> suggests naming the return types of functions, which is very similar to my suggestion for named unnameable types. Even down to the use of the <code>type</code> keyword, which was fun to see. Naming the return types of functions alone would make it possible to do everything that type alias <code>as impl Trait</code> can do, but using it in conjunction with type aliases would give us incredibly comfy ergonomics.</p>
 <h3 id="anxiety-of-impl-trait-overuse">Anxiety of <code>impl Trait</code> overuse</h3>
@@ -130,21 +130,21 @@
 <p>We've finally caught up and are moving on to the more experimental RFCs. <a href="https://rust-lang.github.io/rfcs/2071-impl-trait-existential-types.html">This RFC</a> aims to introduce <em>existential types</em> and expand <code>impl Trait</code> to more places. I have some real critiques of this RFC, so let's get into them.</p>
 <h3 id="as-impl-trait-in-spirit"><code>as impl Trait</code> in spirit</h3>
 <p>One of the first sections of this RFC suggests this syntax for abstracted types:</p>
-<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">let</span><span> displayable: </span><span style="font-weight:bold;color:#a71d5d;">impl </span><span>Display = &quot;Hello, world!&quot;;</span><span>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">let</span><span> displayable: </span><span style="font-weight:bold;color:#a71d5d;">impl </span><span>Display = &quot;Hello, world!&quot;;
 </span></code></pre>
 <p>This doesn't include the concrete underlying type, and so I think this would be much clearer as:</p>
-<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">let</span><span> displayable: </span><span style="font-weight:bold;color:#a71d5d;">&amp;&#39;static str as impl </span><span>Display = &quot;Hello, world!&quot;;</span><span>
-</span><span style="font-style:italic;color:#969896;">// or, with variable type inference</span><span>
-</span><span>let displayable: _ as impl Display = &quot;Hello, world!&quot;;</span><span>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">let</span><span> displayable: </span><span style="font-weight:bold;color:#a71d5d;">&amp;&#39;static str as impl </span><span>Display = &quot;Hello, world!&quot;;
+</span><span style="font-style:italic;color:#969896;">// or, with variable type inference
+</span><span>let displayable: _ as impl Display = &quot;Hello, world!&quot;;
 </span></code></pre>
 <p>This addresses the same problems, but with an arguably clearer syntax:</p>
-<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-style:italic;color:#969896;">// Concrete</span><span>
-</span><span style="font-weight:bold;color:#a71d5d;">const </span><span style="color:#0086b3;">DISPLAYABLE</span><span>: </span><span style="font-weight:bold;color:#a71d5d;">&amp;&#39;static str = </span><span style="color:#183691;">&quot;Hello, world!&quot;</span><span>;</span><span>
-</span><span style="font-style:italic;color:#969896;">// Abstract</span><span>
-</span><span style="font-weight:bold;color:#a71d5d;">const </span><span style="color:#0086b3;">DISPLAYABLE</span><span>: </span><span style="font-weight:bold;color:#a71d5d;">&amp;&#39;static str as impl </span><span>Display = &quot;Hello, world!&quot;;</span><span>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-style:italic;color:#969896;">// Concrete
+</span><span style="font-weight:bold;color:#a71d5d;">const </span><span style="color:#0086b3;">DISPLAYABLE</span><span>: </span><span style="font-weight:bold;color:#a71d5d;">&amp;&#39;static str = </span><span style="color:#183691;">&quot;Hello, world!&quot;</span><span>;
+</span><span style="font-style:italic;color:#969896;">// Abstract
+</span><span style="font-weight:bold;color:#a71d5d;">const </span><span style="color:#0086b3;">DISPLAYABLE</span><span>: </span><span style="font-weight:bold;color:#a71d5d;">&amp;&#39;static str as impl </span><span>Display = &quot;Hello, world!&quot;;
 </span></code></pre>
 <p>And can handle unnameable types with local inference:</p>
-<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">const </span><span style="color:#0086b3;">MY_CLOSURE</span><span>: </span><span style="font-weight:bold;color:#a71d5d;">_ as impl </span><span>Fn(i32) -&gt; i32 = |x| x + 1;</span><span>
+<pre data-lang="rust" style="background-color:#ffffff;color:#323232;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-weight:bold;color:#a71d5d;">const </span><span style="color:#0086b3;">MY_CLOSURE</span><span>: </span><span style="font-weight:bold;color:#a71d5d;">_ as impl </span><span>Fn(i32) -&gt; i32 = |x| x + 1;
 </span></code></pre>
 <h3 id="existential-types">Existential types</h3>
 <p>This section in particular muddies the water with <code>impl Trait</code>. The introduction of existential types is <em>intended</em> to provide the same type-abstracting functionality as <code>impl Trait</code>, but with the added benefit of being usable in more positions. There is a particular focus on type aliases and associated types, where the concrete underlying type is inferred based on its use.</p>
@@ -159,15 +159,11 @@
 </div>
 <div class="section navigation">
     
-        Previous article: <a href="https:&#x2F;&#x2F;david.kolo.ski&#x2F;blog&#x2F;a-new-impl-trait-2&#x2F;">A new impl Trait 2/4</a>
-    
-    
-        Next article: <a href="https:&#x2F;&#x2F;david.kolo.ski&#x2F;blog&#x2F;a-new-impl-trait-4&#x2F;">A new impl Trait 4/4</a>
     
 </div>
 
     <div class="section footer">
-        &copy; 2023 David Koloski
+        &copy; 2024 David Koloski
         <a href="/atom.xml"><img width="16" height="16" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 455 455'%3E%3Cpath d='M0 0v455h455V0H0zm141.435 372.387c-7.656 7.59-18.047 12.219-29.614 12.219-11.555 0-21.945-4.646-29.549-12.219C74.681 364.801 70 354.462 70 342.961s4.681-21.875 12.272-29.483c7.621-7.569 17.994-12.237 29.549-12.237 11.567 0 21.958 4.668 29.579 12.254 7.621 7.621 12.272 17.964 12.307 29.466-.035 11.501-4.686 21.822-12.272 29.426zM217.468 385s0-.101-.017-.101c-.066-39.41-15.431-76.597-43.221-104.352-27.786-27.838-64.925-43.256-104.195-43.291v-60.139c57.299.035 109.169 23.327 146.833 61.014 37.651 37.682 60.944 89.565 60.996 146.869h-60.396zm107.24 0c-.105-140.495-114.196-254.774-254.572-254.879V70c86.817.035 165.432 35.359 222.495 92.422C349.659 219.485 384.965 298.165 385 385h-60.292z' fill-rule='evenodd' fill='%23fff'/%3E%3C/svg%3E"></a>
     </div>
 </body>
